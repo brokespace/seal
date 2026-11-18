@@ -908,7 +908,6 @@
           "quietFor": "Last activity",
           "subagentCount": "{{running}} of {{count}} subagents running",
           "account": "Account",
-          "hostError": "Could not scan {{host}}: {{error}}",
           "finished": "Recently finished",
           "stopPicking": "Done selecting",
           "startPicking": "Select sessions",

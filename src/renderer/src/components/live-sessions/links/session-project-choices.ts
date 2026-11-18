@@ -1,13 +1,13 @@
 import {
   folderProjectKey,
-  liveSessionFolderProject
+  liveSessionFolderProject,
+  sessionProjectNameKey
 } from '../../../../../shared/live-sessions/live-session-project'
 import type {
   LiveSession,
   LiveSessionProject
 } from '../../../../../shared/live-sessions/live-session-types'
 import type { LiveSessionLink } from './live-session-links'
-import { sessionProjectNameKey } from '../../../../../shared/live-sessions/live-session-project'
 import type { SessionProjectCatalog } from './session-project-catalog'
 import { useLiveSessionLinks } from './use-live-session-links'
 import { useSessionProjectCatalog } from './use-workspace-sessions'

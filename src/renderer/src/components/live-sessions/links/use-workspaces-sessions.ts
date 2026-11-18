@@ -16,29 +16,39 @@ import { useSidebarSessionGroups, windowSessionBuilder } from './use-workspace-s
 const NONE: readonly LiveSession[] = []
 const NO_WORKSPACES: readonly SessionWorkspaceRef[] = []
 
-/** Each workspace's agents as the window's own status feed shows them; the same array while none of them changes. */
-function useWorkspacesAgentRows(
-  workspaces: readonly SessionWorkspaceRef[]
-): readonly (readonly DashboardAgentRow[])[] {
-  const store = useAppStateView()
+type AgentRowsSnapshot = readonly (readonly DashboardAgentRow[])[]
+
+/** Reads each workspace's agent rows; returns the same array while none of them changes. */
+function workspacesAgentRowsReader(
+  workspaces: readonly SessionWorkspaceRef[],
+  live: boolean,
+  store: ReturnType<typeof useAppStateView>
+): () => AgentRowsSnapshot {
   // Live reads share the cards' selectors; a retained view's frozen state keeps its own memo.
-  const live = useAppStateViewActive()
-  const getRows = useMemo(() => {
-    const selectors = workspaces.map(({ worktreeId, hostId }) =>
-      live
-        ? getSharedWorktreeAgentRowsSelector(worktreeId, hostId)
-        : createWorktreeAgentRowsSelector(worktreeId, hostId)
-    )
-    let last: readonly (readonly DashboardAgentRow[])[] = []
-    return () => {
-      const state = store.getState()
-      const next = selectors.map((select) => select(state))
-      if (next.length !== last.length || next.some((rows, index) => rows !== last[index])) {
-        last = next
-      }
-      return last
+  const selectors = workspaces.map(({ worktreeId, hostId }) =>
+    live
+      ? getSharedWorktreeAgentRowsSelector(worktreeId, hostId)
+      : createWorktreeAgentRowsSelector(worktreeId, hostId)
+  )
+  let last: AgentRowsSnapshot = []
+  return () => {
+    const state = store.getState()
+    const next = selectors.map((select) => select(state))
+    if (next.length !== last.length || next.some((rows, index) => rows !== last[index])) {
+      last = next
     }
-  }, [workspaces, live, store])
+    return last
+  }
+}
+
+/** Each workspace's agents as the window's own status feed shows them. */
+function useWorkspacesAgentRows(workspaces: readonly SessionWorkspaceRef[]): AgentRowsSnapshot {
+  const store = useAppStateView()
+  const live = useAppStateViewActive()
+  const getRows = useMemo(
+    () => workspacesAgentRowsReader(workspaces, live, store),
+    [workspaces, live, store]
+  )
   return useSyncExternalStore(store.subscribe, getRows, getRows)
 }
 

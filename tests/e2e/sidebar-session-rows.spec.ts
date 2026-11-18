@@ -184,6 +184,7 @@ test('with workspaces hidden, a project lists its sessions, each naming its work
     process.platform === 'win32',
     'The stub agents are found through the POSIX process table'
   )
+  // Sessions settle over several scans, which come 3 to 12 seconds apart.
   test.setTimeout(180_000)
   await showSidebar(orcaPage)
   const workspaces = await addSeedWorkspaces(orcaPage, 2)
