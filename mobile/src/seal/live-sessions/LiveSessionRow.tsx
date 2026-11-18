@@ -1,6 +1,5 @@
 import { AgentStateDot } from '../../components/AgentStateDot'
 import { ListRow } from '../../components/list/ListGroup'
-import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { SessionRecapCounts } from '../session-recap/SessionRecapCounts'
 import {
   liveSessionDotState,
@@ -23,7 +22,6 @@ export function LiveSessionRow({
   opening?: boolean
   onPress: (session: LiveSession) => void
 }) {
-  const t = useMobileTranslation()
   const detail = session.permission?.question ?? session.summary ?? session.statusDetail
   return (
     <ListRow
@@ -34,9 +32,6 @@ export function LiveSessionRow({
         ...(detail ? [detail] : [])
       ].join(' · ')}
       leading={<AgentStateDot state={liveSessionDotState(session.status)} />}
-      value={
-        session.origin === 'external' ? t('seal.liveSessions.external', 'External') : undefined
-      }
       accessory={<SessionRecapCounts brief={session.recap} />}
       navigates
       busy={opening}
