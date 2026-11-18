@@ -11,7 +11,7 @@ import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-t
 import type { TerminalAgent } from '../../../../shared/agent-status/identity/terminal-agent'
 import type { TabDragItemData } from '../tab-group/useTabDragSplit'
 import { useAppStore } from '../../store/index'
-import { SealTabAccountBadge } from '../seal-session/SealTabAccountBadge'
+import { SealSessionAccountBadge } from '../seal-session/SealSessionAccountBadge'
 import {
   ACTIVE_TAB_INDICATOR_CLASSES,
   TAB_ROOT_CLASSES,
@@ -278,7 +278,7 @@ export default function SortableTab({
           {displayTitle}
         </span>
       )}
-      {!isEditing && <SealTabAccountBadge tabId={tab.id} worktreeId={tab.worktreeId} />}
+      {!isEditing && <SealSessionAccountBadge tabId={tab.id} worktreeId={tab.worktreeId} />}
       {tab.color && !isEditing && (
         <span
           className="mr-1.5 size-2 rounded-full shrink-0"

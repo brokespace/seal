@@ -39,6 +39,8 @@ export const SealProjectRuleSchema = z
   .object({
     /** Git remote key (`github.com/owner/repo`), repo path, folder name or display name; `*` globs. */
     match: z.string().trim().min(1).max(512),
+    /** Only launches on this machine (a machine rule key); absent applies on every machine. */
+    machine: z.string().trim().min(1).max(512).optional(),
     label: z.string().trim().max(120).optional(),
     claude: SealScopePolicySchema.optional(),
     codex: SealScopePolicySchema.optional()
@@ -48,7 +50,7 @@ export type SealProjectRule = z.infer<typeof SealProjectRuleSchema>
 
 export const SealMachineRuleSchema = z
   .object({
-    /** `local`, `runtime:<environment id>` or `ssh:<target id>`. */
+    /** `host:<installation id>` (the same on every desktop), or a legacy `local`/`runtime:<id>`. */
     machine: z.string().trim().min(1).max(512),
     label: z.string().trim().max(120).optional(),
     claude: SealScopePolicySchema.optional(),
@@ -56,6 +58,13 @@ export const SealMachineRuleSchema = z
   })
   .strict()
 export type SealMachineRule = z.infer<typeof SealMachineRuleSchema>
+
+const SEAL_HOST_KEY_PREFIX = 'host:'
+
+/** The machine rule key a Seal host answers to wherever it is listed: its installation id. */
+export function sealHostMachineKey(installationId: string): string {
+  return `${SEAL_HOST_KEY_PREFIX}${installationId}`
+}
 
 export const SEAL_SWAP_STRATEGIES = ['best', 'weekly-first', 'consume-first', 'priority'] as const
 export type SealSwapStrategy = (typeof SEAL_SWAP_STRATEGIES)[number]

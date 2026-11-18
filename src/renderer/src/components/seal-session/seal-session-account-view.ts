@@ -23,9 +23,22 @@ export function sessionForTab(
 ): SealSessionAssignment | null {
   let newest: SealSessionAssignment | null = null
   for (const session of sessions) {
-    if (session.tabId === tabId && !session.endedAt && (!newest || session.at > newest.at)) {
+    if (
+      !session.chat &&
+      session.tabId === tabId &&
+      !session.endedAt &&
+      (!newest || session.at > newest.at)
+    ) {
       newest = session
     }
   }
   return newest
+}
+
+/** The account a Seal chat (agent SDK session) runs on. */
+export function sessionForChat(
+  sessions: SealSessionAssignment[],
+  sessionId: string
+): SealSessionAssignment | null {
+  return sessions.find((session) => session.chat && session.id === sessionId) ?? null
 }

@@ -100,8 +100,8 @@ export abstract class CodexRuntimeHomeLaunch extends CodexRuntimeHomeRouting {
     return this.getRuntimeHomePath()
   }
 
-  /** A Seal launch pinned to a saved account that the host does not select; selection state is untouched. */
-  preparePinnedHostAccountHome(accountId: string): string {
+  /** The home a Seal launch pinned to this saved account runs in, read without preparing it. */
+  resolvePinnedHostAccountHome(accountId: string): string {
     const account = this.store
       .getSettings()
       .codexManagedAccounts.find((candidate) => candidate.id === accountId)
@@ -112,13 +112,19 @@ export abstract class CodexRuntimeHomeLaunch extends CodexRuntimeHomeRouting {
     if (resolved.kind !== 'owned') {
       throw new ManagedCodexHomeTemporarilyUnavailableError()
     }
-    syncSystemCodexResourcesIntoManagedHome(resolved.homePath)
+    return resolved.homePath
+  }
+
+  /** A Seal launch pinned to a saved account that the host does not select; selection state is untouched. */
+  preparePinnedHostAccountHome(accountId: string): string {
+    const homePath = this.resolvePinnedHostAccountHome(accountId)
+    syncSystemCodexResourcesIntoManagedHome(homePath)
     syncSystemConfigIntoManagedCodexHome({
-      runtimeHomePath: resolved.homePath,
+      runtimeHomePath: homePath,
       systemHomePath: getSystemCodexHomePath()
     })
-    this.startSelfContainedSessionBridgeForLaunch(resolved.homePath)
-    return resolved.homePath
+    this.startSelfContainedSessionBridgeForLaunch(homePath)
+    return homePath
   }
 
   // Real-home launches see managed-account history too, or switching back to system default hides it (#25000).

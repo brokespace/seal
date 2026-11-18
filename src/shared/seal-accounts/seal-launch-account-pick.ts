@@ -26,6 +26,7 @@ export type SealLaunchPickReason =
   | 'workspace-pin'
   | 'project-default'
   | 'machine-default'
+  | 'current'
   | 'selected'
   | 'auto'
   | 'api-key-fallback'
@@ -72,15 +73,18 @@ export type SealLaunchPickInput = {
   settings: SealAutoSwapSettings
   quarantine: SealQuarantine
   now: number
+  /** The account a relaunching session already runs on; kept while usable so it does not hop. */
+  current?: SealAccountKey | null
 }
 
 /**
  * The account one new session runs on: an explicit override, then the project/machine default,
- * then the host's selected account, then the best allowed account with room. Hosts with no
+ * then the account a relaunch already runs on, then the host's selected account, then the best
+ * allowed account with room. Hosts with no
  * rule and auto-swap off keep Orca's own selection untouched.
  */
 export function pickLaunchAccount(input: SealLaunchPickInput): SealLaunchPick {
-  const { candidates, policy, override, settings, quarantine, now } = input
+  const { candidates, policy, override, settings, quarantine, now, current } = input
   const warnings: string[] = []
   if (override) {
     const chosen = findCandidateByRef(candidates, override.ref)
@@ -115,6 +119,10 @@ export function pickLaunchAccount(input: SealLaunchPickInput): SealLaunchPick {
   }
   if (preferred) {
     warnings.push(`Default account ${preferred.label} is unavailable or near its limit.`)
+  }
+  const kept = current ? findByKey(candidates, current) : null
+  if (kept && isUsable(kept)) {
+    return { kind: 'account', candidate: kept, reason: 'current', warnings }
   }
   const selected = candidates.find((candidate) => candidate.active) ?? null
   if (selected && isUsable(selected)) {

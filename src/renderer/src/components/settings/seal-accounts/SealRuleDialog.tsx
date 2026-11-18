@@ -20,48 +20,81 @@ import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { SettingsSegmentedControl } from '../form-controls/SettingsFormControls'
-import { sealMachineRuleKey, type SealRuleDraft, type SealRuleRow } from './seal-rule-rows'
+import {
+  sealMachineForRuleKey,
+  type SealRuleDraft,
+  type SealRuleRow,
+  type SealRuleScope
+} from './seal-rule-rows'
 
 const BEST_AVAILABLE = '__best__'
+const EVERY_MACHINE = '__every__'
 
 type SealRuleDialogProps = {
   /** The rule being edited; null to add one. What a rule applies to cannot change once saved. */
   rule: SealRuleRow | null
+  /** A new rule from a machine's or a project's list starts on that machine or project. */
+  scope?: SealRuleScope
   accounts: readonly SealFleetAccount[]
   machines: readonly SealFleetMachine[]
-  homeMachineKey: string
   onOpenChange: (open: boolean) => void
   onSave: (draft: SealRuleDraft) => Promise<boolean>
+}
+
+function machineOption(
+  machines: readonly SealFleetMachine[],
+  key: string
+): { id: string; label: string } {
+  return { id: key, label: sealMachineForRuleKey(machines, key)?.label ?? key }
 }
 
 /** One rule, read top to bottom: where it applies, which accounts it allows, which it prefers. */
 export function SealRuleDialog({
   rule,
+  scope: listScope,
   accounts,
   machines,
-  homeMachineKey,
   onOpenChange,
   onSave
 }: SealRuleDialogProps): React.JSX.Element {
   const t = useTranslate()
-  const [scope, setScope] = useState<'project' | 'machine'>(rule?.scope ?? 'project')
+  const homeMachineKey = machines.find((entry) => entry.home)?.ruleKeys[0] ?? 'local'
+  const scopedMachine = listScope?.kind === 'machine' ? listScope.machine.ruleKeys[0] : null
+  const scopedProject = listScope?.kind === 'project' ? listScope : null
+  const [scope, setScope] = useState<'project' | 'machine'>(
+    rule?.scope ?? (scopedMachine ? 'machine' : 'project')
+  )
   const [provider, setProvider] = useState<SealProvider>(rule?.provider ?? 'claude')
-  const [project, setProject] = useState(rule?.scope === 'project' ? rule.target : '')
-  const [machine, setMachine] = useState(rule?.scope === 'machine' ? rule.target : homeMachineKey)
-  const [label, setLabel] = useState(rule?.label ?? '')
+  const [project, setProject] = useState(
+    rule?.scope === 'project' ? rule.target : (scopedProject?.match ?? '')
+  )
+  const [machine, setMachine] = useState(
+    rule?.scope === 'machine' ? rule.target : (scopedMachine ?? homeMachineKey)
+  )
+  // A project rule applies on every machine unless it names one.
+  const [projectMachine, setProjectMachine] = useState(
+    rule ? (rule.machine ?? EVERY_MACHINE) : (scopedMachine ?? EVERY_MACHINE)
+  )
+  const [label, setLabel] = useState(rule?.label ?? scopedProject?.label ?? '')
   const [allow, setAllow] = useState<string[]>(rule?.policy.allow ?? [])
   const [preferred, setPreferred] = useState<string>(rule?.policy.default ?? BEST_AVAILABLE)
   const [saving, setSaving] = useState(false)
   const choices = accounts.filter((account) => account.provider === provider)
   const preferable = allow.length > 0 ? choices.filter((a) => allow.includes(a.key)) : choices
   const paired = machines.map((entry) => ({
-    id: sealMachineRuleKey(entry, homeMachineKey),
+    id: entry.ruleKeys[0] ?? entry.id,
     label: entry.label
   }))
-  // A saved rule may name a machine that is no longer paired; keep it selectable.
-  const machineOptions = paired.some((entry) => entry.id === machine)
-    ? paired
-    : [...paired, { id: machine, label: machine }]
+  // A saved rule may name a machine by an older key, or one no longer paired; keep it selectable.
+  const withSaved = (key: string) =>
+    key === EVERY_MACHINE || paired.some((entry) => entry.id === key)
+      ? paired
+      : [...paired, machineOption(machines, key)]
+  const machineOptions = withSaved(machine)
+  const projectMachineOptions = [
+    { id: EVERY_MACHINE, label: t('seal.accounts.rules.everyMachine', 'Every machine') },
+    ...withSaved(projectMachine)
+  ]
   const target = scope === 'project' ? project.trim() : machine
 
   const changeProvider = (next: SealProvider): void => {
@@ -82,6 +115,9 @@ export function SealRuleDialog({
       scope,
       target,
       provider,
+      ...(scope === 'project' && projectMachine !== EVERY_MACHINE
+        ? { machine: projectMachine }
+        : {}),
       ...(scope === 'project' && label.trim() ? { label: label.trim() } : {}),
       allow,
       default: preferred === BEST_AVAILABLE ? null : preferred
@@ -123,16 +159,18 @@ export function SealRuleDialog({
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
-                <SettingsSegmentedControl
-                  size="sm"
-                  value={scope}
-                  onChange={setScope}
-                  options={[
-                    { value: 'project', label: t('seal.accounts.rules.project', 'Project') },
-                    { value: 'machine', label: t('seal.accounts.rules.machine', 'Machine') }
-                  ]}
-                  ariaLabel={t('seal.accounts.rules.appliesTo', 'Applies to')}
-                />
+                {scopedProject ? null : (
+                  <SettingsSegmentedControl
+                    size="sm"
+                    value={scope}
+                    onChange={setScope}
+                    options={[
+                      { value: 'project', label: t('seal.accounts.rules.project', 'Project') },
+                      { value: 'machine', label: t('seal.accounts.rules.machine', 'Machine') }
+                    ]}
+                    ariaLabel={t('seal.accounts.rules.appliesTo', 'Applies to')}
+                  />
+                )}
                 <SettingsSegmentedControl
                   size="sm"
                   value={provider}
@@ -155,7 +193,7 @@ export function SealRuleDialog({
                 <Input
                   id="seal-rule-project"
                   value={project}
-                  disabled={rule !== null}
+                  disabled={rule !== null || scopedProject !== null}
                   placeholder={t('seal.accounts.rules.projectPlaceholder', 'github.com/acme/*')}
                   onChange={(event) => setProject(event.target.value)}
                 />
@@ -163,6 +201,25 @@ export function SealRuleDialog({
                   {t(
                     'seal.accounts.rules.projectHelp',
                     'A git remote such as github.com/owner/repo, a repo path, or a folder name. Use * to match many.'
+                  )}
+                </p>
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="seal-rule-project-machine">
+                  {t('seal.accounts.rules.onMachine', 'On machine')}
+                </Label>
+                <HostCombobox
+                  id="seal-rule-project-machine"
+                  size="sm"
+                  value={projectMachine}
+                  onChange={setProjectMachine}
+                  options={projectMachineOptions}
+                  disabled={rule !== null}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t(
+                    'seal.accounts.rules.onMachineHelp',
+                    'A rule for one machine replaces the project’s rule for every machine there.'
                   )}
                 </p>
               </div>
@@ -189,7 +246,7 @@ export function SealRuleDialog({
                 value={machine}
                 onChange={setMachine}
                 options={machineOptions}
-                disabled={rule !== null}
+                disabled={rule !== null || scopedMachine !== null}
               />
             </div>
           )}

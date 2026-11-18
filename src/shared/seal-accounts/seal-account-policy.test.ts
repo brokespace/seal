@@ -18,7 +18,7 @@ describe('resolveSealPolicy', () => {
           { match: 'seal', claude: { default: 'claude:me@home.com' } }
         ]
       }),
-      { provider: 'claude', machineKey: 'local', project: sealRepo }
+      { provider: 'claude', machineKeys: ['local'], project: sealRepo }
     )
     expect(resolved.defaultKey).toBe('claude:me@home.com')
     expect(resolved.defaultSource).toBe('project')
@@ -35,7 +35,7 @@ describe('resolveSealPolicy', () => {
         ],
         machines: [{ machine: 'runtime:box', codex: { allow: ['codex:b@x.com', 'codex:c@x.com'] } }]
       }),
-      { provider: 'codex', machineKey: 'runtime:box', project: sealRepo }
+      { provider: 'codex', machineKeys: ['runtime:box'], project: sealRepo }
     )
     expect(resolved.allow).toEqual(['codex:b@x.com'])
   })
@@ -48,15 +48,32 @@ describe('resolveSealPolicy', () => {
           { machine: 'local', claude: { allow: ['claude:b@x.com'], default: 'claude:b@x.com' } }
         ]
       }),
-      { provider: 'claude', machineKey: 'local', project: sealRepo }
+      { provider: 'claude', machineKeys: ['local'], project: sealRepo }
     )
     expect(resolved).toMatchObject({ defaultKey: 'claude:b@x.com', defaultSource: 'machine' })
+  })
+
+  it('lets a project rule for one machine override the project rule for every machine there only', () => {
+    const rules = config({
+      projects: [
+        { match: 'github.com/brokespace/seal', claude: { default: 'claude:me@home.com' } },
+        {
+          match: 'github.com/brokespace/seal',
+          machine: 'host:quant',
+          claude: { default: 'claude:me@corp.com#team' }
+        }
+      ]
+    })
+    const on = (machineKeys: string[]) =>
+      resolveSealPolicy(rules, { provider: 'claude', machineKeys, project: sealRepo }).defaultKey
+    expect(on(['host:quant', 'runtime:legacy'])).toBe('claude:me@corp.com#team')
+    expect(on(['host:laptop'])).toBe('claude:me@home.com')
   })
 
   it('applies no constraint to an unmatched project on an unlisted machine', () => {
     const resolved = resolveSealPolicy(
       config({ projects: [{ match: 'other-repo', claude: { allow: ['claude:a@x.com'] } }] }),
-      { provider: 'claude', machineKey: 'ssh:box', project: sealRepo }
+      { provider: 'claude', machineKeys: ['ssh:box'], project: sealRepo }
     )
     expect(resolved).toMatchObject({ allow: null, defaultKey: null, projectRule: null })
   })

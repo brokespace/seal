@@ -95,7 +95,10 @@
           "editSsh": "Edit SSH details…",
           "addSsh": "Add SSH details…",
           "editorOffline": "Connect this machine to open it in an editor.",
-          "sessions": "Agents on this machine"
+          "sessions": "Agents on this machine",
+          "accountsTitle": "Accounts on {{value0}}",
+          "accountsDescription": "The Claude and Codex logins signed in here, and the rules that pick one for new sessions. Every Seal machine keeps the same rules.",
+          "accounts": "Accounts…"
         },
         "edit": {
           "saved": "Machine updated"
@@ -1633,7 +1636,9 @@
         "notHere": "Not on this computer",
         "pushedThere": "Login pushed from this computer. This machine has no Seal server, so its state is not shown.",
         "thisComputer": "This computer",
-        "thisServer": "This server"
+        "thisServer": "This server",
+        "unknown": "Seal has not read this machine’s accounts yet.",
+        "loginsOnlyRules": "This machine is reached over SSH only, so it takes pushed logins but no rules. Connect it through its Seal server to choose its accounts."
       },
       "notice": {
         "mergedTitle": "Seal merged duplicate accounts",
@@ -1711,14 +1716,20 @@
         "prefersBest": "Picks the one with the most headroom.",
         "edit": "Edit rule for {{value0}}",
         "remove": "Remove rule for {{value0}}",
-        "projectPlaceholder": "github.com/acme/*"
+        "projectPlaceholder": "github.com/acme/*",
+        "projectOnMachine": "{{value0}} on {{value1}}",
+        "everyMachine": "Every machine",
+        "onMachine": "On machine",
+        "onMachineHelp": "A rule for one machine replaces the project’s rule for every machine there."
       },
       "summary": {
         "none": "No accounts yet.",
         "fleet": "{{value0}} accounts across {{value1}} machines.",
         "one": "1 account on this computer.",
         "fleetOne": "1 account across {{value0}} machines.",
-        "local": "{{value0}} accounts on this computer."
+        "local": "{{value0}} accounts on this computer.",
+        "machineOne": "1 account on {{value0}}.",
+        "machine": "{{value0}} accounts on {{value1}}."
       },
       "group": {
         "claude": "Claude",
@@ -1854,10 +1865,27 @@
         "history": {
           "title": "Swap history",
           "description": "Every account swap Seal made, and why."
+        },
+        "project": {
+          "title": "Project accounts",
+          "description": "Which Claude and Codex accounts this project’s sessions use, on every machine or on one."
         }
       },
       "home": {
         "signInAgain": "Sign in again in Settings > Accounts"
+      },
+      "project": {
+        "title": "Accounts",
+        "description": "Which Claude and Codex accounts this project’s sessions start on. A rule for one machine replaces the project’s rule there; auto-swap still moves sessions within what a rule allows.",
+        "menu": "Account Settings"
+      },
+      "ties": {
+        "machineDefault": "New sessions on this machine start on it",
+        "machineAllowed": "One of the accounts this machine may use",
+        "projectDefault": "New sessions in this project start on it",
+        "projectAllowed": "One of the accounts this project may use",
+        "usedBy": "Used by",
+        "default": "default"
       }
     },
     "launcher": {

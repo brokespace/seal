@@ -93,10 +93,7 @@ export async function syncSealFleet(
     targets.map(async (environmentId): Promise<SealFleetSyncResult> => {
       let policyApplied = true
       try {
-        const applied = await call(environmentId, 'seal.accounts.applyFleetConfig', {
-          config,
-          machineKey: `runtime:${environmentId}`
-        })
+        const applied = await call(environmentId, 'seal.accounts.applyFleetConfig', { config })
         policyApplied = !(
           applied &&
           typeof applied === 'object' &&

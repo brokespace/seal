@@ -22,7 +22,10 @@ export function formatPolicies(status: SealAccountsStatus): string {
     const parts = [`claude: ${describe(rule.claude)}`, `codex: ${describe(rule.codex)}`].filter(
       (part) => !part.endsWith('null')
     )
-    lines.push(`project ${rule.match}${rule.label ? ` (${rule.label})` : ''}  ${parts.join('  ')}`)
+    const where = rule.machine ? ` on ${rule.machine}` : ''
+    lines.push(
+      `project ${rule.match}${where}${rule.label ? ` (${rule.label})` : ''}  ${parts.join('  ')}`
+    )
   }
   for (const rule of status.config.machines) {
     const parts = [`claude: ${describe(rule.claude)}`, `codex: ${describe(rule.codex)}`].filter(
@@ -32,7 +35,8 @@ export function formatPolicies(status: SealAccountsStatus): string {
       `machine ${rule.machine}${rule.label ? ` (${rule.label})` : ''}  ${parts.join('  ')}`
     )
   }
-  return lines.length > 0 ? lines.join('\n') : 'No project or machine rules.'
+  const self = status.hostKey ? [`this machine: ${status.hostKey}`] : []
+  return [...self, ...(lines.length > 0 ? lines : ['No project or machine rules.'])].join('\n')
 }
 
 const DELIVERY_TEXT: Record<SealSessionSwapEntry['delivery'], string> = {

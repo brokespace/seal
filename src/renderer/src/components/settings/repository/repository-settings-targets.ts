@@ -8,6 +8,10 @@ export function getRepositoryIconSectionId(repoId: string): string {
   return `repo-${repoId}-icon`
 }
 
+export function getRepositoryAccountsSectionId(repoId: string): string {
+  return `repo-${repoId}-accounts`
+}
+
 export function getRepositoryAgentConfigSectionId(repoId: string): string {
   return `repo-${repoId}-agent-config`
 }

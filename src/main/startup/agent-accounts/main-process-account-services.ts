@@ -17,7 +17,12 @@ import { browserManager } from '../../browser/guest-lifecycle/manager/browser-ma
 import { prewarmStructuredAgentModelCatalogs } from '../../runtime/agent-session/model-catalog/structured-agent-model-catalog-wiring'
 import { mainProcessState as state } from '../main-process-state'
 import { setSealFleetTransport } from '../../seal-accounts/seal-fleet-sync'
-import { sealDesktopFleetTransport } from '../../seal-accounts/seal-desktop-fleet-transport'
+import {
+  sealDesktopFleetTransport,
+  sealDesktopReplicaTargets
+} from '../../seal-accounts/seal-desktop-fleet-transport'
+import { startSealConfigReplication } from '../../seal-accounts/seal-config-replication'
+import { getSealAccountManager } from '../../seal-accounts/seal-account-manager'
 
 // Settings that change which account or binary a new chat's agent runs under.
 const MODEL_CATALOG_ACCOUNT_SETTINGS = [
@@ -53,6 +58,13 @@ export function initializeMainProcessAccountServices(): void {
     setClaudeStatusLineListener: (listener) => agentHookServer.setClaudeStatusLineListener(listener)
   })
   setSealFleetTransport(sealDesktopFleetTransport)
+  const sealAccounts = getSealAccountManager()
+  if (sealAccounts) {
+    startSealConfigReplication(sealAccounts, {
+      targets: sealDesktopReplicaTargets,
+      call: sealDesktopFleetTransport
+    })
+  }
   state.rateLimits = services.rateLimits
   state.codexRuntimeHome = services.codexRuntimeHome
   state.codexAccounts = services.codexAccounts

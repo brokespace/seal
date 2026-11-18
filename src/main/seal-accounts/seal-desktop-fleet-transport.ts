@@ -6,6 +6,7 @@ import { callRuntimeEnvironment } from '../ipc/runtime-environments/requests/run
 import { getMachineRegistry } from '../machines/registry/machine-registry-service'
 import type { SealFleetTransport } from './seal-fleet-sync'
 import { installLoginOnMachine } from './seal-machine-login-install'
+import type { SealReplicaTarget } from './seal-config-replication'
 
 const FLEET_CALL_TIMEOUT_MS = 60_000
 
@@ -35,13 +36,22 @@ export const sealDesktopFleetTransport: SealFleetTransport = async (target, meth
     app.getPath('userData'),
     environmentId,
     method,
-    method === 'seal.accounts.applyFleetConfig' && params && typeof params === 'object'
-      ? { ...params, machineKey: `runtime:${environmentId}` }
-      : params,
+    params,
     FLEET_CALL_TIMEOUT_MS
   )
   if (!response.ok) {
     throw new Error(response.error.message)
   }
   return response.result
+}
+
+/** Every saved machine this desktop reaches through its Seal server. */
+export function sealDesktopReplicaTargets(): SealReplicaTarget[] {
+  return getMachineRegistry()
+    .records()
+    .flatMap((record) =>
+      activeMachineConnection(record) === 'server' && record.environmentId
+        ? [{ target: record.environmentId, environmentId: record.environmentId }]
+        : []
+    )
 }

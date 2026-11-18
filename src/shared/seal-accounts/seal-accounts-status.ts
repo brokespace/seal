@@ -43,6 +43,10 @@ export type SealSessionAssignment = {
   warnings: string[]
   /** The terminal pane the session runs in (`tabId:leafId`). */
   paneKey?: string | null
+  /** A Seal chat (agent SDK session); its id is the chat's session id and it has no pane. */
+  chat?: boolean
+  /** The account the user moved this chat to; it outranks the policy until they move it again. */
+  choice?: SealAccountKey | null
   /** The session's own Claude config dir or CODEX_HOME, which a live swap rewrites. */
   profileHome?: string | null
   liveSwap?: SealSessionLiveSwapMode
@@ -81,7 +85,12 @@ export type SealMigrationNotice = {
 }
 
 export type SealAccountsStatus = {
+  /** The key the managing desktop last gave this host; `local` on a desktop. */
   machineKey: string
+  /** The machine rule key every desktop names this host by (`host:<installation id>`). */
+  hostKey?: string
+  /** Every machine rule key that applies to this host, `hostKey` first. */
+  machineKeys?: string[]
   config: SealAccountsConfig
   providers: Record<SealProvider, SealProviderStatus>
   quarantine: Record<SealAccountKey, SealQuarantineEntry>

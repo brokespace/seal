@@ -12,11 +12,14 @@ import { Button } from '../../ui/button'
 import { SettingsGroup } from '../section-layout/SettingsGroup'
 import { SealRuleDialog } from './SealRuleDialog'
 import {
-  sealMachineRuleKey,
+  sealMachineForRuleKey,
+  sealRuleInScope,
+  sealRuleRowKey,
   sealRuleRows,
   type SealRuleDraft,
   type SealRuleRef,
-  type SealRuleRow
+  type SealRuleRow,
+  type SealRuleScope
 } from './seal-rule-rows'
 
 type SealRulesSectionProps = {
@@ -26,7 +29,12 @@ type SealRulesSectionProps = {
   onSave: (draft: SealRuleDraft) => Promise<boolean>
   onRemove: (rule: SealRuleRef) => void
   /** Pushes rules and auto-swap settings to every other machine; resolves with a summary. */
-  onSync: () => Promise<string>
+  onSync?: () => Promise<string>
+  /** Only one machine's or one project's rules; new rules start there. */
+  scope?: SealRuleScope
+  id?: string
+  title?: string
+  description?: string
 }
 
 /** Which accounts a project or a machine may use, in plain sentences. */
@@ -36,20 +44,38 @@ export function SealRulesSection({
   machines,
   onSave,
   onRemove,
-  onSync
+  onSync,
+  scope,
+  id = 'seal-accounts-rules',
+  title,
+  description
 }: SealRulesSectionProps): React.JSX.Element {
   const t = useTranslate()
   const [editing, setEditing] = useState<SealRuleRow | 'new' | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<string | null>(null)
-  const rows = sealRuleRows(status.config)
+  const rows = sealRuleRows(status.config).filter((row) => !scope || sealRuleInScope(row, scope))
   const remotes = machines.filter((machine) => !machine.home)
   const labelOf = (key: string): string =>
     accounts.find((account) => sealAccountKeysMatch(account.key, key))?.candidate.label ?? key
-  const machineLabel = (key: string): string =>
-    machines.find((machine) => sealMachineRuleKey(machine, status.machineKey) === key)?.label ?? key
+  const machineLabel = (key: string): string => sealMachineForRuleKey(machines, key)?.label ?? key
+  const rowName = (row: SealRuleRow): string => {
+    if (row.scope === 'machine') {
+      return row.label ?? machineLabel(row.target)
+    }
+    const name = row.label ?? row.target
+    return row.machine
+      ? t('seal.accounts.rules.projectOnMachine', '{{value0}} on {{value1}}', {
+          value0: name,
+          value1: machineLabel(row.machine)
+        })
+      : name
+  }
 
   const sync = async (): Promise<void> => {
+    if (!onSync) {
+      return
+    }
     setSyncing(true)
     setSyncResult(await onSync())
     setSyncing(false)
@@ -57,15 +83,18 @@ export function SealRulesSection({
 
   return (
     <SettingsGroup
-      id="seal-accounts-rules"
-      title={t('seal.accounts.rules.title', 'Rules')}
-      description={t(
-        'seal.accounts.rules.description',
-        'Limit which accounts a project or a machine may use, and which one it prefers. Without a rule, every account may be used everywhere.'
-      )}
+      id={id}
+      title={title ?? t('seal.accounts.rules.title', 'Rules')}
+      description={
+        description ??
+        t(
+          'seal.accounts.rules.description',
+          'Limit which accounts a project or a machine may use, and which one it prefers. Without a rule, every account may be used everywhere.'
+        )
+      }
       action={
         <div className="flex gap-2">
-          {remotes.length > 0 ? (
+          {onSync && remotes.length > 0 ? (
             <Button variant="ghost" size="xs" disabled={syncing} onClick={() => void sync()}>
               <Send />
               {t('seal.accounts.rules.sync', 'Sync to machines')}
@@ -99,13 +128,10 @@ export function SealRulesSection({
         rows.map((row) => {
           const allowed = row.policy.allow?.length ? row.policy.allow.map(labelOf).join(', ') : null
           const preferred = row.policy.default ? labelOf(row.policy.default) : null
-          const name =
-            row.scope === 'machine'
-              ? (row.label ?? machineLabel(row.target))
-              : (row.label ?? row.target)
+          const name = rowName(row)
           return (
             <div
-              key={`${row.scope}:${row.target}:${row.provider}`}
+              key={sealRuleRowKey(row)}
               className="flex items-start gap-3 py-3"
               data-settings-row=""
               data-slot="seal-rule-row"
@@ -169,11 +195,11 @@ export function SealRulesSection({
       )}
       {editing ? (
         <SealRuleDialog
-          key={editing === 'new' ? 'new' : `${editing.scope}:${editing.target}:${editing.provider}`}
+          key={editing === 'new' ? 'new' : sealRuleRowKey(editing)}
           rule={editing === 'new' ? null : editing}
+          scope={scope}
           accounts={accounts}
           machines={machines}
-          homeMachineKey={status.machineKey}
           onOpenChange={(open) => (open ? undefined : setEditing(null))}
           onSave={onSave}
         />

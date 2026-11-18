@@ -81,8 +81,7 @@ const SEAL_ACCOUNT_METHOD_DEFINITIONS = [
     params: SealAccountsApplyFleetConfigParams,
     handler: async (params, context) => {
       requireDesktopCaller(context)
-      accounts().applyFleetConfig(params.config, params.machineKey)
-      return {}
+      return accounts().applyFleetConfig(params.config, params.machineKey)
     }
   }),
   defineMethod({

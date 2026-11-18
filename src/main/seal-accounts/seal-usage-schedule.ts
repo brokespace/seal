@@ -24,7 +24,16 @@ export function isLiveSealSession(session: SealSessionAssignment, now: number): 
   )
 }
 
-/** The host's selected account plus every account a live session runs on. */
+/** Chats have no pane to watch; one launched recently counts as running. */
+const CHAT_IN_USE_MS = 12 * 60 * 60_000
+
+function isRunning(session: SealSessionAssignment, now: number): boolean {
+  return session.chat
+    ? !session.endedAt && now - (session.lastSeenAt ?? session.at) < CHAT_IN_USE_MS
+    : isLiveSealSession(session, now)
+}
+
+/** The host's selected account plus every account a live session or chat runs on. */
 export function sealAccountsInUse(
   provider: SealProvider,
   candidates: readonly SealAccountCandidate[],
@@ -37,7 +46,7 @@ export function sealAccountsInUse(
       (session) =>
         session.provider === provider &&
         session.accountKey !== null &&
-        isLiveSealSession(session, now) &&
+        isRunning(session, now) &&
         sealAccountKeysMatch(session.accountKey, candidate.key)
     )
     if (candidate.active || running) {

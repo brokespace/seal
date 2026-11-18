@@ -1,6 +1,7 @@
 import type { SealAccountKey, SealProvider } from './seal-accounts-config'
 import type { SealAccountCandidate, SealAccountHealth } from './seal-account-candidates'
 import { sealAccountKeysMatch } from './seal-account-key'
+import { sealAccountTies, type SealAccountTie } from './seal-account-ties'
 import type {
   SealAccountsStatus,
   SealSessionAssignment,
@@ -24,6 +25,22 @@ export type SealFleetMachine = Pick<SealFleetMachineReading, 'id' | 'label' | 'h
   reachable: boolean
   /** It runs Seal: it reports its accounts, follows rules and swaps on its own. */
   runsSeal: boolean
+  /** Every machine rule key that names it; the first is the one new rules use. */
+  ruleKeys: string[]
+}
+
+/** A host names itself by its `host:` key once it reports one; older rules may use the others. */
+export function sealMachineRuleKeys(
+  machine: Pick<SealFleetMachineReading, 'id' | 'home' | 'status'>
+): string[] {
+  const status = machine.status
+  const keys = [
+    status?.hostKey,
+    ...(status?.machineKeys ?? []),
+    status?.machineKey,
+    machine.home ? 'local' : `runtime:${machine.id}`
+  ]
+  return [...new Set(keys.filter((key): key is string => typeof key === 'string' && key !== ''))]
 }
 
 export const SEAL_ACCOUNT_GROUPS = ['claude', 'codex', 'apiKeys'] as const
@@ -45,6 +62,13 @@ export type SealAccountPresence = {
   reported: boolean
 }
 
+/** A rule naming an account, ready to show: the machine's or project's name, and where it applies. */
+export type SealFleetTie = Pick<SealAccountTie, 'scope' | 'role'> & {
+  name: string
+  /** For a project rule made for one machine. */
+  machineLabel: string | null
+}
+
 export type SealFleetAccount = {
   key: SealAccountKey
   provider: SealProvider
@@ -55,6 +79,8 @@ export type SealFleetAccount = {
   machines: SealAccountPresence[]
   /** Open sessions across every machine. */
   sessions: number
+  /** The machines and projects whose rules name it. */
+  ties: SealFleetTie[]
 }
 
 export type SealFleetSession = SealSessionAssignment & { machineId: string; machineLabel: string }
@@ -167,7 +193,8 @@ export function buildSealFleetOverview(
           candidate,
           onHome: machine.home,
           machines: [held],
-          sessions: held.sessions
+          sessions: held.sessions,
+          ties: []
         })
       }
     }
@@ -176,6 +203,28 @@ export function buildSealFleetOverview(
   for (const machine of ordered) {
     if (machine.loginsOnly) {
       addPushedCopies(accounts, machine, copies[machine.id] ?? [])
+    }
+  }
+  const machines = ordered.map((machine) => ({
+    id: machine.id,
+    label: machine.label,
+    home: machine.home,
+    error: machine.error,
+    reachable: machine.loginsOnly ? machine.loginsOnly.connected : machine.status !== null,
+    runsSeal: !machine.loginsOnly,
+    ruleKeys: sealMachineRuleKeys(machine)
+  }))
+  const config = ordered.find((machine) => machine.status)?.status?.config
+  if (config) {
+    const machineName = (key: string): string =>
+      machines.find((machine) => machine.ruleKeys.includes(key))?.label ?? key
+    for (const account of accounts) {
+      account.ties = sealAccountTies(config, account.key, account.provider).map((tie) => ({
+        scope: tie.scope,
+        role: tie.role,
+        name: tie.scope === 'machine' ? machineName(tie.target) : (tie.label ?? tie.target),
+        machineLabel: tie.machine ? machineName(tie.machine) : null
+      }))
     }
   }
   const group = (name: SealAccountGroup): SealFleetAccount[] =>
@@ -191,14 +240,7 @@ export function buildSealFleetOverview(
         : []
     )
   return {
-    machines: ordered.map((machine) => ({
-      id: machine.id,
-      label: machine.label,
-      home: machine.home,
-      error: machine.error,
-      reachable: machine.loginsOnly ? machine.loginsOnly.connected : machine.status !== null,
-      runsSeal: !machine.loginsOnly
-    })),
+    machines,
     groups: { claude: group('claude'), codex: group('codex'), apiKeys: group('apiKeys') },
     sessions: tagged((status) => status.sessions).sort((a, b) => b.at - a.at),
     swaps: tagged((status) => status.swapLog).sort((a, b) => b.at - a.at),

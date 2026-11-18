@@ -25,6 +25,7 @@ import { RepositoryRemoveProjectSection } from './RepositoryRemoveProjectSection
 import type { SettingsProjectRemovalScope } from '../navigation/settings-project-list'
 import { matchesSettingsSearch } from '../search/settings-search'
 import { RepositoryAgentConfigSection } from '../agent-config/RepositoryAgentConfigSection'
+import { RepositorySealAccountsSection } from './RepositorySealAccountsSection'
 import { useAppStore } from '@/store/index'
 import { getRepositoryIconSectionId } from './repository-settings-targets'
 import { RepositoryIconPicker } from './identity/RepositoryIconPicker'
@@ -165,9 +166,8 @@ export function RepositoryPane({
     [clearCopiedTemplateResetTimer]
   )
 
-  const updateSelectedRepoHookSettings = (nextSettings: RepoHookSettings) => {
-    updateSelectedRepo(repo.id, { hookSettings: nextSettings })
-  }
+  const updateSelectedRepoHookSettings = (hookSettings: RepoHookSettings) =>
+    updateSelectedRepo(repo.id, { hookSettings })
 
   const handleCopyTemplate = async () => {
     // Make missing-orca.yaml migration a one-click copy of the expected shared-template shape.
@@ -396,6 +396,7 @@ export function RepositoryPane({
     !isFolder && (forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, mcpEntries)) ? (
       <McpConfigSection key={`mcp-configs:${selectedHostId}:${repo.id}`} repo={repo} />
     ) : null,
+    <RepositorySealAccountsSection key={`seal-accounts:${repo.id}`} repo={repo} />,
     <RepositoryAgentConfigSection key={`agent-config:${selectedHostId}:${repo.id}`} repo={repo} />,
     forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, [sidebarVisibilityEntry]) ? (
       <RepositorySidebarVisibilitySection

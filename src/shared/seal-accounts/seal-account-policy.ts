@@ -19,7 +19,8 @@ export type SealProjectIdentity = {
 
 export type SealLaunchScope = {
   provider: SealProvider
-  machineKey: string
+  /** Every key this machine answers to: its `host:` key first, then any legacy key. */
+  machineKeys: readonly string[]
   project: SealProjectIdentity | null
 }
 
@@ -70,23 +71,49 @@ export function projectRuleMatches(
   return projectIdentityNames(project).some((name) => matcher.test(name))
 }
 
+/** A project rule scoped to one machine applies only there; an unscoped one applies everywhere. */
+function appliesOnMachine(rule: SealProjectRule, machineKeys: readonly string[]): boolean {
+  return rule.machine === undefined || machineKeys.includes(rule.machine)
+}
+
+/**
+ * The most specific matching rule: machine-scoped before every-machine, then exact before glob, so a
+ * catch-all cannot shadow a specific project. With a provider, only rules with a policy for it count.
+ */
 export function findProjectRule(
   config: Pick<SealAccountsConfig, 'projects'>,
-  project: SealProjectIdentity | null
+  project: SealProjectIdentity | null,
+  machineKeys: readonly string[] = [],
+  provider?: SealProvider
 ): SealProjectRule | null {
   if (!project) {
     return null
   }
-  // Exact rules win over globs so a catch-all cannot shadow a specific project.
-  const matches = config.projects.filter((rule) => projectRuleMatches(rule, project))
-  return matches.find((rule) => !rule.match.includes('*')) ?? matches[0] ?? null
+  const matches = config.projects.filter(
+    (rule) =>
+      appliesOnMachine(rule, machineKeys) &&
+      (!provider || rule[provider] !== undefined) &&
+      projectRuleMatches(rule, project)
+  )
+  const rank = (rule: SealProjectRule): number =>
+    (rule.machine === undefined ? 2 : 0) + (rule.match.includes('*') ? 1 : 0)
+  return matches.reduce<SealProjectRule | null>(
+    (best, rule) => (best === null || rank(rule) < rank(best) ? rule : best),
+    null
+  )
 }
 
 export function findMachineRule(
   config: Pick<SealAccountsConfig, 'machines'>,
-  machineKey: string
+  machineKeys: readonly string[]
 ): SealMachineRule | null {
-  return config.machines.find((rule) => rule.machine === machineKey) ?? null
+  for (const key of machineKeys) {
+    const rule = config.machines.find((entry) => entry.machine === key)
+    if (rule) {
+      return rule
+    }
+  }
+  return null
 }
 
 function allowList(policy: SealScopePolicy | undefined): SealAccountKey[] | null {
@@ -109,8 +136,8 @@ export function resolveSealPolicy(
   config: Pick<SealAccountsConfig, 'projects' | 'machines'>,
   scope: SealLaunchScope
 ): ResolvedSealPolicy {
-  const projectRule = findProjectRule(config, scope.project)
-  const machineRule = findMachineRule(config, scope.machineKey)
+  const projectRule = findProjectRule(config, scope.project, scope.machineKeys, scope.provider)
+  const machineRule = findMachineRule(config, scope.machineKeys)
   const projectPolicy = projectRule?.[scope.provider]
   const machinePolicy = machineRule?.[scope.provider]
   const projectAllow = allowList(projectPolicy)

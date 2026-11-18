@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { SealProvider } from '../../shared/seal-accounts/seal-accounts-config'
+import type { SealAccountKey, SealProvider } from '../../shared/seal-accounts/seal-accounts-config'
 import type { SealProjectIdentity } from '../../shared/seal-accounts/seal-account-policy'
 import {
   pickLaunchAccount,
@@ -37,6 +37,8 @@ export function pickSealLaunch(
     worktreeId?: string
     override: SealLaunchOverride | null
     autoRank: boolean
+    /** The account a relaunching session runs on now. */
+    current?: SealAccountKey | null
   }
 ): SealLaunchPick {
   const state = manager.store.getState()
@@ -48,7 +50,8 @@ export function pickSealLaunch(
     override: args.override ?? (pinned ? { ref: pinned, source: 'workspace-pin' } : null),
     settings: args.autoRank ? settings : { ...settings, enabled: false },
     quarantine: state.quarantine,
-    now: manager.now()
+    now: manager.now(),
+    current: args.current ?? null
   })
 }
 
