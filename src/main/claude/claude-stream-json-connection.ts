@@ -2,11 +2,11 @@ import { withOrcaClaudeChatEntrypoint } from '../../shared/agent-launch/startup/
 import { claudeStartupAnswerObservation } from './child-process/claude-startup-answer-observation'
 import type { PipedProcessSpawner } from '@orca/process-host/process-spec'
 import type * as ClaudeAgentSdk from '@anthropic-ai/claude-agent-sdk'
-import type { CanUseTool, OnUserDialog, SDKUserMessage } from '@anthropic-ai/claude-agent-sdk'
 import { spawnProcess } from '@orca/process-host'
 import { buildClaudeChildProcessEnv } from './child-process/claude-child-process-environment'
 import { withoutInheritedClaudeConfigDir } from './structured/launch/claude-config-dir-pin'
 import { withoutRejectedClaudeApiKey } from './configuration/claude-rejected-api-key'
+import { restateClaudeAlwaysLoadMcpServers } from './configuration/claude-always-load-mcp-servers'
 import {
   createClaudeControlSurface,
   type ClaudeControlSurface
@@ -67,9 +67,9 @@ export type ClaudeStreamJsonConnectionHandlers = {
   /** Raw stdout before the SDK reads it, for state that must keep wire order with permission requests. */
   onStdout?: (chunk: Buffer | string) => void
   /** The SDK handles request IDs, aborts and deduplication; cannot combine with permissionPromptToolName. */
-  canUseTool?: CanUseTool
+  canUseTool?: ClaudeAgentSdk.CanUseTool
   /** `request_user_dialog` control; the CLI only emits kinds declared in `supportedDialogKinds`. */
-  onUserDialog?: OnUserDialog
+  onUserDialog?: ClaudeAgentSdk.OnUserDialog
   /** A transport/process fault; a physical root exit arrives marked observed and is followed by onExit. */
   onFault?: (error: Error) => void
   /** Report observed root exit once; expected stays true even after an unproven close attempt. */
@@ -121,7 +121,7 @@ export async function openClaudeStreamJsonConnection(
   const session = (queryImpl ?? query)({
     prompt: inbox.messages,
     options: {
-      ...launch.options,
+      ...(await restateClaudeAlwaysLoadMcpServers(launch.options, env, launch.cwd)),
       cwd: launch.cwd,
       env: withOrcaClaudeChatEntrypoint(env, process.platform),
       pathToClaudeCodeExecutable: launch.pathToClaudeCodeExecutable,
@@ -268,7 +268,7 @@ export async function openClaudeStreamJsonConnection(
     }
     startup.finish()
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: dispatch constructs the SDK user envelope after mapping every content block.
-    return inbox.push(message as unknown as SDKUserMessage, beforeDispatch)
+    return inbox.push(message as unknown as ClaudeAgentSdk.SDKUserMessage, beforeDispatch)
   }
 
   const close = (options?: ProviderProcessCloseOptions): Promise<boolean> => {
