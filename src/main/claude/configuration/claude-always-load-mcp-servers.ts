@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import type { McpStdioServerConfig, Options } from '@anthropic-ai/claude-agent-sdk'
@@ -38,8 +37,15 @@ export function claudeAlwaysLoadMcpServers(
     ) {
       continue
     }
-    const { alwaysLoad: _alwaysLoad, env: _env, ...rest } = entry
-    restated[name] = { ...rest, command: entry.command } as McpStdioServerConfig
+    const args = Array.isArray(entry.args)
+      ? entry.args.filter((arg) => typeof arg === 'string')
+      : []
+    restated[name] = {
+      type: 'stdio',
+      command: entry.command,
+      ...(args.length > 0 ? { args } : {}),
+      ...(typeof entry.timeout === 'number' ? { timeout: entry.timeout } : {})
+    }
   }
   return restated
 }
@@ -51,18 +57,22 @@ async function readClaudeAlwaysLoadMcpServers(
   platform: NodeJS.Platform = process.platform
 ): Promise<Record<string, McpStdioServerConfig>> {
   const style = platform === 'win32' ? 'win32' : 'posix'
-  const configFile = resolveClaudeGlobalConfigFile({
-    env,
-    homeDir: (style === 'win32' ? env.USERPROFILE : env.HOME) || homedir(),
-    style,
-    exists: existsSync
-  })
-  try {
-    const config: unknown = JSON.parse(await readFile(configFile, 'utf8'))
-    return claudeAlwaysLoadMcpServers(config, toClaudeTrustKey(cwd, style))
-  } catch {
-    return {}
+  const homeDir = (style === 'win32' ? env.USERPROFILE : env.HOME) || homedir()
+  // Claude's legacy file wins when present; probe it without blocking the loop.
+  const [legacy, current] = [true, false].map((exists) =>
+    resolveClaudeGlobalConfigFile({ env, homeDir, style, exists: () => exists })
+  )
+  for (const configFile of [legacy, current]) {
+    try {
+      const config: unknown = JSON.parse(await readFile(configFile, 'utf8'))
+      return claudeAlwaysLoadMcpServers(config, toClaudeTrustKey(cwd, style))
+    } catch (error) {
+      if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) {
+        return {}
+      }
+    }
   }
+  return {}
 }
 
 /** Resumes start hooks after reading their input; only fresh starts that load user hooks race. */

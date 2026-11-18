@@ -26,7 +26,7 @@ describe('claudeAlwaysLoadMcpServers', () => {
     }
     expect(claudeAlwaysLoadMcpServers(config, PROJECT)).toEqual({
       codegraph: { type: 'stdio', command: 'codegraph', args: ['serve'] },
-      local: { command: 'local', timeout: 9000 }
+      local: { type: 'stdio', command: 'local', timeout: 9000 }
     })
   })
 })
