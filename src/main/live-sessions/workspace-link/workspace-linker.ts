@@ -243,10 +243,19 @@ export class WorkspaceLinker {
     if (this.holder(place)) {
       return 'linked'
     }
-    const primary = this.primaryWorkspace(repo)
-    if (primary) {
-      this.pins.set(place.key, primary.worktreeId)
-      return 'linked'
+    if (probe.kind === 'repository' && probe.main) {
+      // A linked worktree is a workspace of its own, never its main checkout's.
+      await creation.importWorktree(repo, probe.root)
+      await catalog.refresh()
+      if (this.holder(place)) {
+        return 'linked'
+      }
+    } else {
+      const primary = this.primaryWorkspace(repo)
+      if (primary) {
+        this.pins.set(place.key, primary.worktreeId)
+        return 'linked'
+      }
     }
     if (created) {
       await creation.remove(repo, 'none of its workspaces can hold the session')
