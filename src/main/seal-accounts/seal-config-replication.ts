@@ -7,7 +7,6 @@ import type { SealFleetHost } from './seal-fleet-host'
 import type { SealAccountManager } from './seal-account-manager'
 import type { SealFleetTransport } from './seal-fleet-sync'
 
-const REPLICATE_EVERY_MS = 60_000
 const EDIT_SETTLE_MS = 500
 
 /** A machine this desktop reaches through its Seal server. */
@@ -94,7 +93,12 @@ export async function replicateSealConfig(
 /** Desktop only: keeps every Seal host's copy of the account config the same as this one's. */
 export function startSealConfigReplication(
   manager: Manager,
-  deps: { targets: () => SealReplicaTarget[]; call: SealFleetTransport }
+  deps: {
+    targets: () => SealReplicaTarget[]
+    call: SealFleetTransport
+    /** Fires as each Seal server comes online, which is when it may hold edits made there. */
+    onHostOnline: (listener: () => void) => () => void
+  }
 ): () => void {
   let running: Promise<void> | null = null
   let again = false
@@ -121,12 +125,11 @@ export function startSealConfigReplication(
     settle = setTimeout(run, EDIT_SETTLE_MS)
     settle.unref?.()
   })
-  const timer = setInterval(run, REPLICATE_EVERY_MS)
-  timer.unref?.()
+  const unsubscribeOnline = deps.onHostOnline(run)
   run()
   return () => {
     unsubscribe()
-    clearInterval(timer)
+    unsubscribeOnline()
     clearTimeout(settle ?? undefined)
   }
 }

@@ -1,9 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import {
   defaultSealAccountsConfig,
+  SealAccountsConfigSchema,
   type SealAccountsConfig
 } from '../../shared/seal-accounts/seal-accounts-config'
 import { replicateSealConfig } from './seal-config-replication'
+import type { SealFleetTransport } from './seal-fleet-sync'
+
+/** Hands each offered config to the host the call targets. */
+function fleet(hosts: Record<string, ReturnType<typeof host>>): SealFleetTransport {
+  return async (target, _method, params) => {
+    const offered = SealAccountsConfigSchema.parse(
+      typeof params === 'object' && params !== null && 'config' in params ? params.config : null
+    )
+    return hosts[target]?.apply(offered)
+  }
+}
 
 /** A Seal host as `seal.accounts.applyFleetConfig` treats it: the newer config wins. */
 function host(hostKey: string, config: SealAccountsConfig) {
@@ -48,15 +60,13 @@ describe('replicateSealConfig', () => {
     const quant = host('host:quant', edited)
     const dev = host('host:dev', { ...defaultSealAccountsConfig(), updatedAt: 100 })
     const manager = desktop({ ...defaultSealAccountsConfig(), updatedAt: 150 }, 300)
-    const hosts = { quant, dev }
     await replicateSealConfig(
       manager,
       [
         { target: 'quant', environmentId: 'quant' },
         { target: 'dev', environmentId: 'dev' }
       ],
-      async (target, _method, params) =>
-        hosts[target as keyof typeof hosts].apply((params as { config: SealAccountsConfig }).config)
+      fleet({ quant, dev })
     )
     expect(manager.getConfig().machines).toEqual(edited.machines)
     expect(dev.config.machines).toEqual(edited.machines)
@@ -74,8 +84,7 @@ describe('replicateSealConfig', () => {
     await replicateSealConfig(
       manager,
       [{ target: 'env-1', environmentId: 'env-1' }],
-      async (_target, _method, params) =>
-        remote.apply((params as { config: SealAccountsConfig }).config)
+      fleet({ 'env-1': remote })
     )
     expect(manager.getConfig().machines.map((rule) => rule.machine)).toEqual(['host:remote'])
     expect(manager.getConfig().projects[0]?.machine).toBe('host:desktop')

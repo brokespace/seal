@@ -22,6 +22,8 @@ import {
   sealDesktopReplicaTargets
 } from '../../seal-accounts/seal-desktop-fleet-transport'
 import { startSealConfigReplication } from '../../seal-accounts/seal-config-replication'
+import { onRuntimeEnvironmentStatusPublished } from '../../ipc/runtime-environments/status/runtime-environment-status-owner'
+import { trackRuntimeEnvironmentVerifiedTransitions } from '../../ipc/runtime-environments/status/runtime-environment-verified-transitions'
 import { getSealAccountManager } from '../../seal-accounts/seal-account-manager'
 
 // Settings that change which account or binary a new chat's agent runs under.
@@ -62,7 +64,9 @@ export function initializeMainProcessAccountServices(): void {
   if (sealAccounts) {
     startSealConfigReplication(sealAccounts, {
       targets: sealDesktopReplicaTargets,
-      call: sealDesktopFleetTransport
+      call: sealDesktopFleetTransport,
+      onHostOnline: (listener) =>
+        onRuntimeEnvironmentStatusPublished(trackRuntimeEnvironmentVerifiedTransitions(listener))
     })
   }
   state.rateLimits = services.rateLimits
