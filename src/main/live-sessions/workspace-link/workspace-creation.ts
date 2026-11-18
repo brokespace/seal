@@ -20,6 +20,7 @@ export type WorkspaceCreationDeps = {
 /** Makes projects on this process's own machine for sessions no workspace holds, and takes them away again. */
 export class WorkspaceCreation {
   private readonly making = new Map<string, Promise<{ repo: Repo; created: boolean }>>()
+  private readonly importing = new Map<string, Promise<unknown>>()
 
   constructor(private readonly deps: WorkspaceCreationDeps) {}
 
@@ -61,7 +62,23 @@ export class WorkspaceCreation {
   }
 
   /** Lists a worktree of the project that Seal hides as made outside it, as importing it from the sidebar does. */
-  async importWorktree(repo: Repo, path: string): Promise<void> {
+  importWorktree(repo: Repo, path: string): Promise<void> {
+    // One at a time per project: each import writes the whole path list, so two at once lose one.
+    const key = `${getRepoExecutionHostId(repo)}|${repo.id}`
+    const imported = (this.importing.get(key) ?? Promise.resolve()).then(() =>
+      this.listWorktree(repo, path)
+    )
+    const settled = imported.catch(() => undefined)
+    this.importing.set(key, settled)
+    void settled.then(() => {
+      if (this.importing.get(key) === settled) {
+        this.importing.delete(key)
+      }
+    })
+    return imported
+  }
+
+  private async listWorktree(repo: Repo, path: string): Promise<void> {
     const hostId = getRepoExecutionHostId(repo)
     const current =
       this.deps.store
