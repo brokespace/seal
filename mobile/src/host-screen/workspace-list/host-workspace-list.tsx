@@ -118,7 +118,12 @@ export function HostWorkspaceList({
     [rawSections]
   )
   const { collapsedGroups } = controller
-  const workspaceSessions = useHostWorkspaceSessions(client, displayWorktrees)
+  // The rows drawn, which a feed-built list takes from the sidebar feed rather than worktree.ps.
+  const listedRows = useMemo(
+    () => rawSections.flatMap((section) => section.data.map((entry) => entry.row)),
+    [rawSections]
+  )
+  const workspaceSessions = useHostWorkspaceSessions(client, listedRows)
   const sessionOpener = useLiveSessionOpener(hostId)
   const openSession = sessionOpener.open
   const { groupBy, agentActivityDisplayMode } = state.view
