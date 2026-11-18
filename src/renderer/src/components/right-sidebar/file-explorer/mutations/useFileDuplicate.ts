@@ -38,21 +38,24 @@ export function useFileDuplicate({
       const stem = dotIndex > 0 ? name.slice(0, dotIndex) : name
       const ext = dotIndex > 0 ? name.slice(dotIndex) : ''
 
+      const reportFailure = (err: unknown): void => {
+        toast.error(
+          extractIpcErrorMessage(
+            err,
+            translate(
+              'components.toastFallbacks.fileDuplicateFailed',
+              "Failed to duplicate '{{name}}'.",
+              { name }
+            )
+          )
+        )
+      }
       const run = async (): Promise<void> => {
         let operationGuard
         try {
           operationGuard = captureFileExplorerOperationGuard(activeWorktreeId, node.operationOwner)
         } catch (err) {
-          toast.error(
-            extractIpcErrorMessage(
-              err,
-              translate(
-                'components.toastFallbacks.fileDuplicateFailed',
-                "Failed to duplicate '{{name}}'.",
-                { name }
-              )
-            )
-          )
+          reportFailure(err)
           return
         }
         const context = {
@@ -67,9 +70,15 @@ export function useFileDuplicate({
         // Find an available copy name; the exclusive copy below handles concurrent creation races.
         let candidate = joinPath(dir, `${stem} copy${ext}`)
         let n = 2
-        while (await runtimePathExists(context, candidate)) {
-          candidate = joinPath(dir, `${stem} copy ${n}${ext}`)
-          n += 1
+        try {
+          while (await runtimePathExists(context, candidate)) {
+            candidate = joinPath(dir, `${stem} copy ${n}${ext}`)
+            n += 1
+          }
+        } catch (err) {
+          // An unreachable host fails the probe, not the copy; without this the item does nothing.
+          reportFailure(err)
+          return
         }
 
         // Another process can claim the name after pathExists; retry exclusive-copy EEXIST failures with a bounded new-name search.
@@ -90,16 +99,7 @@ export function useFileDuplicate({
               retries += 1
               continue
             }
-            toast.error(
-              extractIpcErrorMessage(
-                err,
-                translate(
-                  'components.toastFallbacks.fileDuplicateFailed',
-                  "Failed to duplicate '{{name}}'.",
-                  { name }
-                )
-              )
-            )
+            reportFailure(err)
             return
           }
         }

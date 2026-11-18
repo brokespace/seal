@@ -13,6 +13,9 @@ import type { AppState } from '@/store/types'
 import { dedupePaletteWorktrees } from '../search/palette-repo-resolution'
 import { getResolvedExecutionHostIdForWorktree } from './resolved-worktree-execution-host'
 import type { WorktreeRuntimeOwnerState } from './worktree-runtime-owner-state'
+import { isTwinWorkspace } from './resolve-owner'
+import { selectKnownWorktreeById } from '@/store/workspaces/selection/known-worktree-selection'
+import { findKnownWorktreeById } from '@/store/slices/worktrees/listing/detected-worktree-meta'
 import {
   selectFolderWorkspaces,
   selectWorktreesByRepo
@@ -63,6 +66,32 @@ export function getActiveExecutionHostIdForWorktree(
     getResolvedExecutionHostIdForWorktree(state, worktreeId) ??
     LOCAL_EXECUTION_HOST_ID
   )
+}
+
+/**
+ * The copy of the active workspace a shown tab runs on, when the selection names another or none.
+ * One strip lists every same-id copy's tabs, and host-routed panels (Files, search) read the selection.
+ */
+export function getActiveWorkspaceCopyHostOfTab(
+  state: AppState,
+  tab: Pick<Tab, 'worktreeId' | 'executionHostId'>
+): ExecutionHostId | null {
+  const host = tab.executionHostId
+  if (
+    !host ||
+    state.activeWorktreeId !== tab.worktreeId ||
+    state.activeWorkspaceExecutionHostId === host
+  ) {
+    return null
+  }
+  const selected = state.activeWorkspaceExecutionHostId
+    ? selectKnownWorktreeById(state, tab.worktreeId)
+    : null
+  // Without a selection only a twin is ambiguous; a lone copy already routes to its one host.
+  const alreadyRouted = selected
+    ? isExecutionHostAliasForWorktree(host, selected)
+    : !isTwinWorkspace(state, tab.worktreeId)
+  return !alreadyRouted && findKnownWorktreeById(state, tab.worktreeId, host) ? host : null
 }
 
 export function isUnifiedTabOwnedByWorktree(

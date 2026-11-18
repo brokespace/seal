@@ -345,7 +345,7 @@ export function MachineFileExplorer({
             menuRow={menuRow}
             menuDir={menuDir}
             selectedPaths={selectedPaths}
-            machineKind={machine.connection}
+            machine={machine}
             onOpen={openEntry}
             editorLabel={editor.label}
             onOpenInEditor={editor.openRow}

@@ -99,7 +99,7 @@ const EXPECTED: Record<LiveSessionMenuItemId, [keyof LiveSessionMenuEffects, ...
   ],
   'swap-account': ['swapAccount', session, 'claude:work'],
   'take-over': ['takeOver', session],
-  'open-worktree': ['openWorktree', 'repo-1::/srv/shop'],
+  'open-worktree': ['openWorktree', 'repo-1::/srv/shop', session],
   'open-machine': ['openMachine', session],
   'reveal-transcript': ['revealTranscript', session],
   stop: ['confirm', 'stop', [session]],

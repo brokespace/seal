@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@stablyai/playwright-test'
 import { createFakeEditorClis, type FakeEditorClis } from './helpers/fake-editor-clis'
 import { launchHeadlessPairedRuntimeHost } from './helpers/headless-paired-runtime-host'
 import { localSshdUnavailableReason, startLocalSshdMachines } from './helpers/local-sshd-machines'
+import { connectRemoteMachines, listMachines, selectMachine } from './helpers/machines-page'
 import { createRestartSession } from './helpers/orca-restart'
 import { seedIsolatedSshConfig } from './helpers/ssh-config-host-picker'
 import { waitForSessionReady } from './helpers/store'
@@ -18,29 +19,9 @@ const OPEN_IN_APPLICATIONS = [
   { id: 'missing', label: 'Missing editor', command: 'seal-e2e-missing-editor' }
 ]
 
-type MachineRow = { id: MachineId; ssh: boolean; server: boolean }
-
-async function listMachines(page: Page): Promise<MachineRow[]> {
-  return page.evaluate(async () =>
-    (await window.api.machines!.list()).map((machine) => ({
-      id: machine.id,
-      ssh: machine.ssh !== null,
-      server: machine.server !== null
-    }))
-  )
-}
-
-async function connectRemoteMachines(page: Page): Promise<void> {
-  for (const machine of await listMachines(page)) {
-    if (machine.id !== 'local') {
-      await page.evaluate((machineId) => window.api.machines!.connect({ machineId }), machine.id)
-    }
-  }
-}
-
 /** Selects the machine and waits until its files are listed. */
 async function showMachine(page: Page, machineId: MachineId): Promise<string> {
-  await page.locator(`[data-machines-page] [data-machine-id="${machineId}"]`).click()
+  await selectMachine(page, machineId)
   await expect(page.locator(`[data-machine-explorer="${machineId}"]`)).toBeVisible({
     timeout: 120_000
   })

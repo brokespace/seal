@@ -150,6 +150,7 @@
           "preview": "Preview",
           "download": "Download to this computer…",
           "copyPath": "Copy path",
+          "copyPathFailed": "Could not copy the path.",
           "newFolder": "New folder…",
           "upload": "Upload files…",
           "downloadUrl": "Download from URL…",

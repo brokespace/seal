@@ -3,6 +3,7 @@ import { useAppStore } from '@/store'
 import { translate as t } from '@/i18n/i18n'
 import { rememberMachineSelection } from '@/components/machines/model/machine-selection'
 import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
+import { getRepoExecutionHostId } from '../../../../shared/execution-host'
 import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
 import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
@@ -17,7 +18,13 @@ export function openProjectWorkspace(worktree: Worktree): void {
 /** The project's pane in Settings, at one of its sections when given. */
 export function openProjectSettings(repo: Repo, sectionId?: string): void {
   const state = useAppStore.getState()
-  state.openSettingsTarget({ pane: 'repo', repoId: repo.id, ...(sectionId ? { sectionId } : {}) })
+  // Why the host: repo ids repeat across hosts, and a bare id opens whichever copy Settings lists first.
+  state.openSettingsTarget({
+    pane: 'repo',
+    repoId: repo.id,
+    hostId: getRepoExecutionHostId(repo),
+    ...(sectionId ? { sectionId } : {})
+  })
   state.openSettingsPage()
 }
 

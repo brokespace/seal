@@ -15,6 +15,7 @@ import {
   quotePosixShellUnlessPlain
 } from '../../../../../shared/shell/launch/shell-argument-quoting'
 import { liveSessionMachineId } from '../../../../../shared/live-sessions/live-session-machine-id'
+import { liveSessionExecutionHost } from '../../../../../shared/live-sessions/live-session-execution-host'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { parseMachineId } from '../../../../../shared/machines/machine-types'
 import { rememberMachineSelection } from '../../machines/model/machine-selection'
@@ -150,7 +151,15 @@ export const liveSessionMenuEffects: LiveSessionMenuEffects = {
     }
   },
   takeOver: (session) => void takeOverLiveSession(session),
-  openWorktree: (worktreeId) => void activateAndRevealWorktree(worktreeId),
+  openWorktree: (worktreeId, session) => {
+    // A same-id workspace on several machines opens the session's own copy, so Files shows its files.
+    const hostId = liveSessionExecutionHost(session.machine)
+    const onSessionHost = useAppStore.getState().getKnownWorktreeById(worktreeId, hostId)
+    void activateAndRevealWorktree(
+      worktreeId,
+      onSessionHost ? { executionHostId: hostId } : undefined
+    )
+  },
   openMachine,
   revealTranscript: (session) => void revealTranscript(session),
   confirm: (danger, sessions) => liveSessionDialogStore.show({ kind: 'danger', danger, sessions })
