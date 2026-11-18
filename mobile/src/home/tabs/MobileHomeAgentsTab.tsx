@@ -9,6 +9,7 @@ import {
   LiveSessionsHostList,
   useLiveSessionsHost
 } from '../../seal/live-sessions/LiveSessionsHostList'
+import type { LiveSession } from '../../seal/live-sessions/live-session-schemas'
 import { colors, spacing } from '../../theme/mobile-theme'
 import { themedStyleSheet } from '../../theme/themed-styles'
 import { useMobileColorScheme } from '../../theme/use-mobile-color-scheme'
@@ -49,6 +50,7 @@ export function MobileHomeAgentsTab(props: { data: MobileHomeData; bottomInset: 
             <AgentsTabDesktop
               key={host.id}
               host={host}
+              sessions={props.data.liveSessions.byDesktop.get(host.id)}
               named={hosts.length > 1}
               first={index === 0}
             />
@@ -59,7 +61,13 @@ export function MobileHomeAgentsTab(props: { data: MobileHomeData; bottomInset: 
   )
 }
 
-function AgentsTabDesktop(props: { host: HostProfile; named: boolean; first: boolean }) {
+function AgentsTabDesktop(props: {
+  host: HostProfile
+  /** Its sessions without those another paired desktop owns. */
+  sessions: readonly LiveSession[] | undefined
+  named: boolean
+  first: boolean
+}) {
   const live = useLiveSessionsHost(props.host.id)
   const title = useHostDisplay(props.host).title
   return (
@@ -68,6 +76,7 @@ function AgentsTabDesktop(props: { host: HostProfile; named: boolean; first: boo
       <LiveSessionsHostList
         hostId={props.host.id}
         host={live}
+        sessions={props.sessions}
         first={props.first && !props.named}
       />
     </View>

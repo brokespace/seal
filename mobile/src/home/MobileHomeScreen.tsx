@@ -10,7 +10,6 @@ import { ActionSheetModal } from '../components/ActionSheetModal'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { getHostListActionSheetActions } from '../host-list-action-sheet-actions'
 import { triggerMediumImpact } from '../platform/haptics/haptics'
-import { useAgentListRowActions } from '../agents/use-agent-list-row-actions'
 import { useOpenMobileTasks } from '../tasks/use-open-mobile-tasks'
 import { useOpenMobileAutomations } from '../automations/use-open-mobile-automations'
 import { colors, spacing } from '../theme/mobile-theme'
@@ -64,11 +63,6 @@ export function MobileHomeScreen() {
   const [visitedTabs, setVisitedTabs] = useState<ReadonlySet<HomeTabId>>(() => new Set(['feed']))
   const [automationsHostId, setAutomationsHostId] = useState<string | null>(null)
   const [tabBarHeight, setTabBarHeight] = useState(0)
-  const agentActions = useAgentListRowActions(
-    tabBarHeight,
-    data.sortedHosts,
-    data.applyAgentActivity
-  )
 
   const selectTab = useCallback((next: HomeTabId) => {
     setTab(next)
@@ -185,7 +179,6 @@ export function MobileHomeScreen() {
                   <MobileHomeFeedTab
                     data={data}
                     bottomInset={contentBottom}
-                    agentHandlers={agentActions.handlers}
                     onSeeAllAgents={seeAllAgents}
                     onOpenHost={openHost}
                     onOpenHostActions={openHostActions}
@@ -233,11 +226,10 @@ export function MobileHomeScreen() {
             tabs={HOME_TABS}
             active={tab}
             bottomInset={insets.bottom}
-            agentsBadge={data.agentsNeedingYou.length}
+            agentsBadge={data.liveSessions.needsYou.length}
             onSelect={selectTab}
           />
         </View>
-        {agentActions.sheet}
         <ActionSheetModal
           visible={actionTarget != null}
           title={actionTarget?.name}

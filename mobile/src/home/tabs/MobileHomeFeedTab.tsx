@@ -3,7 +3,6 @@ import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { useResponsiveLayout } from '../../layout/responsive-layout'
 import { spacing } from '../../theme/mobile-theme'
 import { themedStyleSheet } from '../../theme/themed-styles'
-import type { AgentListRowHandlers } from '../../agents/MobileAgentListRows'
 import type { HostCatalogEntry } from '../../host-catalog/host-profile'
 import { MobileHomeAppUpdateCard } from '../MobileHomeAppUpdateCard'
 import { MobileHomeEmptyState } from '../MobileHomeEmptyState'
@@ -17,7 +16,6 @@ import { MobileHomeTabHeader } from './MobileHomeTabHeader'
 export function MobileHomeFeedTab(props: {
   data: MobileHomeData
   bottomInset: number
-  agentHandlers: AgentListRowHandlers
   onSeeAllAgents: () => void
   onOpenHost: (host: HostCatalogEntry) => void
   onOpenHostActions: (host: HostCatalogEntry) => void
@@ -42,7 +40,7 @@ export function MobileHomeFeedTab(props: {
       />
     )
   }
-  const hasActiveAgents = data.activeAgents.length > 0
+  const hasActiveAgents = data.liveSessions.active.length > 0
   return (
     <>
       {title}
@@ -54,10 +52,7 @@ export function MobileHomeFeedTab(props: {
         ]}
       >
         <MobileHomeActiveAgents
-          rows={data.activeAgents}
-          hosts={data.sortedHosts}
-          now={data.agentList.now}
-          handlers={props.agentHandlers}
+          sessions={data.liveSessions.active}
           onSeeAll={props.onSeeAllAgents}
         />
         <MobileHomeHostList
@@ -68,7 +63,7 @@ export function MobileHomeFeedTab(props: {
           hostConnections={data.hostConnections}
           hosts={data.sortedHostCatalog}
           hostStates={data.hostStates}
-          needsYouByHost={data.needsYouByHost}
+          needsYouByHost={data.liveSessions.needsYouByHost}
           worktreeInfo={data.worktreeInfo}
           onOpen={props.onOpenHost}
           onOpenActions={props.onOpenHostActions}
