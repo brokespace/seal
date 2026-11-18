@@ -61,7 +61,7 @@ describe('a paired server session whose server is out of reach', () => {
     const removed = await removeFromOwner(
       SERVER_CHAT,
       { sessionIds: [SERVER_CHAT.id], stop: true, deleteTranscripts: false },
-      { server: null, chats: { stop }, host: null }
+      { server: null, chats: { stop, deleteTranscripts: vi.fn() }, host: null }
     )
 
     expect(attempts).toEqual([

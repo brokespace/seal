@@ -29,7 +29,7 @@ function repo(id: string, overrides: Partial<Repo> = {}): Repo {
   return { id, path: `/${id}`, displayName: id, badgeColor: '', addedAt: 1, ...overrides }
 }
 function applyGroupUpdate(base: ProjectGroup, updates: ProjectGroupUpdate): ProjectGroup {
-  const { rootProjectOrder, ...rest } = updates
+  const { rootProjectOrder, hiddenAt: _hiddenAt, ...rest } = updates
   const next: ProjectGroup = { ...base, ...rest }
   if (rootProjectOrder === null) {
     delete next.rootProjectOrder

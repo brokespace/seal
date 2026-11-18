@@ -298,7 +298,8 @@ export class LiveSessionService {
   /** Hides sessions for good at once; stops them and deletes their transcripts behind that when asked. */
   async remove(request: LiveRemoveRequest): Promise<LiveRemoveResult> {
     const { result, sessions, removed } = await removeSessions(request, {
-      session: (sessionId) => this.registry.get(sessionId),
+      // A removed session's row can still be deleted: its transcript stays until then.
+      session: (sessionId) => this.registry.get(sessionId, true),
       owner: (session) => ({
         server: session.surface.kind === 'external' ? null : this.federated(session.id),
         chats: this.chats,

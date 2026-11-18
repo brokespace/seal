@@ -105,6 +105,13 @@ export function normalizeLoadedProfileState(
     deletedSshConfigAliases: Array.isArray(parsed.deletedSshConfigAliases)
       ? parsed.deletedSshConfigAliases.filter((alias): alias is string => typeof alias === 'string')
       : [],
+    ...(Array.isArray(parsed.dismissedSessionProjects)
+      ? {
+          dismissedSessionProjects: parsed.dismissedSessionProjects.filter(
+            (name): name is string => typeof name === 'string'
+          )
+        }
+      : {}),
     retiredWorktreeNamesByRepo: normalizeRetiredNameRegistryMap(parsed.retiredWorktreeNamesByRepo),
     retiredWorktreeNamesByNamespace: normalizeRetiredNameRegistryMap(
       parsed.retiredWorktreeNamesByNamespace

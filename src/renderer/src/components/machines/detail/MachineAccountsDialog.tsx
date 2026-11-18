@@ -38,7 +38,7 @@ export function MachineAccountsDialog({
           <DialogDescription>
             {t(
               'auto.components.machines.detail.accountsDescription',
-              'The Claude and Codex logins signed in here, and the rules that pick one for new sessions. Every Seal machine keeps the same rules.'
+              'The Claude and Codex logins signed in on this machine, and which one its new sessions use.'
             )}
           </DialogDescription>
         </DialogHeader>

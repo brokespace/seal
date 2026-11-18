@@ -119,7 +119,7 @@ export class RuntimeRepositorySettingsController {
     return updated
   }
 
-  async update(repoSelector: string, updates: RepositoryUpdates): Promise<Repo> {
+  async update(repoSelector: RuntimeRepoSelector, updates: RepositoryUpdates): Promise<Repo> {
     const store = this.requireStore()
     const repo = await this.deps.resolveRepo(repoSelector)
     assertWslMoveRepoWritable(store, repo)

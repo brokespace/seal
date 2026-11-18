@@ -1,4 +1,4 @@
-import { ArrowLeftRight } from 'lucide-react'
+import { ArrowLeftRight, TriangleAlert } from 'lucide-react'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import { formatResetDuration } from '../../../../shared/rate-limit-reset-format'
@@ -18,6 +18,8 @@ import type {
   SealSessionSwapEntry
 } from '../../../../shared/seal-accounts/seal-accounts-status'
 import { sessionSwapTargets } from './seal-session-account-view'
+import { sealLoginUsable } from '../../../../shared/seal-accounts/seal-account-health'
+import { sealHealthLabel } from '../settings/seal-accounts/seal-account-presentation'
 import { useAppStore } from '../../store'
 import { normalizeUsagePercentageDisplay } from '../../../../shared/usage-percentage-display'
 import type { RateLimitWindow } from '../../../../shared/rate-limit-types'
@@ -96,6 +98,8 @@ export function SealSessionAccountMenu({
   const targets = sessionSwapTargets(session, candidates)
   const last = session.history?.at(-1) ?? null
   const label = current?.label ?? session.accountLabel
+  // The login this session runs on stopped working here; its next relaunch moves off it.
+  const broken = current && !sealLoginUsable(current) ? sealHealthLabel(current.health, t) : null
   return (
     <DropdownMenu modal={false} defaultOpen={defaultOpen}>
       <DropdownMenuTrigger asChild>
@@ -106,9 +110,17 @@ export function SealSessionAccountMenu({
             'inline-flex max-w-32 shrink-0 items-center gap-1 rounded-sm border border-border px-1 text-3xs leading-4 text-muted-foreground hover:bg-muted hover:text-foreground',
             className
           )}
-          title={t('seal.session.badge.title', 'Running on {{value0}}. Click to switch.', {
-            value0: label
-          })}
+          title={
+            broken
+              ? t(
+                  'seal.session.badge.brokenTitle',
+                  'Running on {{value0}}: {{value1}}. Click to switch.',
+                  { value0: label, value1: broken }
+                )
+              : t('seal.session.badge.title', 'Running on {{value0}}. Click to switch.', {
+                  value0: label
+                })
+          }
           aria-label={t('seal.session.badge.aria', 'Session account {{value0}}', {
             value0: label
           })}
@@ -117,11 +129,27 @@ export function SealSessionAccountMenu({
           onClick={(event) => event.stopPropagation()}
           onDoubleClick={(event) => event.stopPropagation()}
         >
+          {broken ? (
+            <TriangleAlert
+              className="size-3 shrink-0 text-destructive"
+              data-slot="seal-session-account-warning"
+              aria-hidden
+            />
+          ) : null}
           <span className="truncate">{label}</span>
           {used !== null ? <span className="tabular-nums">{used}</span> : null}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-56">
+        {broken ? (
+          <p className="px-2 pt-1.5 text-2xs text-destructive" role="status">
+            {t(
+              'seal.session.menu.broken',
+              '{{value0}}: {{value1}}. Sign in again in Settings → Accounts, or move this session below.',
+              { value0: label, value1: broken }
+            )}
+          </p>
+        ) : null}
         {usage ? (
           <div className="px-2 pt-1.5" data-slot="seal-session-usage">
             {usage}

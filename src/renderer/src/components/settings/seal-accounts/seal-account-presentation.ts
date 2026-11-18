@@ -8,6 +8,20 @@ import type { SealAccountGroup } from '../../../../../shared/seal-accounts/seal-
 
 export type SealHealthTone = 'ok' | 'warning' | 'dead'
 
+/** Text color for a health tone. */
+export const SEAL_HEALTH_TEXT_CLASS = {
+  ok: 'text-muted-foreground',
+  warning: 'text-status-warning-text',
+  dead: 'text-destructive'
+} as const satisfies Record<SealHealthTone, string>
+
+/** Status-dot color for a health tone. */
+export const SEAL_HEALTH_DOT_CLASS = {
+  ok: 'bg-status-success',
+  warning: 'bg-status-warning',
+  dead: 'bg-destructive'
+} as const satisfies Record<SealHealthTone, string>
+
 export function sealHealthTone(health: SealAccountHealth | undefined): SealHealthTone {
   if (health?.state === 'dead') {
     return 'dead'
@@ -34,11 +48,13 @@ export function sealHealthLabel(
   }
   switch (health.reason) {
     case 'signed-out':
-      return t('seal.accounts.health.signedOut', 'Signed out')
     case 'rejected':
-      return t('seal.accounts.health.rejected', 'Login rejected')
+    case 'no-refresh':
+      return t('seal.accounts.health.signInNeeded', 'Sign-in needed')
     case 'expired':
-      return t('seal.accounts.health.expired', 'Expired')
+      return t('seal.accounts.health.loginExpired', 'Login expired')
+    case 'wrong-login':
+      return t('seal.accounts.health.wrongLogin', 'Wrong login stored')
     case 'missing-secret':
       return t('seal.accounts.health.missingSecret', 'Secret missing')
   }
@@ -102,6 +118,18 @@ export function sealHealthAdvice(candidate: SealAccountCandidate, t: Translate):
       'This computer’s keychain no longer holds the secret. Remove it and add it again.'
     )
   }
+  if (health.reason === 'no-refresh') {
+    return t(
+      'seal.accounts.health.advice.noRefresh',
+      'This copy of the login cannot renew itself, so it can stop working at any moment. Sign in again; Seal will not pick it until then.'
+    )
+  }
+  if (health.reason === 'wrong-login') {
+    return t(
+      'seal.accounts.health.advice.wrongLogin',
+      'The login stored for this account belongs to a different plan. Sign in again with this account; Seal will not pick it until then.'
+    )
+  }
   return candidate.credential === 'setup-token'
     ? t(
         'seal.accounts.health.advice.tokenDead',
@@ -109,7 +137,7 @@ export function sealHealthAdvice(candidate: SealAccountCandidate, t: Translate):
       )
     : t(
         'seal.accounts.health.advice.loginDead',
-        'The provider no longer accepts this login. Sign in again to keep using it.'
+        'The provider no longer accepts this login. Sign in again; Seal will not pick it until then.'
       )
 }
 

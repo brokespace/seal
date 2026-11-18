@@ -108,6 +108,8 @@ export type PersistedState = {
   sshTargetGenerationCounter?: number
   /** SSH config aliases the user deleted; suppresses re-import from ~/.ssh/config so a deleted host doesn't reappear. */
   deletedSshConfigAliases: string[]
+  /** Names (`sessionProjectNameKey`) of projects Seal made for sessions that the user removed; never made again on its own. */
+  dismissedSessionProjects?: string[]
   /** Identity records for removed SSH targets so a re-added host can re-adopt workspaces orphaned on the old target id. */
   removedSshTargetTombstones?: RemovedSshTargetTombstone[]
   sshRemotePtyLeases: SshRemotePtyLease[]

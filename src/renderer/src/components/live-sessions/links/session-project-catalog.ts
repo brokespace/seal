@@ -1,5 +1,6 @@
 import type { AppState } from '@/store/types'
 import { getRuntimePathBasename } from '../../../../../shared/cross-platform-path'
+import { sessionProjectNameKey } from '../../../../../shared/live-sessions/live-session-project'
 import type { LiveSessionProject } from '../../../../../shared/live-sessions/live-session-types'
 import {
   getGitRemoteProviderIdentity,
@@ -27,11 +28,6 @@ export type SessionProjectCatalog = {
   find: (project: LiveSessionProject) => SidebarSessionProject | undefined
   /** The project of a workspace, by its repo's or its group's id. */
   ofWorkspace: (repoId: string) => SidebarSessionProject | undefined
-}
-
-/** One project per name: a folder or repository of that name on any machine is that project. */
-export function sessionProjectNameKey(name: string): string {
-  return name.trim().toLowerCase()
 }
 
 export type SessionProjectCatalogInputs = Pick<AppState, 'repos' | 'projectGroups'> & {
@@ -95,6 +91,9 @@ export function buildSessionProjectCatalog({
     byWorkspace.set(group.id, project)
     claim(byKey, group.id, project)
     claim(byName, sessionProjectNameKey(group.name), project)
+    // A project made for sessions stays theirs after the user renames it.
+    claim(byKey, group.sessionProject?.key, project)
+    claim(byName, group.sessionProject && sessionProjectNameKey(group.sessionProject.name), project)
   }
   return {
     projects: [...byHeader.values()],

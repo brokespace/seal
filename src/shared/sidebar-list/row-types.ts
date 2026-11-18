@@ -136,6 +136,9 @@ export type FolderWorkspaceRow = {
 /** Stable create/repo identity only: subscribing to full progress records would rebuild the list on phase/loader churn. */
 export type PendingCreationRef = { creationId: string; repoId: string }
 
+/** A workspace whose sessions a header lists in its place; `hostId` keeps to its card's host where it has one per host. */
+export type SessionWorkspaceRef = { worktreeId: string; hostId?: ExecutionHostId }
+
 /** A project's agent sessions that none of its workspaces holds, right under its header. Only the desktop lists them. */
 export type ProjectSessionsRow = {
   type: 'project-sessions'
@@ -144,6 +147,10 @@ export type ProjectSessionsRow = {
   /** The project the header names, which a session in a folder of that name need not repeat. */
   project: string | null
   groupDepth: number
+  /** While workspaces are hidden: the ones under the header, whose sessions are listed here too. */
+  workspaces?: readonly SessionWorkspaceRef[]
+  /** False on a later host's copy of a header: the first copy lists the header's own sessions. */
+  headerSessions?: false
 }
 
 export type Row =

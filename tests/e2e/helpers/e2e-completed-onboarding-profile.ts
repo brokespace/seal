@@ -48,7 +48,9 @@ export function getE2ECompletedOnboardingProfile() {
       usagePercentageDisplayChangeNoticeDismissed: true,
       statusBarCompactChangeNoticeDismissed: true,
       // Shown once when a Codex terminal appears; it can land mid-test and close an open menu.
-      codexTerminalServerIsolationNoticeSeen: true
+      codexTerminalServerIsolationNoticeSeen: true,
+      // Specs drive workspace cards; the view that lists sessions in their place opts in per spec.
+      hideSidebarWorkspaces: false
     }
   }
 }
