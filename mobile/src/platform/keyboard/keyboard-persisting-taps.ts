@@ -44,8 +44,7 @@ export function useKeyboardPersistingTaps(mode: KeyboardPersistingTaps) {
   return useCallback(
     (node: unknown) => {
       releaseRef.current?.()
-      releaseRef.current =
-        isWebDomElement(node) ? keepTextFocusThroughTaps(node, mode) : null
+      releaseRef.current = isWebDomElement(node) ? keepTextFocusThroughTaps(node, mode) : null
     },
     [mode]
   )

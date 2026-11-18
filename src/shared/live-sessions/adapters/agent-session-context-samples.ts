@@ -135,6 +135,15 @@ export function contextSampleOfMessage(
   return sample ? { ...sample, ...at } : null
 }
 
+type ContextMeasure = { usedTokens: number; windowTokens?: number; model?: string; at?: number }
+
+function heldWindowTokens(
+  measured: ContextMeasure | null,
+  model: string | undefined
+): number | undefined {
+  return measured?.model === model ? measured?.windowTokens : undefined
+}
+
 export type ContextSampleFoldOptions = {
   /** The samples cover the session from its start, so the compaction count is whole. */
   complete?: boolean
@@ -152,8 +161,7 @@ export function foldContextSamples(
 ): NativeChatContextUsageSummary | null {
   let sampled = false
   let model: string | undefined
-  let measured: { usedTokens: number; windowTokens?: number; model?: string; at?: number } | null =
-    null
+  let measured: ContextMeasure | null = null
   let compactions = 0
   let lastCompactedAt: number | undefined
   for (const sample of samples) {
@@ -168,8 +176,8 @@ export function foldContextSamples(
       continue
     }
     // A window does not shrink under one model: a context seen past the default stays in the larger one.
-    const held = measured?.model === model ? measured?.windowTokens : undefined
-    const windowTokens =
+    const held = heldWindowTokens(measured, model)
+    const windowTokens: number | undefined =
       sample.windowTokens !== undefined && held !== undefined
         ? Math.max(sample.windowTokens, held)
         : sample.windowTokens
