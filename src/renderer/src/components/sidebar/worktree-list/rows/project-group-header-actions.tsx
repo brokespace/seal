@@ -24,10 +24,15 @@ import {
   stopRepoHeaderMenuEvent
 } from './header-event-guards'
 
+type HeaderGroup = ProjectGroup | { id: null } | undefined
+
+/** The group behind a header when a folder backs it; null for any other header. */
+export function folderProjectGroupOf(group: HeaderGroup): ProjectGroup | null {
+  return group && 'parentPath' in group && group.parentPath ? group : null
+}
+
 /** The group behind a header when Seal made it for sessions; null for any other header. */
-export function sessionProjectGroupOf(
-  group: ProjectGroup | { id: null } | undefined
-): ProjectGroup | null {
+export function sessionProjectGroupOf(group: HeaderGroup): ProjectGroup | null {
   return group && 'sessionProject' in group && group.sessionProject ? group : null
 }
 
