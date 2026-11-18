@@ -108,6 +108,7 @@ export async function acquireClaudeSession({
     const permissionChanged = proof.observeClaudeReportedPermissionMode(observedOptions, message)
     const modelReport = observeClaudeExecutionModel(liveSession, init?.model)
     if (init) {
+      initProof.observeStartupHook(init)
       initProof.resolve(init)
       if (liveSession) {
         liveSession.capabilities = proof.readClaudeCapabilities(
