@@ -97,7 +97,7 @@
           "editorOffline": "Connect this machine to open it in an editor.",
           "sessions": "Agents on this machine",
           "accountsTitle": "Accounts on {{value0}}",
-          "accountsDescription": "The Claude and Codex logins signed in here, and the rules that pick one for new sessions. Every Seal machine keeps the same rules.",
+          "accountsDescription": "The Claude and Codex logins signed in on this machine, and which one its new sessions use.",
           "accounts": "Accounts…"
         },
         "edit": {
@@ -1707,14 +1707,10 @@
         "preferred": "Preferred account",
         "bestAvailable": "The one with the most headroom",
         "title": "Rules",
-        "description": "Limit which accounts a project or a machine may use, and which one it prefers. Without a rule, every account may be used everywhere.",
+        "description": "Which account new sessions use. A project’s rule wins over its machine’s, and a project rule for one machine wins over that project’s rule for every machine. Without a rule, any account may be used.",
         "sync": "Sync to machines",
         "add": "Add rule",
         "empty": "No rules yet. Add one to keep a client’s repos on a work account, or a shared machine on a single login.",
-        "mayUse": "May use {{value0}}.",
-        "mayUseAny": "May use any account.",
-        "prefers": "Prefers {{value0}}.",
-        "prefersBest": "Picks the one with the most headroom.",
         "edit": "Edit rule for {{value0}}",
         "remove": "Remove rule for {{value0}}",
         "projectPlaceholder": "github.com/acme/*",
@@ -1819,16 +1815,13 @@
       "back": "Back",
       "health": {
         "expiring": "Expires {{value0}}",
-        "signedOut": "Signed out",
-        "rejected": "Login rejected",
-        "expired": "Expired",
         "missingSecret": "Secret missing",
         "advice": {
           "tokenExpiring": "Setup tokens last one year. Paste a new one before this one runs out.",
           "loginExpiring": "This login cannot renew itself. Sign in again before it runs out.",
           "missingSecret": "This computer’s keychain no longer holds the secret. Remove it and add it again.",
           "tokenDead": "The provider no longer accepts this token. Remove it and paste a new one.",
-          "loginDead": "The provider no longer accepts this login. Sign in again to keep using it.",
+          "loginDead": "The provider no longer accepts this login. Sign in again; Seal will not pick it until then.",
           "noRefresh": "This copy of the login cannot renew itself, so it can stop working at any moment. Sign in again; Seal will not pick it until then.",
           "wrongLogin": "The login stored for this account belongs to a different plan. Sign in again with this account; Seal will not pick it until then."
         },
@@ -1888,7 +1881,7 @@
       },
       "project": {
         "title": "Accounts",
-        "description": "Which Claude and Codex accounts this project’s sessions start on. A rule for one machine replaces the project’s rule there; auto-swap still moves sessions within what a rule allows.",
+        "description": "The Claude and Codex accounts this project’s sessions use. Add a rule for one machine when the project should use a different account there.",
         "menu": "Account Settings"
       },
       "ties": {
