@@ -1,3 +1,4 @@
+import { sealLoginUsable } from './seal-account-health'
 import type { SealAccountKey, SealAutoSwapSettings } from './seal-accounts-config'
 import type { SealAccountCandidate } from './seal-account-candidates'
 import { isAllowedByPolicy, type ResolvedSealPolicy } from './seal-account-policy'
@@ -61,7 +62,7 @@ export function eligibleTargets(
     (candidate) =>
       candidate.launchable &&
       !candidate.disabled &&
-      !candidate.authFailure &&
+      sealLoginUsable(candidate) &&
       candidate.kind !== 'api-key' &&
       isAllowedByPolicy(options.policy, candidate.key) &&
       !isQuarantined(options.quarantine, candidate.key, options.now)

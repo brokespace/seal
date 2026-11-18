@@ -1,3 +1,4 @@
+import { sealLoginUsable } from '../../../../shared/seal-accounts/seal-account-health'
 import type { SealAccountCandidate } from '../../../../shared/seal-accounts/seal-account-candidates'
 import type { SealSessionAssignment } from '../../../../shared/seal-accounts/seal-accounts-status'
 
@@ -12,7 +13,7 @@ export function sessionSwapTargets(
       candidate.kind !== 'api-key' &&
       candidate.launchable &&
       !candidate.disabled &&
-      !candidate.authFailure
+      sealLoginUsable(candidate)
   )
 }
 

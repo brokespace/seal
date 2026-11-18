@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Pencil, Plus, Send, Trash2 } from 'lucide-react'
-import { useTranslate } from '@/i18n/use-translate'
+import { useIntlLocale, useTranslate } from '@/i18n/use-translate'
 import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
 import type {
   SealFleetAccount,
@@ -51,6 +51,7 @@ export function SealRulesSection({
   description
 }: SealRulesSectionProps): React.JSX.Element {
   const t = useTranslate()
+  const intlLocale = useIntlLocale()
   const [editing, setEditing] = useState<SealRuleRow | 'new' | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<string | null>(null)
@@ -59,17 +60,56 @@ export function SealRulesSection({
   const labelOf = (key: string): string =>
     accounts.find((account) => sealAccountKeysMatch(account.key, key))?.candidate.label ?? key
   const machineLabel = (key: string): string => sealMachineForRuleKey(machines, key)?.label ?? key
+  const listOr = (labels: string[]): string =>
+    new Intl.ListFormat(intlLocale, { type: 'disjunction' }).format(labels)
   const rowName = (row: SealRuleRow): string => {
     if (row.scope === 'machine') {
       return row.label ?? machineLabel(row.target)
     }
-    const name = row.label ?? row.target
-    return row.machine
-      ? t('seal.accounts.rules.projectOnMachine', '{{value0}} on {{value1}}', {
+    const name =
+      row.label ??
+      (row.target.trim() === '*'
+        ? t('seal.accounts.rules.allProjects', 'All projects')
+        : row.target)
+    if (!row.machine) {
+      return name
+    }
+    const machine = machineLabel(row.machine)
+    // A name that already says where it applies is not told twice.
+    return name.endsWith(machine)
+      ? name
+      : t('seal.accounts.rules.projectOnMachine', '{{value0}} on {{value1}}', {
           value0: name,
-          value1: machineLabel(row.machine)
+          value1: machine
         })
-      : name
+  }
+  /** Which account(s) the rule's sessions use and how one is picked, in one sentence. */
+  const rowSummary = (row: SealRuleRow): string => {
+    const allowed = row.policy.allow?.length ? row.policy.allow.map(labelOf) : null
+    const preferred = row.policy.default ? labelOf(row.policy.default) : null
+    if (allowed?.length === 1) {
+      return t('seal.accounts.rules.usesOnly', 'Uses {{value0}}.', { value0: allowed[0] })
+    }
+    if (preferred && allowed) {
+      return t(
+        'seal.accounts.rules.usesPreferredAmong',
+        'Uses {{value0}}; when it runs low, whichever of {{value1}} has the most left.',
+        { value0: preferred, value1: listOr(allowed.filter((entry) => entry !== preferred)) }
+      )
+    }
+    if (preferred) {
+      return t(
+        'seal.accounts.rules.usesPreferred',
+        'Uses {{value0}}; when it runs low, whichever other account has the most left.',
+        { value0: preferred }
+      )
+    }
+    if (allowed) {
+      return t('seal.accounts.rules.usesAmong', 'Uses whichever of {{value0}} has the most left.', {
+        value0: listOr(allowed)
+      })
+    }
+    return t('seal.accounts.rules.usesAny', 'Uses whichever account has the most left.')
   }
 
   const sync = async (): Promise<void> => {
@@ -89,7 +129,7 @@ export function SealRulesSection({
         description ??
         t(
           'seal.accounts.rules.description',
-          'Limit which accounts a project or a machine may use, and which one it prefers. Without a rule, every account may be used everywhere.'
+          'Which account new sessions use. A project’s rule wins over its machine’s, and a project rule for one machine wins over that project’s rule for every machine. Without a rule, any account may be used.'
         )
       }
       action={
@@ -126,8 +166,6 @@ export function SealRulesSection({
         </p>
       ) : (
         rows.map((row) => {
-          const allowed = row.policy.allow?.length ? row.policy.allow.map(labelOf).join(', ') : null
-          const preferred = row.policy.default ? labelOf(row.policy.default) : null
           const name = rowName(row)
           return (
             <div
@@ -153,20 +191,8 @@ export function SealRulesSection({
                 {row.scope === 'project' && row.label ? (
                   <p className="truncate font-mono text-2xs text-muted-foreground">{row.target}</p>
                 ) : null}
-                <p className="text-xs text-muted-foreground">
-                  {[
-                    allowed
-                      ? t('seal.accounts.rules.mayUse', 'May use {{value0}}.', { value0: allowed })
-                      : t('seal.accounts.rules.mayUseAny', 'May use any account.'),
-                    preferred
-                      ? t('seal.accounts.rules.prefers', 'Prefers {{value0}}.', {
-                          value0: preferred
-                        })
-                      : t(
-                          'seal.accounts.rules.prefersBest',
-                          'Picks the one with the most headroom.'
-                        )
-                  ].join(' ')}
+                <p className="text-xs text-muted-foreground" data-slot="seal-rule-summary">
+                  {rowSummary(row)}
                 </p>
               </div>
               <Button

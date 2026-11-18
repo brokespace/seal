@@ -120,6 +120,24 @@ describe('pickLaunchAccount', () => {
     })
   })
 
+  it('never starts a session on a default whose login stopped working', () => {
+    const expiredWork = account('codex:work@corp.com', 10, {
+      label: 'work',
+      health: { state: 'dead', reason: 'expired' }
+    })
+    const result = pick({
+      candidates: [expiredWork, personal],
+      policy: {
+        allow: null,
+        defaultKey: 'codex:work@corp.com',
+        defaultSource: 'project',
+        projectRule: null,
+        machineRule: null
+      }
+    })
+    expect(result).toMatchObject({ kind: 'account', reason: 'selected', candidate: personal })
+  })
+
   it('auto-picks the account with most room when auto-swap is on and the selection is full', () => {
     const fullPersonal = account('codex:me@home.com', 99, { label: 'personal', active: true })
     const result = pick({

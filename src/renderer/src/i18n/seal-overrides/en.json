@@ -97,7 +97,7 @@
           "editorOffline": "Connect this machine to open it in an editor.",
           "sessions": "Agents on this machine",
           "accountsTitle": "Accounts on {{value0}}",
-          "accountsDescription": "The Claude and Codex logins signed in here, and the rules that pick one for new sessions. Every Seal machine keeps the same rules.",
+          "accountsDescription": "The Claude and Codex logins signed in on this machine, and which one its new sessions use.",
           "accounts": "Accounts…"
         },
         "edit": {
@@ -1600,7 +1600,8 @@
         "pushUpdate": "Update login",
         "pushCopy": "Copy login",
         "remove": "Remove…",
-        "reorder": "Change the priority of {{value0}}"
+        "reorder": "Change the priority of {{value0}}",
+        "resend": "Send login again"
       },
       "reorderHint": "Drag to change priority, or focus the handle and use Space and the arrow keys.",
       "add": {
@@ -1706,21 +1707,23 @@
         "preferred": "Preferred account",
         "bestAvailable": "The one with the most headroom",
         "title": "Rules",
-        "description": "Limit which accounts a project or a machine may use, and which one it prefers. Without a rule, every account may be used everywhere.",
+        "description": "Which account new sessions use. A project’s rule wins over its machine’s, and a project rule for one machine wins over that project’s rule for every machine. Without a rule, any account may be used.",
         "sync": "Sync to machines",
         "add": "Add rule",
         "empty": "No rules yet. Add one to keep a client’s repos on a work account, or a shared machine on a single login.",
-        "mayUse": "May use {{value0}}.",
-        "mayUseAny": "May use any account.",
-        "prefers": "Prefers {{value0}}.",
-        "prefersBest": "Picks the one with the most headroom.",
         "edit": "Edit rule for {{value0}}",
         "remove": "Remove rule for {{value0}}",
         "projectPlaceholder": "github.com/acme/*",
         "projectOnMachine": "{{value0}} on {{value1}}",
         "everyMachine": "Every machine",
         "onMachine": "On machine",
-        "onMachineHelp": "A rule for one machine replaces the project’s rule for every machine there."
+        "onMachineHelp": "A rule for one machine replaces the project’s rule for every machine there.",
+        "allProjects": "All projects",
+        "usesOnly": "Uses {{value0}}.",
+        "usesPreferredAmong": "Uses {{value0}}; when it runs low, whichever of {{value1}} has the most left.",
+        "usesPreferred": "Uses {{value0}}; when it runs low, whichever other account has the most left.",
+        "usesAmong": "Uses whichever of {{value0}} has the most left.",
+        "usesAny": "Uses whichever account has the most left."
       },
       "summary": {
         "none": "No accounts yet.",
@@ -1812,19 +1815,21 @@
       "back": "Back",
       "health": {
         "expiring": "Expires {{value0}}",
-        "signedOut": "Signed out",
-        "rejected": "Login rejected",
-        "expired": "Expired",
         "missingSecret": "Secret missing",
         "advice": {
           "tokenExpiring": "Setup tokens last one year. Paste a new one before this one runs out.",
           "loginExpiring": "This login cannot renew itself. Sign in again before it runs out.",
           "missingSecret": "This computer’s keychain no longer holds the secret. Remove it and add it again.",
           "tokenDead": "The provider no longer accepts this token. Remove it and paste a new one.",
-          "loginDead": "The provider no longer accepts this login. Sign in again to keep using it."
+          "loginDead": "The provider no longer accepts this login. Sign in again; Seal will not pick it until then.",
+          "noRefresh": "This copy of the login cannot renew itself, so it can stop working at any moment. Sign in again; Seal will not pick it until then.",
+          "wrongLogin": "The login stored for this account belongs to a different plan. Sign in again with this account; Seal will not pick it until then."
         },
         "rateLimited": "Rate limited",
-        "rateLimitedUntil": "Rate limited · resets in {{value0}}"
+        "rateLimitedUntil": "Rate limited · resets in {{value0}}",
+        "signInNeeded": "Sign-in needed",
+        "loginExpired": "Login expired",
+        "wrongLogin": "Wrong login stored"
       },
       "identity": {
         "setupToken": "Claude setup token",
@@ -1876,7 +1881,7 @@
       },
       "project": {
         "title": "Accounts",
-        "description": "Which Claude and Codex accounts this project’s sessions start on. A rule for one machine replaces the project’s rule there; auto-swap still moves sessions within what a rule allows.",
+        "description": "The Claude and Codex accounts this project’s sessions use. Add a rule for one machine when the project should use a different account there.",
         "menu": "Account Settings"
       },
       "ties": {
@@ -1911,7 +1916,8 @@
       },
       "badge": {
         "title": "Running on {{value0}}. Click to switch.",
-        "aria": "Session account {{value0}}"
+        "aria": "Session account {{value0}}",
+        "brokenTitle": "Running on {{value0}}: {{value1}}. Click to switch."
       },
       "menu": {
         "switch": "Move this session to",
@@ -1919,7 +1925,8 @@
         "lastSwap": "{{value0}} to {{value1}}, {{value2}}",
         "swapNow": "swapping now",
         "swapAt": "next swap ~{{value0}}",
-        "noSwap": "no swap expected before reset"
+        "noSwap": "no swap expected before reset",
+        "broken": "{{value0}}: {{value1}}. Sign in again in Settings → Accounts, or move this session below."
       },
       "error": {
         "swap": "Could not switch this session",

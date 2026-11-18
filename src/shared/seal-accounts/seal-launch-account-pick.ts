@@ -1,3 +1,4 @@
+import { sealLoginUsable } from './seal-account-health'
 import type { SealAccountKey, SealAutoSwapSettings } from './seal-accounts-config'
 import type { SealAccountCandidate } from './seal-account-candidates'
 import { sealAccountKeysMatch } from './seal-account-key'
@@ -95,6 +96,9 @@ export function pickLaunchAccount(input: SealLaunchPickInput): SealLaunchPick {
       if (isExhausted(accountPressure(chosen, settings, now))) {
         warnings.push(`${chosen.label} is near its usage limit.`)
       }
+      if (!sealLoginUsable(chosen)) {
+        warnings.push(`${chosen.label} needs a new sign-in.`)
+      }
       return { kind: 'account', candidate: chosen, reason: override.source, warnings }
     }
     warnings.push(
@@ -141,7 +145,7 @@ export function pickLaunchAccount(input: SealLaunchPickInput): SealLaunchPick {
     (candidate) =>
       candidate.launchable &&
       candidate.kind !== 'api-key' &&
-      !candidate.authFailure &&
+      sealLoginUsable(candidate) &&
       isAllowedByPolicy(policy, candidate.key)
   )
   const fallback =
