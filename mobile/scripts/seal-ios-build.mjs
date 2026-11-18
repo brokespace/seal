@@ -5,6 +5,9 @@
 //     Debug dev client on a USB/Wi-Fi-connected iPhone (sandbox APNs). Pair, then `pnpm start`.
 //   SEAL_APPLE_TEAM_ID=ABCDE12345 node scripts/seal-ios-build.mjs adhoc [--install <udid>]
 //     Release IPA signed for registered devices (production APNs) in build/ios-adhoc/.
+//   SEAL_APPLE_TEAM_ID=ABCDE12345 ASC_KEY_PATH=... ASC_KEY_ID=... ASC_ISSUER_ID=... \
+//     node scripts/seal-ios-build.mjs testflight
+//     App Store build uploaded to App Store Connect for TestFlight, signed with the API key.
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -14,7 +17,6 @@ const MOBILE_ROOT = path.resolve(import.meta.dirname, '..')
 const WORKSPACE = path.join(MOBILE_ROOT, 'ios', 'Seal.xcworkspace')
 const BUILD_DIR = path.join(MOBILE_ROOT, 'build')
 const ARCHIVE = path.join(BUILD_DIR, 'Seal.xcarchive')
-const EXPORT_DIR = path.join(BUILD_DIR, 'ios-adhoc')
 
 function fail(message) {
   console.error(message)
@@ -39,8 +41,8 @@ function flag(name) {
 }
 
 const mode = process.argv[2]
-if (mode !== 'dev' && mode !== 'adhoc') {
-  fail('Usage: seal-ios-build.mjs <dev|adhoc> [--device <name|udid>] [--install <udid>]')
+if (mode !== 'dev' && mode !== 'adhoc' && mode !== 'testflight') {
+  fail('Usage: seal-ios-build.mjs <dev|adhoc|testflight> [--device <name|udid>] [--install <udid>]')
 }
 if (process.platform !== 'darwin') {
   fail('iOS builds need macOS with Xcode.')
@@ -68,6 +70,26 @@ if (mode === 'dev') {
   process.exit(0)
 }
 
+// Lets xcodebuild create the App Store certificate and profiles without an Xcode account session.
+function ascAuthArgs() {
+  const { ASC_KEY_PATH, ASC_KEY_ID, ASC_ISSUER_ID } = process.env
+  if (!ASC_KEY_PATH || !ASC_KEY_ID || !ASC_ISSUER_ID) {
+    if (mode === 'testflight') {
+      fail('Set ASC_KEY_PATH, ASC_KEY_ID and ASC_ISSUER_ID to your App Store Connect API key.')
+    }
+    return []
+  }
+  return [
+    '-authenticationKeyPath',
+    ASC_KEY_PATH,
+    '-authenticationKeyID',
+    ASC_KEY_ID,
+    '-authenticationKeyIssuerID',
+    ASC_ISSUER_ID
+  ]
+}
+
+const authArgs = ascAuthArgs()
 const apsEnv = { ORCA_IOS_APS_ENVIRONMENT: 'production' }
 run('npx', ['expo', 'prebuild', '--platform', 'ios', '--clean'], apsEnv)
 run(
@@ -84,21 +106,33 @@ run(
     '-archivePath',
     ARCHIVE,
     '-allowProvisioningUpdates',
+    ...authArgs,
     `DEVELOPMENT_TEAM=${teamId}`,
     'CODE_SIGN_STYLE=Automatic',
     'archive'
   ],
   apsEnv
 )
+const testflight = mode === 'testflight'
+const EXPORT_DIR = path.join(BUILD_DIR, testflight ? 'ios-testflight' : 'ios-adhoc')
 mkdirSync(EXPORT_DIR, { recursive: true })
-const exportOptions = path.join(BUILD_DIR, 'SealAdHocExportOptions.plist')
+const exportOptions = path.join(
+  BUILD_DIR,
+  `Seal${testflight ? 'TestFlight' : 'AdHoc'}ExportOptions.plist`
+)
+// The upload destination sends the build straight to App Store Connect instead of writing an IPA.
+const methodKeys = testflight
+  ? `<key>method</key><string>app-store-connect</string>
+  <key>destination</key><string>upload</string>
+  <key>manageAppVersionAndBuildNumber</key><false/>`
+  : '<key>method</key><string>release-testing</string>'
 writeFileSync(
   exportOptions,
   `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>method</key><string>release-testing</string>
+  ${methodKeys}
   <key>teamID</key><string>${teamId}</string>
   <key>signingStyle</key><string>automatic</string>
   <key>compileBitcode</key><false/>
@@ -114,8 +148,13 @@ run('xcodebuild', [
   exportOptions,
   '-exportPath',
   EXPORT_DIR,
-  '-allowProvisioningUpdates'
+  '-allowProvisioningUpdates',
+  ...authArgs
 ])
+if (testflight) {
+  console.log('Uploaded to App Store Connect; TestFlight lists it once processing finishes.')
+  process.exit(0)
+}
 const ipa = path.join(EXPORT_DIR, 'Seal.ipa')
 console.log(`Ad-hoc IPA: ${ipa}`)
 const installTarget = flag('install')
