@@ -139,6 +139,52 @@ async function stopSession(input: Rec, runtime: SealMcpToolRuntime): Promise<Hom
   }
 }
 
+const ANSWER_REFUSALS: Record<string, string> = {
+  prompt_not_pending:
+    'that question is no longer pending; list_sessions shows what it waits on now',
+  option_not_offered: 'that option is not one the question offers',
+  not_answerable:
+    'Seal cannot answer this session from here; message_session or take_over_session it instead'
+}
+
+async function answerPermission(
+  input: Rec,
+  runtime: SealMcpToolRuntime
+): Promise<HomeChatToolResult> {
+  const access = runtime.services.seal.sessions
+  const sessionId = access.currentId(String(input.session_id ?? '').trim())
+  // The session list is already narrowed to the client's machines.
+  const session = (await access.list()).sessions.find((candidate) => candidate.id === sessionId)
+  if (!session) {
+    return {
+      text: `No session ${sessionId}. Call list_sessions and use an id from it.`,
+      isError: true
+    }
+  }
+  const reply = await runtime.callRpc('liveSessions.answer', {
+    sessionId: session.id,
+    promptId: String(input.prompt_id),
+    optionId: String(input.option_id)
+  })
+  if (isRec(reply) && reply.ok === true) {
+    return {
+      text: `Answered ${session.id}. read_session shows how it goes on.`,
+      isError: false,
+      machine: session.machineLabel
+    }
+  }
+  const reason = isRec(reply) ? text(reply.reason) : null
+  const detail =
+    (reason ? ANSWER_REFUSALS[reason] : undefined) ??
+    (isRec(reply) ? text(reply.error) : null) ??
+    'unknown reason'
+  return {
+    text: `Seal could not answer ${session.id}: ${detail}.`,
+    isError: true,
+    machine: session.machineLabel
+  }
+}
+
 /** Tools answered by Seal's own RPC methods; `restricted` means the client has a machine allowlist. */
 export function executeSealMcpRpcTool(
   tool: SealMcpRpcToolName,
@@ -153,5 +199,7 @@ export function executeSealMcpRpcTool(
       return listWorkspaces(input, runtime, restricted)
     case 'stop_session':
       return stopSession(input, runtime)
+    case 'answer_permission':
+      return answerPermission(input, runtime)
   }
 }

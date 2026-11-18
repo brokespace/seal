@@ -126,7 +126,9 @@ export type LiveSession = {
   /** Launched from Seal (an Orca pane) or found running outside it. */
   origin: 'seal' | 'external'
   cwd: string | null
-  /** The cwd's last path segment. */
+  /** The folder it started in; it places the session in a project, wherever it moved since. */
+  startCwd?: string | null
+  /** The last path segment of the folder it started in (else its cwd). */
   project: string | null
   title: string | null
   status: LiveSessionStatus

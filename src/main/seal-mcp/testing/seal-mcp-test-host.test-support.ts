@@ -20,6 +20,7 @@ function session(id: string, machineId: string, machineLabel: string): HomeChatS
     machineId,
     machineLabel,
     surface: 'cli',
+    chatSessionId: null,
     cwd: '/work/seal',
     place: {
       projectKey: 'folder:seal',
@@ -34,7 +35,8 @@ function session(id: string, machineId: string, machineLabel: string): HomeChatS
     lastActivityAt: 1_700_000_000_000,
     active: true,
     alive: true,
-    canTakeOver: false
+    canTakeOver: false,
+    permission: null
   }
 }
 
@@ -94,7 +96,8 @@ export async function createSealMcpTestHost(
         sessions: {
           list: () => Promise.resolve({ sessions, errors: [] }),
           currentId: (id) => id,
-          transcript: (sessionId) => Promise.resolve(`transcript of ${sessionId}`),
+          transcript: (sessionId) =>
+            Promise.resolve({ text: `transcript of ${sessionId}`, start: 0, more: false }),
           send: (sessionId, text) => {
             sentToSessions.push({ sessionId, text })
             return Promise.resolve({ state: 'delivered', route: 'seal-pane', error: null })

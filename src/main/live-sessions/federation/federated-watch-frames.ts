@@ -155,6 +155,7 @@ const serverSessionSchema = z.object({
   machine: z.object({ hostId: z.string() }),
   origin: z.enum(['seal', 'external']),
   cwd: NullableText,
+  startCwd: NullableText.optional(),
   project: NullableText,
   title: NullableText,
   status: z.enum(LIVE_SESSION_STATUSES),

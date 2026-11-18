@@ -24,6 +24,7 @@ function transcript(
       provider: 'claude',
       providerSessionId: id,
       cwd,
+      startCwd: cwd,
       title: `title ${id}`,
       phase,
       firstAt: NOW - 3_600_000,

@@ -273,6 +273,7 @@ export function assembleHostSessions(input: {
       inputRoutes.push({ kind: 'resume' })
     }
     const cwd = summary?.cwd ?? process?.cwd ?? null
+    const startCwd = summary?.startCwd ?? cwd
     const continues = (transcript ? (earlierOf.get(transcript) ?? []) : []).map((id) =>
       liveSessionId(machine.hostId, provider, id)
     )
@@ -292,7 +293,8 @@ export function assembleHostSessions(input: {
         surface
       }),
       cwd,
-      project: projectOf(cwd),
+      startCwd,
+      project: projectOf(startCwd),
       title: summary?.title ?? null,
       status,
       statusSource,

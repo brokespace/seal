@@ -1,11 +1,9 @@
-import { randomUUID } from 'node:crypto'
-import { parseExecutionHostId } from '../../../shared/execution-host'
 import type { HomeChatOpenView } from '../../../shared/home-chat/home-chat-types'
 import { isLiveSessionPlaceInProject } from '../../../shared/live-sessions/live-session-workspace-groups'
-import { agentTerminalHandle, parseOrcaJson } from '../delegation/home-chat-orca-json'
-import { LOCAL_MACHINE_ID, type HomeChatMachineInfo } from '../machines/home-chat-machine-types'
+import { LOCAL_MACHINE_ID } from '../machines/home-chat-machine-types'
 import type { HomeChatSessionSummary } from '../seal/home-chat-session-access'
 import type { HomeChatCatalogEntry } from '../skills/home-chat-machine-catalog'
+import { startSession } from './home-chat-session-start'
 import type { HomeChatSealToolName } from './home-chat-tool-definitions'
 import {
   clipToolText,
@@ -58,7 +56,10 @@ function sessionLine(session: HomeChatSessionSummary): string {
     session.place.project ? `project: ${session.place.project}` : null,
     session.worktreeId ? `workspace: worktree:${session.worktreeId}` : null
   ].filter(Boolean)
-  return `- ${session.id}\n  ${session.agent} on ${session.machineLabel} (${session.machineId}) in ${session.cwd ?? 'unknown folder'}\n  ${session.status}${session.statusDetail ? `: ${session.statusDetail}` : ''}, active ${ago(session.lastActivityAt)}, ${flags.join(', ')}${place.length ? `\n  ${place.join(', ')}` : ''}${session.title ? `\n  title: ${session.title}` : ''}`
+  const asks = session.permission
+    ? `\n  asks: ${session.permission.question} (prompt ${session.permission.promptId}; options: ${session.permission.options.map((option) => `${option.id} = ${option.label}`).join(', ')})`
+    : ''
+  return `- ${session.id}\n  ${session.agent} on ${session.machineLabel} (${session.machineId}) in ${session.cwd ?? 'unknown folder'}\n  ${session.status}${session.statusDetail ? `: ${session.statusDetail}` : ''}, active ${ago(session.lastActivityAt)}, ${flags.join(', ')}${place.length ? `\n  ${place.join(', ')}` : ''}${session.title ? `\n  title: ${session.title}` : ''}${asks}`
 }
 
 async function listSessions(
@@ -101,6 +102,31 @@ async function findSession(
   return session
 }
 
+async function readSession(
+  input: Record<string, unknown>,
+  ctx: HomeChatToolContext
+): Promise<HomeChatToolResult> {
+  const session = await findSession(ctx, str(input.session_id))
+  const latestTurn = input.latest_turn === true
+  const page = await ctx.services.seal.sessions.transcript(session.id, {
+    limit: typeof input.limit === 'number' ? input.limit : 20,
+    before: typeof input.before === 'number' ? input.before : null,
+    latestTurn,
+    fullText: input.full_text === true
+  })
+  const older = !page.more
+    ? 'This reaches the start of the transcript.'
+    : latestTurn
+      ? 'Earlier turns: read_session without latest_turn.'
+      : `Older messages: read_session with before ${page.start}.`
+  return ok(
+    clipToolText(
+      `${sessionLine(session).slice(2)}\n\n${latestTurn ? 'Latest turn' : 'Transcript'}, oldest first. ${older}\n\n${page.text}`
+    ),
+    session.machineLabel
+  )
+}
+
 async function messageSession(
   input: Record<string, unknown>,
   ctx: HomeChatToolContext
@@ -123,64 +149,6 @@ async function messageSession(
       ? `Delivered to ${session.id}${how}; it is in the session's transcript. Read its answer with read_session.`
       : `Handed to ${session.id}${how} (${sent.state}). It will show in the transcript once the session picks it up; read_session shows the answer.`,
     session.machineLabel
-  )
-}
-
-function hostArgs(info: HomeChatMachineInfo): string[] {
-  const host = info.executionHostId ?? info.id
-  const parsed = parseExecutionHostId(host)
-  if (parsed?.kind === 'runtime') {
-    return ['--environment', parsed.environmentId]
-  }
-  return host === LOCAL_MACHINE_ID ? [] : ['--host', host]
-}
-
-async function startSession(
-  input: Record<string, unknown>,
-  ctx: HomeChatToolContext
-): Promise<HomeChatToolResult> {
-  const worktree = optionalStr(input.worktree)
-  const project = optionalStr(input.project)
-  if (!worktree && !project) {
-    return failed(
-      'start_session needs worktree (an existing workspace) or project (to create a new worktree). Find them with seal_cli ["worktree", "list", "--json"] or ["project", "list", "--json"].'
-    )
-  }
-  const machine = await ctx.machines.open(optionalStr(input.machine) ?? LOCAL_MACHINE_ID)
-  if (machine.info.kind === 'hop') {
-    return failed(
-      `${machine.info.label} is reached through another machine, so Seal cannot host agent sessions on it. Use run_command there, or add it as an SSH host on the Machines page.`
-    )
-  }
-  const agent = optionalStr(input.agent) ?? 'claude'
-  const prompt = str(input.prompt)
-  const args = worktree
-    ? ['agent', 'launch', '--agent', agent, '--worktree', worktree, '--prompt', prompt]
-    : [
-        'worktree',
-        'create',
-        '--project',
-        str(project),
-        '--name',
-        optionalStr(input.name) ?? `assistant-${randomUUID().slice(0, 6)}`,
-        '--agent',
-        agent,
-        '--prompt',
-        prompt
-      ]
-  const result = await ctx.runOrcaCli([...args, ...hostArgs(machine.info), '--json'], {
-    timeoutMs: 10 * 60_000,
-    signal: ctx.signal
-  })
-  if (result.exitCode !== 0) {
-    return failed(
-      `Seal could not start the session on ${machine.info.label}: ${(result.stderr || result.stdout).trim().slice(0, 2_000) || `exit code ${result.exitCode}`}`
-    )
-  }
-  const handle = agentTerminalHandle(parseOrcaJson(result.stdout))
-  return ok(
-    `Started a ${agent} session on ${machine.info.label}${handle ? ` (terminal ${handle})` : ''}. It appears in list_sessions once the agent is up; read it with read_session and steer it with message_session.`,
-    machine.info.label
   )
 }
 
@@ -219,14 +187,8 @@ export async function executeSealTool(
   switch (tool) {
     case 'list_sessions':
       return listSessions(input, ctx)
-    case 'read_session': {
-      const session = await findSession(ctx, str(input.session_id))
-      const limit = typeof input.limit === 'number' ? input.limit : 20
-      return ok(
-        clipToolText(await seal.sessions.transcript(session.id, limit)),
-        session.machineLabel
-      )
-    }
+    case 'read_session':
+      return readSession(input, ctx)
     case 'message_session':
       return messageSession(input, ctx)
     case 'take_over_session': {

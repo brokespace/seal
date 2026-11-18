@@ -61,7 +61,11 @@ describe('Seal MCP over stdio (`seal mcp`)', () => {
     const listed = await client.listTools()
     const refused = await client.callTool({ name: 'list_machines', arguments: {} })
 
-    expect(listed.tools.map((tool) => tool.name)).toEqual(['message_session', 'start_session'])
+    expect(listed.tools.map((tool) => tool.name)).toEqual([
+      'message_session',
+      'start_session',
+      'answer_permission'
+    ])
     expect(refused.isError).toBe(true)
     expect(toolText(refused)).toContain('no tool')
   })

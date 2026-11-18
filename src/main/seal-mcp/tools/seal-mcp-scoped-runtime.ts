@@ -57,9 +57,9 @@ function scopeSessions(
   return {
     list,
     currentId: sessions.currentId,
-    transcript: async (sessionId, limit) => {
+    transcript: async (sessionId, read) => {
       await requireVisible(sessionId)
-      return sessions.transcript(sessionId, limit)
+      return sessions.transcript(sessionId, read)
     },
     send: async (sessionId, text) => {
       await requireVisible(sessionId)
