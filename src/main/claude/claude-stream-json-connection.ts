@@ -6,7 +6,7 @@ import { spawnProcess } from '@orca/process-host'
 import { buildClaudeChildProcessEnv } from './child-process/claude-child-process-environment'
 import { withoutInheritedClaudeConfigDir } from './structured/launch/claude-config-dir-pin'
 import { withoutRejectedClaudeApiKey } from './configuration/claude-rejected-api-key'
-import { restateClaudeAlwaysLoadMcpServers } from './configuration/claude-always-load-mcp-servers'
+import { prepareClaudeFreshStart } from './configuration/claude-fresh-start-hook-race'
 import {
   createClaudeControlSurface,
   type ClaudeControlSurface
@@ -55,13 +55,6 @@ export type ClaudeStreamJsonLaunch = {
   envToDelete?: readonly string[]
 }
 
-function withoutKeys(env: Record<string, string>, keys: readonly string[]): Record<string, string> {
-  for (const key of keys) {
-    delete env[key]
-  }
-  return env
-}
-
 export type ClaudeStreamJsonConnectionHandlers = {
   onMessage?: (message: Record<string, unknown>) => void
   /** Raw stdout before the SDK reads it, for state that must keep wire order with permission requests. */
@@ -92,6 +85,8 @@ export type ClaudeStreamJsonConnection = ClaudeControlSurface & {
   readonly executableMissing?: boolean
   exited?: Promise<Error>
   startupFailure?: () => Error | undefined
+  /** A fresh start whose settings have an `asyncRewake` SessionStart hook that can hold it. */
+  readonly rewakeHookMayHold?: boolean
   pauseReading?: () => void
   resumeReading?: () => void
   send: (message: Record<string, unknown>, beforeDispatch?: () => Promise<void>) => Promise<void>
@@ -109,19 +104,19 @@ export async function openClaudeStreamJsonConnection(
   const startup = claudeStartupAnswerObservation(handlers.onStdout)
   const spawner = createClaudeCodeProcessSpawn(spawnImpl, process.platform, launch, startup.feed)
   // Always supply scrubbed env to prevent ambient auth leaks; only launch.env may pin CLAUDE_CONFIG_DIR.
-  const env = await withoutRejectedClaudeApiKey(
-    withoutKeys(
-      buildClaudeChildProcessEnv(launch.env, {
-        inheritedEnv: withoutInheritedClaudeConfigDir(process.env)
-      }),
-      launch.envToDelete ?? []
-    )
-  )
+  const childEnv = buildClaudeChildProcessEnv(launch.env, {
+    inheritedEnv: withoutInheritedClaudeConfigDir(process.env)
+  })
+  for (const key of launch.envToDelete ?? []) {
+    delete childEnv[key]
+  }
+  const env = await withoutRejectedClaudeApiKey(childEnv)
   const inbox = createClaudeUserMessageQueue()
+  const fresh = await prepareClaudeFreshStart(launch.options, env, launch.cwd)
   const session = (queryImpl ?? query)({
     prompt: inbox.messages,
     options: {
-      ...(await restateClaudeAlwaysLoadMcpServers(launch.options, env, launch.cwd)),
+      ...fresh.options,
       cwd: launch.cwd,
       env: withOrcaClaudeChatEntrypoint(env, process.platform),
       pathToClaudeCodeExecutable: launch.pathToClaudeCodeExecutable,
@@ -310,6 +305,7 @@ export async function openClaudeStreamJsonConnection(
   return {
     ...controls,
     startupFailure: startup.failure,
+    rewakeHookMayHold: fresh.rewakeHookMayHold,
     exited: exited.promise,
     get pid() {
       return spawner.pid

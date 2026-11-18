@@ -1,10 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import type { McpStdioServerConfig, Options } from '@anthropic-ai/claude-agent-sdk'
+import type { McpStdioServerConfig } from '@anthropic-ai/claude-agent-sdk'
 import { resolveClaudeGlobalConfigFile, toClaudeTrustKey } from './claude-folder-trust-file'
-
-// Fresh headless Claude spawns SessionStart hooks before noting its input streams; an `alwaysLoad`
-// wait widens that window, so an `asyncRewake` hook runs in the foreground and blocks initialize.
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -51,7 +48,7 @@ export function claudeAlwaysLoadMcpServers(
 }
 
 /** Reads the global config the child will load; unreadable config restates nothing. */
-async function readClaudeAlwaysLoadMcpServers(
+export async function readClaudeAlwaysLoadMcpServers(
   env: Record<string, string>,
   cwd: string,
   platform: NodeJS.Platform = process.platform
@@ -73,21 +70,4 @@ async function readClaudeAlwaysLoadMcpServers(
     }
   }
   return {}
-}
-
-/** Resumes start hooks after reading their input; only fresh starts that load user hooks race. */
-export async function restateClaudeAlwaysLoadMcpServers<
-  TOptions extends Pick<Options, 'resume' | 'continue' | 'settingSources' | 'mcpServers'>
->(options: TOptions, env: Record<string, string>, cwd: string): Promise<TOptions> {
-  if (
-    options.resume !== undefined ||
-    options.continue === true ||
-    !options.settingSources?.includes('user')
-  ) {
-    return options
-  }
-  const restated = await readClaudeAlwaysLoadMcpServers(env, cwd)
-  return Object.keys(restated).length > 0
-    ? { ...options, mcpServers: { ...restated, ...options.mcpServers } }
-    : options
 }

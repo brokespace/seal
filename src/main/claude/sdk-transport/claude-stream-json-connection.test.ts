@@ -108,7 +108,7 @@ describe('Claude stream-json connection', () => {
     connection.resumeReading?.()
   })
 
-  it('restates alwaysLoad MCP servers without it on fresh starts only', async () => {
+  it('restates alwaysLoad MCP servers and flags rewake hooks on fresh starts only', async () => {
     const scenario = scriptScenario([HOLD_OPEN])
     writeFileSync(
       join(scenario.cwd, '.claude.json'),
@@ -123,9 +123,18 @@ describe('Claude stream-json connection', () => {
         }
       })
     )
+    writeFileSync(
+      join(scenario.cwd, 'settings.json'),
+      JSON.stringify({
+        hooks: {
+          SessionStart: [{ hooks: [{ type: 'command', command: 'wait', asyncRewake: true }] }]
+        }
+      })
+    )
     const configured = { CLAUDE_CONFIG_DIR: scenario.cwd }
     const fresh = await open(launchFor(scenario, configured))
     await fresh.initializationResult()
+    expect(fresh.rewakeHookMayHold).toBe(true)
     const mcpConfig = (argv: string[]): string | undefined => argv[argv.indexOf('--mcp-config') + 1]
     expect(JSON.parse(mcpConfig(scenario.readReport().argv) ?? 'null')).toEqual({
       mcpServers: { codegraph: { type: 'stdio', command: 'codegraph', args: ['serve', '--mcp'] } }
@@ -139,5 +148,6 @@ describe('Claude stream-json connection', () => {
     })
     await resumed.initializationResult()
     expect(scenario.readReport().argv).not.toContain('--mcp-config')
+    expect(resumed.rewakeHookMayHold).toBe(false)
   })
 })

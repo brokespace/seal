@@ -8,12 +8,8 @@ import {
 
 import type { AgentSessionAccountKind } from '../../../shared/agent-session/agent-session-availability'
 import type { StructuredAgentSessionProviderOpenResult } from '../../native-chat/agent-session-wire/startup/structured-agent-session-provider-open-contract'
-import { withProviderRequestTimeout } from '../../provider-process/provider-request-timeout'
-import {
-  providerDiagnostic,
-  withProviderDiagnostic
-} from '../../../shared/agent-session/failures/agent-session-failure'
 import type { ClaudeStreamJsonConnection } from '../claude-stream-json-connection'
+import { claudeStartupDeadlines } from './claude-structured-startup-deadlines'
 import { ClaudeSlashCommandCatalog } from '../command-catalog/claude-slash-command-catalog'
 import {
   claudeAuthDiagnostic,
@@ -65,29 +61,6 @@ export type ClaudeStartupFacts = ClaudeInitializeFacts & {
   prepared: ReturnType<typeof prepareClaudeStructuredSessionAcquisitionOptions>
 }
 
-/** Well past slow healthy starts, well before the host ceiling: a CLI that holds a SessionStart
- *  hook in the foreground (an `asyncRewake` hook beside an `alwaysLoad` MCP server) never answers. */
-export const CLAUDE_INITIALIZE_TIMEOUT_MS = 180_000
-
-function claudeInitializeTimeout(initProof: ClaudeInitProof): Error {
-  const hooks = initProof.runningStartupHooks()
-  const error = new Error(
-    `claude did not answer initialize within ${CLAUDE_INITIALIZE_TIMEOUT_MS}ms`
-  )
-  return withProviderRequestTimeout(
-    withProviderDiagnostic(
-      error,
-      hooks > 0
-        ? providerDiagnostic(
-            `Claude was still running ${hooks} SessionStart hook${hooks === 1 ? '' : 's'} from its settings. It does not answer until they finish.`,
-            'person'
-          )
-        : undefined
-    ),
-    { method: 'initialize', timeoutMs: CLAUDE_INITIALIZE_TIMEOUT_MS }
-  )
-}
-
 export async function readClaudeStartupFacts(input: {
   connection: ClaudeStreamJsonConnection
   initProof: ClaudeInitProof
@@ -98,7 +71,7 @@ export async function readClaudeStartupFacts(input: {
   requestTimeoutMs: number | undefined
   emit: (event: ClaudeStructuredSessionEvent) => void
 }): Promise<ClaudeInitializeFacts> {
-  let timer: ReturnType<typeof setTimeout> | undefined
+  const deadlines = claudeStartupDeadlines(input)
   const control = input.connection.initializationResult().then((result) => {
     const authError = claudeInitializationAuthError(result, input.account)
     if (authError) {
@@ -135,20 +108,8 @@ export async function readClaudeStartupFacts(input: {
       }
       throw await claudeStartupAnswerAfterExit(input.connection, control, error)
     }),
-    new Promise<never>((_resolve, reject) => {
-      timer = setTimeout(
-        () =>
-          reject(
-            claudeStartFailure([
-              input.connection.startupFailure?.(),
-              claudeInitializeTimeout(input.initProof)
-            ])
-          ),
-        CLAUDE_INITIALIZE_TIMEOUT_MS
-      )
-      timer.unref?.()
-    })
-  ]).finally(() => clearTimeout(timer))
+    deadlines.expired
+  ]).finally(deadlines.clear)
   if (input.connection.closed) {
     throw (
       input.connection.startupFailure?.() ??
