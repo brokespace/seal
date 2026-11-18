@@ -1,4 +1,8 @@
 import type { AgentSessionContextUsage } from '../../../../shared/agent-session/agent-session-context-usage'
+import {
+  autoCompactAtTokens,
+  type CodexAutoCompactSettings
+} from '../../../../shared/agent-session/agent-auto-compact-settings'
 import { parseAgentJournalItemKey } from '../../../../shared/agent-session/journal/agent-session-journal-item-key'
 import { writeAgentJournalTurnRow } from '../../../native-chat/agent-session-timeline/agent-journal-turn-row-revision'
 import type { StructuredAgentSessionEventSink } from '../../../native-chat/agent-session-wire/journal-ingress/structured-agent-session-event-sink'
@@ -14,7 +18,8 @@ function positiveCount(value: unknown): number | null {
 // last.totalTokens measures context, including after compaction; total is cumulative thread spend.
 export function readCodexContextUsage(
   params: unknown,
-  capturedAt: number
+  capturedAt: number,
+  autoCompact: CodexAutoCompactSettings | null = null
 ): AgentSessionContextUsage | null {
   const usage = readRecord(readRecord(params).tokenUsage)
   // Every request reads at least the instructions, so zero is no measurement.
@@ -35,10 +40,19 @@ export function readCodexContextUsage(
       usedTokens,
       windowTokens,
       percentage: Math.round((usedTokens / windowTokens) * 100),
+      ...autoCompactAt(autoCompact, windowTokens),
       categories: [],
       capturedAt
     }
   }
+}
+
+function autoCompactAt(
+  settings: CodexAutoCompactSettings | null,
+  windowTokens: number
+): { autoCompactAtTokens?: number } {
+  const at = settings ? autoCompactAtTokens(settings, undefined, windowTokens) : null
+  return at === null ? {} : { autoCompactAtTokens: at }
 }
 
 /** Resume can replay usage without an open turn; attach it to the newest row then. */
@@ -49,8 +63,9 @@ export function recordCodexContextUsage(input: {
   threadId: string
   params: unknown
   capturedAt: number
+  autoCompact?: CodexAutoCompactSettings | null
 }): void {
-  const contextUsage = readCodexContextUsage(input.params, input.capturedAt)
+  const contextUsage = readCodexContextUsage(input.params, input.capturedAt, input.autoCompact)
   if (!contextUsage) {
     return
   }

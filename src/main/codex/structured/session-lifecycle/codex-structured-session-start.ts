@@ -143,12 +143,18 @@ export async function openCodexStructuredSession(
     )
     current()
   }
+  const configuredRead = readCodexConfiguredLaunchDefaults(
+    connection,
+    deps.requestTimeoutMs,
+    launch.cwd
+  )
+  // Usage reports pick up the auto-compact point when it arrives; only a missing service tier waits.
+  void configuredRead.then((read) => {
+    attempt.window.autoCompact = read?.autoCompact ?? null
+  })
   const configured =
     opened.serviceTier === undefined
-      ? await waitForPromiseWithSignal(
-          readCodexConfiguredLaunchDefaults(connection, deps.requestTimeoutMs, launch.cwd),
-          openInput.signal
-        )
+      ? await waitForPromiseWithSignal(configuredRead, openInput.signal)
       : null
   current()
   const serviceTier =

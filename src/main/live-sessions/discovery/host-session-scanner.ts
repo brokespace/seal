@@ -21,6 +21,7 @@ import { summarizeSubagentFile, type SubagentFileSummary } from './claude-subage
 import { foldCodexTerminals, newCodexTerminalState } from './codex-background-terminals'
 import { codexPlan } from './codex-transcript-activity'
 import { recordsOf } from './transcript-records'
+import { discoveredAgentConfigsIn, HostAutoCompactConfig } from './host-auto-compact-config'
 
 export type HostScanLimits = {
   maxAgeMinutes: number
@@ -95,6 +96,7 @@ export class HostSessionScanner {
   private agentPids: string | null = null
   /** The agent process last known to write each transcript; outlives the read cache. */
   private readonly writers = new Map<string, number>()
+  private readonly autoCompact = new HostAutoCompactConfig()
 
   constructor(
     private readonly host: LiveSessionHost,
@@ -126,9 +128,12 @@ export class HostSessionScanner {
       transcripts: !findFiles,
       known: findFiles ? [] : known,
       headKnown: findFiles ? [] : headKnown,
-      jobs: asked
+      jobs: asked,
+      configRoots: this.autoCompact.rootsOf(cached)
     })
-    const output = parseDiscoveryOutput(await this.host.run(script))
+    const stdout = await this.host.run(script)
+    const output = parseDiscoveryOutput(stdout)
+    this.autoCompact.absorb(discoveredAgentConfigsIn(stdout))
     this.agentPids = output.complete ? agentPidsOf(output) : null
     if (findFiles) {
       // After the script: it names the transcripts running agents own, which are listed however old.
@@ -155,6 +160,10 @@ export class HostSessionScanner {
     // A scan cut short lists only some: the rest stand as earlier scans read them.
     const transcripts = [...this.cache.values()].map((transcript) => ({
       ...transcript,
+      summary: {
+        ...transcript.summary,
+        context: this.autoCompact.apply(transcript, transcript.summary.context)
+      },
       agentPid: this.writers.get(transcript.path),
       contested: this.contested.has(transcript.path)
     }))

@@ -1,3 +1,4 @@
+import type { CodexAutoCompactSettings } from '../../../../shared/agent-session/agent-auto-compact-settings'
 import type { AgentSessionAccountKind } from '../../../../shared/agent-session/agent-session-availability'
 import type { StructuredAgentSessionEventSink } from '../../../native-chat/agent-session-wire/journal-ingress/structured-agent-session-event-sink'
 import type { CodexDispatchEchoes } from '../turns/codex-structured-dispatch-echo'
@@ -16,6 +17,7 @@ export function createCodexSessionJournalTranslator(input: {
   acquisitionId: string
   deps: CodexStructuredSessionAdapterDeps
   primaryThreadId: () => string | null
+  autoCompact: () => CodexAutoCompactSettings | null
   dispatchEchoes: CodexDispatchEchoes
   subagentExecutions: CodexSubagentExecutions
   prompts: CodexAcquisitionAttempt['window']['prompts']
@@ -29,6 +31,7 @@ export function createCodexSessionJournalTranslator(input: {
         acquisitionId,
         ...(deps.now ? { now: deps.now } : {}),
         primaryThreadId: input.primaryThreadId,
+        autoCompact: input.autoCompact,
         dispatchEchoes,
         dispatchRequestOrigin: (clientMessageId) => dispatchEchoes.requestOrigin(clientMessageId),
         dispatchTurnOpener: (threadId, turnId) => dispatchEchoes.turnOpener(threadId, turnId),

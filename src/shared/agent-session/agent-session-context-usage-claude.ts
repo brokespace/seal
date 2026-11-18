@@ -4,10 +4,9 @@ import type { AgentSessionTokenUsage } from './agent-session-context-usage'
 
 /**
  * The window a Claude model has when nothing states it. A transcript names the model without its
- * window, and no per-model table exists: every current Claude model has 200k, and the 1M beta is
- * the one exception. So: `[1m]` on the model id means 1M, a context already past 200k can only be
- * a 1M window, and anything else is 200k. The SDK's own report and `modelUsage[].contextWindow`
- * outrank this wherever they exist.
+ * window. Claude 4.7 and later (with every Fable and Mythos model) serve 1M; older models serve
+ * 200k unless `[1m]` asks for the beta, and a context already past 200k can only be a 1M window.
+ * The SDK's own report and `modelUsage[].contextWindow` outrank this wherever they exist.
  */
 export const CLAUDE_DEFAULT_CONTEXT_WINDOW_TOKENS = 200_000
 export const CLAUDE_EXTENDED_CONTEXT_WINDOW_TOKENS = 1_000_000
@@ -35,12 +34,39 @@ export function claudeTokenUsage(value: unknown): AgentSessionTokenUsage | null 
   return total > 0 ? usage : null
 }
 
-export function claudeContextWindowHint(model: string): number | null {
-  // Bare names vary by provider and plan mode; only an explicit [1m] gives a reliable hint.
-  if (!/\[1m\]$/iu.test(model.trim())) {
+/** The first Claude generation whose every model serves 1M without asking. */
+const CLAUDE_EXTENDED_BY_DEFAULT_SINCE = [4, 7] as const
+
+/** `claude-opus-5-5`, `us.anthropic.claude-sonnet-4-5-20250929-v1:0`, `claude-haiku-4-5@20251001`. */
+function claudeModelVersion(model: string): readonly [number, number] | 'extended' | null {
+  const id = /claude-[a-z0-9.-]*/u.exec(model.toLowerCase())?.[0]
+  if (!id) {
     return null
   }
-  return CLAUDE_EXTENDED_CONTEXT_WINDOW_TOKENS
+  if (/^claude-(?:fable|mythos)(?:-|$)/u.test(id)) {
+    return 'extended'
+  }
+  // A two-digit minor, never the eight-digit date some ids end with.
+  const m = /^claude-(?:opus|sonnet|haiku)-(\d+)(?:-(\d{1,2}))?(?![0-9])/u.exec(id)
+  return m ? [Number(m[1]), Number(m[2] ?? 0)] : null
+}
+
+/** Null where the model alone cannot tell: aliases, older models, and ids from elsewhere. */
+export function claudeContextWindowHint(model: string): number | null {
+  const trimmed = model.trim()
+  if (/\[1m\]$/iu.test(trimmed)) {
+    return CLAUDE_EXTENDED_CONTEXT_WINDOW_TOKENS
+  }
+  const version = claudeModelVersion(trimmed)
+  if (version === null) {
+    return null
+  }
+  const [major, minor] = CLAUDE_EXTENDED_BY_DEFAULT_SINCE
+  return version === 'extended' ||
+    version[0] > major ||
+    (version[0] === major && version[1] >= minor)
+    ? CLAUDE_EXTENDED_CONTEXT_WINDOW_TOKENS
+    : null
 }
 
 /** The window to measure a transcript's usage against, when only the model and the count are known. */

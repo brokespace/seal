@@ -682,6 +682,40 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
     }
   })
 
+  // Claude names neither its window nor where it compacts: the model and the host's settings do.
+  it("measures a session against its model's window and the point its host's settings compact at", async () => {
+    const root = await realpath(home)
+    const projects = join(root, '.claude/projects/-srv-api')
+    await mkdir(projects, { recursive: true })
+    await writeFile(
+      join(root, '.claude/settings.json'),
+      JSON.stringify({ modelSettings: { 'claude-opus-5-5': { autoCompactWindow: 400_000 } } })
+    )
+    // ast-grep-ignore: test-no-wall-clock -- the script lists transcripts by their real modification time
+    const at = new Date().toISOString()
+    await writeFile(
+      join(projects, `${CLAUDE_ID}.jsonl`),
+      line({ type: 'user', cwd: '/srv/api', timestamp: at, message: { content: 'Refactor it' } }) +
+        line({
+          type: 'assistant',
+          timestamp: at,
+          message: {
+            model: 'claude-opus-5-5',
+            usage: { input_tokens: 900, cache_read_input_tokens: 140_000 }
+          }
+        })
+    )
+    const scanner = new HostSessionScanner(localHost('test'), LOCAL_SCAN_LIMITS)
+    // ast-grep-ignore: test-no-wall-clock -- the scan reads real files on the real clock
+    const { sessions } = await scanner.scan(Date.now())
+    expect(sessions.find((s) => s.transcriptPath?.startsWith(root))?.context).toMatchObject({
+      usedTokens: 140_900,
+      windowTokens: 1_000_000,
+      percentage: 14,
+      autoCompactAtTokens: 367_000
+    })
+  })
+
   // The real `ps` says when the stand-in agent started: ten minutes after the transcript's last write.
   it('lists an agent apart from a transcript in its folder that was last written before it started', async () => {
     const root = await realpath(home)
