@@ -11,7 +11,17 @@ export type SealCredentialKind = 'login' | 'setup-token' | 'api-key'
 export type SealAccountHealth =
   | { state: 'ok' }
   | { state: 'expiring'; expiresAt: number }
-  | { state: 'dead'; reason: 'signed-out' | 'rejected' | 'expired' | 'missing-secret' }
+  | {
+      state: 'dead'
+      /** `no-refresh`: a login that cannot renew itself; `wrong-login`: the stored login is another plan's. */
+      reason:
+        | 'signed-out'
+        | 'rejected'
+        | 'expired'
+        | 'missing-secret'
+        | 'no-refresh'
+        | 'wrong-login'
+    }
 
 /** One account this host could launch an agent with, as Seal's policy and swap logic see it. */
 export type SealAccountCandidate = {

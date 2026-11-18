@@ -42,7 +42,7 @@ function ProjectSealAccounts({ repo }: { repo: Repo }): React.JSX.Element {
             title={t('seal.accounts.project.title', 'Accounts')}
             description={t(
               'seal.accounts.project.description',
-              'Which Claude and Codex accounts this project’s sessions start on. A rule for one machine replaces the project’s rule there; auto-swap still moves sessions within what a rule allows.'
+              'The Claude and Codex accounts this project’s sessions use. Add a rule for one machine when the project should use a different account there.'
             )}
             scope={{ kind: 'project', project, match, label: repo.displayName }}
             status={fleet.status}

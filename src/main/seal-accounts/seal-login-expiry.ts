@@ -5,14 +5,17 @@ import {
   type SealAccountKey
 } from '../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
-import type { SealLoginExpiry } from '../../shared/seal-accounts/seal-account-health'
+import {
+  claudeLoginMatchesAccount,
+  type SealLoginExpiry
+} from '../../shared/seal-accounts/seal-account-health'
 import {
   credentialFreshness,
   parseClaudeOAuth
 } from '../../shared/seal-accounts/seal-credential-freshness'
 import { getSystemCodexHomePath } from '../codex/configuration/homes/codex-home-paths'
 import type { SealAccountManager } from './seal-account-manager'
-import { readClaudeHomeCredentials } from './seal-claude-home-credentials'
+import { readClaudeHomeCredentials, readClaudeOAuthAccount } from './seal-claude-home-credentials'
 
 const REFRESH_INTERVAL_MS = 10 * 60_000
 
@@ -47,7 +50,18 @@ async function readExpiry(
     const home = system ? router.systemDefaultHome() : router.accountHome(candidate.localId ?? '')
     const json = await readClaudeHomeCredentials(home, { system })
     const oauth = json ? parseClaudeOAuth(json) : null
-    return oauth ? { expiresAt: oauth.expiresAt, refreshable: oauth.refreshToken !== null } : null
+    if (!oauth) {
+      return null
+    }
+    const account = await readClaudeOAuthAccount(system ? undefined : home).catch(() => null)
+    const organizationType =
+      typeof account?.organizationType === 'string' ? account.organizationType : null
+    return {
+      expiresAt: oauth.expiresAt,
+      refreshable: oauth.refreshToken !== null,
+      stranded: oauth.refreshToken === null && oauth.expiresAt === null,
+      wrongLogin: !claudeLoginMatchesAccount(oauth.subscriptionType, organizationType)
+    }
   }
   const home =
     candidate.localId === null ? getSystemCodexHomePath() : manager.codexHome(candidate.localId)

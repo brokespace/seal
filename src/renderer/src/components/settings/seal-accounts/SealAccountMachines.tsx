@@ -6,13 +6,12 @@ import type {
   SealFleetAccount,
   SealFleetTie
 } from '../../../../../shared/seal-accounts/seal-fleet-overview'
-import { sealHealthLabel, sealHealthTone } from './seal-account-presentation'
-
-const DOT_CLASS = {
-  ok: 'bg-status-success',
-  warning: 'bg-status-warning',
-  dead: 'bg-destructive'
-} as const
+import {
+  SEAL_HEALTH_DOT_CLASS,
+  SEAL_HEALTH_TEXT_CLASS,
+  sealHealthLabel,
+  sealHealthTone
+} from './seal-account-presentation'
 
 function presenceDetail(presence: SealAccountPresence, t: Translate): string {
   if (!presence.reported) {
@@ -83,10 +82,19 @@ export function SealAccountMachines({ account }: { account: SealFleetAccount }):
                 <span
                   className={cn(
                     'size-1.5 shrink-0 rounded-full',
-                    DOT_CLASS[sealHealthTone(presence.health)]
+                    SEAL_HEALTH_DOT_CLASS[sealHealthTone(presence.health)]
                   )}
                   aria-hidden
                 />
+              ) : null}
+              {presence.reported && presence.health.state !== 'ok' ? (
+                <span
+                  className={SEAL_HEALTH_TEXT_CLASS[sealHealthTone(presence.health)]}
+                  data-slot="seal-account-machine-health"
+                  aria-hidden
+                >
+                  {sealHealthLabel(presence.health, t)}
+                </span>
               ) : null}
               <span className="sr-only">{presenceDetail(presence, t)}</span>
             </span>

@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode, Ref } from 'react'
-import { LogIn } from 'lucide-react'
+import { LogIn, Send } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import { formatResetDuration } from '../../../../../shared/rate-limit-reset-format'
@@ -17,6 +17,8 @@ import {
   sealAccountIdentity,
   sealAccountNotice,
   sealHealthAdvice,
+  SEAL_HEALTH_DOT_CLASS,
+  SEAL_HEALTH_TEXT_CLASS,
   sealHealthTone,
   sealLoginBillingBadge
 } from './seal-account-presentation'
@@ -47,17 +49,8 @@ function formatClock(at: number): string {
   return new Date(at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 }
 
-const TONE_CLASS = {
-  ok: 'text-muted-foreground',
-  warning: 'text-status-warning-text',
-  dead: 'text-destructive'
-} as const
-
-const TONE_DOT_CLASS = {
-  ok: 'bg-status-success',
-  warning: 'bg-status-warning',
-  dead: 'bg-destructive'
-} as const
+const TONE_CLASS = SEAL_HEALTH_TEXT_CLASS
+const TONE_DOT_CLASS = SEAL_HEALTH_DOT_CLASS
 
 /** One account: who it is, whether it works, how full it is, and where its login lives. */
 export function SealAccountCard({
@@ -86,6 +79,18 @@ export function SealAccountCard({
   const paused = quarantine && quarantine.until > now ? quarantine : null
   const canUse =
     account.onHome && isLogin && candidate.launchable && !candidate.active && tone !== 'dead'
+  // A working login here can replace a broken copy on another machine in one click.
+  const brokenElsewhere =
+    account.onHome && tone !== 'dead' && isLogin
+      ? pushTargets.filter((machine) =>
+          account.machines.some(
+            (presence) =>
+              presence.machineId === machine.id &&
+              presence.reported &&
+              presence.health.state === 'dead'
+          )
+        )
+      : []
   const facts = [
     candidate.swapEstimate
       ? candidate.swapEstimate.at <= now
@@ -203,6 +208,16 @@ export function SealAccountCard({
             <Button variant="outline" size="xs" onClick={onRelogin}>
               <LogIn />
               {t('seal.accounts.action.relogin', 'Sign in again')}
+            </Button>
+          ) : brokenElsewhere.length > 0 ? (
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => brokenElsewhere.forEach((machine) => onPush(machine.id))}
+              data-slot="seal-account-resend"
+            >
+              <Send />
+              {t('seal.accounts.action.resend', 'Send login again')}
             </Button>
           ) : canUse ? (
             <Button variant="outline" size="xs" onClick={onUse}>
