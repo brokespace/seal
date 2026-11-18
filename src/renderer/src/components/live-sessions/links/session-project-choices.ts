@@ -7,10 +7,10 @@ import type {
   LiveSessionProject
 } from '../../../../../shared/live-sessions/live-session-types'
 import type { LiveSessionLink } from './live-session-links'
-import { sessionProjectNameKey, type SessionProjectCatalog } from './session-project-catalog'
-import type { SessionsHeader } from './sidebar-session-groups'
+import { sessionProjectNameKey } from '../../../../../shared/live-sessions/live-session-project'
+import type { SessionProjectCatalog } from './session-project-catalog'
 import { useLiveSessionLinks } from './use-live-session-links'
-import { useSessionProjectCatalog, useSidebarSessionGroups } from './use-workspace-sessions'
+import { useSessionProjectCatalog } from './use-workspace-sessions'
 
 export type SessionProjectChoice = LiveSessionProject & {
   /** The session is listed under it now. */
@@ -39,18 +39,14 @@ export function sessionProjectNamed(
 export function sessionProjectChoices(
   session: LiveSession,
   link: LiveSessionLink | undefined,
-  catalog: SessionProjectCatalog,
-  sessionHeaders: readonly SessionsHeader[]
+  catalog: SessionProjectCatalog
 ): SessionProjectChoices {
   const moved = session.assignedProject
   const named = moved ?? (link ? undefined : liveSessionFolderProject(session))
   const listed = named ? catalog.find(named) : link && catalog.ofWorkspace(link.repoId)
   const currentName = sessionProjectNameKey(listed?.name ?? named?.name ?? '')
   const byName = new Map<string, LiveSessionProject>()
-  for (const project of [
-    ...catalog.projects,
-    ...sessionHeaders.flatMap(({ name }) => (name ? [{ key: folderProjectKey(name), name }] : []))
-  ]) {
+  for (const project of catalog.projects) {
     const nameKey = sessionProjectNameKey(project.name)
     if (!byName.has(nameKey)) {
       byName.set(nameKey, { key: project.key, name: project.name })
@@ -68,6 +64,5 @@ export function sessionProjectChoices(
 export function useSessionProjectChoices(session: LiveSession): SessionProjectChoices {
   const { links } = useLiveSessionLinks()
   const catalog = useSessionProjectCatalog()
-  const { sessionHeaders } = useSidebarSessionGroups()
-  return sessionProjectChoices(session, links.get(session.id), catalog, sessionHeaders)
+  return sessionProjectChoices(session, links.get(session.id), catalog)
 }

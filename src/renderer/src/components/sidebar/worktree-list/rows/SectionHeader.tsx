@@ -43,7 +43,8 @@ import { RepoScanUnavailableIndicator } from './RepoScanUnavailableIndicator'
 import { LiveSessionsBadge } from '@/components/live-sessions/links/LiveSessionsBadge'
 import {
   ProjectGroupCreateWorkspaceButton,
-  ProjectGroupHeaderMenu
+  ProjectGroupHeaderMenu,
+  sessionProjectGroupOf
 } from './project-group-header-actions'
 import {
   RepoHeaderCreateWorkspaceButton,
@@ -371,6 +372,7 @@ export function renderWorktreeSectionHeaderRow(
                 hostId={projectGroupHostIdForHeader}
                 label={label}
                 projectGroup={folderBackedProjectGroup}
+                sessionProjectGroup={sessionProjectGroupOf(row.projectGroup)}
                 onRefreshProjectGroup={ctx.onRefreshProjectGroup}
                 onRename={ctx.onRenameProjectGroup}
                 onDelete={ctx.onDeleteProjectGroup}

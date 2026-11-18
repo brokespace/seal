@@ -109,6 +109,13 @@ function ProjectDialog({ session }: { session: LiveSession }): React.JSX.Element
             return
           }
           const project = sessionProjectNamed(name, catalog)
+          // Asked for by name: made even if the user once removed a project so named.
+          if (!catalog.find(project)) {
+            void window.api.projectGroups.ensureSessionProjects({
+              projects: [project],
+              explicit: true
+            })
+          }
           void window.api.liveSessions.annotate({ sessionId: session.id, project })
           close()
         }}

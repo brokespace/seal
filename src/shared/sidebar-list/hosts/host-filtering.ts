@@ -7,6 +7,7 @@ import {
   type ExecutionHostScope
 } from '../../execution-host'
 import type { FolderWorkspace } from '../../folder-workspaces/folder-workspace-types'
+import { withoutHiddenProjectGroups } from '../../hidden-projects'
 import type { ProjectGroup } from '../../project-group-types'
 import type { Repo } from '../../repo-types'
 
@@ -27,10 +28,11 @@ export function filterProjectGroupsForVisibleHosts(
   visibleHostIdSet: ReadonlySet<ExecutionHostId> | null,
   defaultHostId: ExecutionHostId
 ): readonly ProjectGroup[] {
+  const listed = withoutHiddenProjectGroups(projectGroups)
   if (!visibleHostIdSet) {
-    return projectGroups
+    return listed
   }
-  return projectGroups.filter((group) =>
+  return listed.filter((group) =>
     visibleHostIdSet.has(getProjectGroupExecutionHostIdForRows(group, defaultHostId))
   )
 }

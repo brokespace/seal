@@ -44,6 +44,7 @@ export const WSL_DRIVE_UNC_STATE_DISPOSITIONS = {
   sshTargets: 'keep',
   sshTargetGenerationCounter: 'keep',
   deletedSshConfigAliases: 'keep',
+  dismissedSessionProjects: 'keep',
   removedSshTargetTombstones: 'keep',
   sshRemotePtyLeases: 'keep',
   sshPtyConsumerRecoveries: 'keep',

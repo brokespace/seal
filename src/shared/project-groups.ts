@@ -86,6 +86,12 @@ export function normalizeProjectGroups(value: unknown): ProjectGroup[] {
         : {}),
       isCollapsed: raw.isCollapsed === true,
       color: typeof raw.color === 'string' ? raw.color : null,
+      ...(typeof raw.hiddenAt === 'number' && Number.isFinite(raw.hiddenAt)
+        ? { hiddenAt: raw.hiddenAt }
+        : {}),
+      ...(typeof raw.sessionProject?.key === 'string' && typeof raw.sessionProject.name === 'string'
+        ? { sessionProject: { key: raw.sessionProject.key, name: raw.sessionProject.name } }
+        : {}),
       createdAt:
         typeof raw.createdAt === 'number' && Number.isFinite(raw.createdAt) ? raw.createdAt : now,
       updatedAt:

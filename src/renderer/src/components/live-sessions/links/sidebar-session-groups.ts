@@ -1,10 +1,16 @@
-import { liveSessionFolderProject } from '../../../../../shared/live-sessions/live-session-project'
-import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import {
+  liveSessionFolderProject,
+  sessionProjectNameKey
+} from '../../../../../shared/live-sessions/live-session-project'
+import type {
+  LiveSession,
+  LiveSessionProject
+} from '../../../../../shared/live-sessions/live-session-types'
 import type { LiveSessionLink } from './live-session-links'
 import { sessionsHeaderKey, UNASSIGNED_SESSION_GROUP } from '../workspace-rows/session-fold-keys'
-import { sessionProjectNameKey, type SessionProjectCatalog } from './session-project-catalog'
+import type { SessionProjectCatalog } from './session-project-catalog'
 
-/** A header the sessions bring to the list: a project it has none for, named by their folder or by the user, or none at all. */
+/** The header the sessions bring to the list: the one for sessions under no listed project. */
 export type SessionsHeader = { key: string; name: string | null }
 
 /** Where the sidebar lists a session: on a workspace's card, or under a header of the list. */
@@ -17,8 +23,15 @@ export type SidebarSessionGroups = {
   byWorkspace: ReadonlyMap<string, readonly LiveSession[]>
   /** Sessions no workspace holds, by the key of the header they sit under. */
   byHeader: ReadonlyMap<string, readonly LiveSession[]>
-  /** The headers among those that the list has not got itself: projects by name, then the one for no project. */
+  /** The headers among those that the list has not got itself: only the one for no project. */
   sessionHeaders: readonly SessionsHeader[]
+  /** Projects sessions name that no project is yet, one per name, with those sessions: Seal makes each a project. */
+  unknownProjects: readonly UnknownSessionProject[]
+}
+
+export type UnknownSessionProject = {
+  project: LiveSessionProject
+  sessions: readonly LiveSession[]
 }
 
 function add<K>(groups: Map<K, LiveSession[]>, key: K, session: LiveSession): void {
@@ -33,7 +46,8 @@ function add<K>(groups: Map<K, LiveSession[]>, key: K, session: LiveSession): vo
 /**
  * Where the sidebar lists each session: under the project the user moved it to, else on its
  * workspace's card, else under the project its folder gives it. `listedHeaders` are the project
- * headers the list has now; a project without one gets a header after the last workspace.
+ * headers the list has now; a session whose project has none listed (hidden, filtered out, or not
+ * made yet) sits under the header for no project, so every project header is a project's own.
  */
 export function groupSidebarSessions(
   sessions: readonly LiveSession[],
@@ -43,7 +57,7 @@ export function groupSidebarSessions(
 ): SidebarSessionGroups {
   const byWorkspace = new Map<string, LiveSession[]>()
   const byHeader = new Map<string, LiveSession[]>()
-  const named = new Map<string, string>()
+  const unknown = new Map<string, { project: LiveSessionProject; sessions: LiveSession[] }>()
   const places = new Map<string, SidebarSessionPlace>()
   const unassignedKey = sessionsHeaderKey(UNASSIGNED_SESSION_GROUP)
   for (const session of sessions) {
@@ -58,24 +72,25 @@ export function groupSidebarSessions(
     }
     const own = moved ?? liveSessionFolderProject(session)
     const project = movedTo ?? (own && catalog.find(own))
-    let headerKey = unassignedKey
-    if (project && listedHeaders.has(project.headerKey)) {
-      headerKey = project.headerKey
-    } else if (own) {
-      const name = project?.name ?? own.name
-      headerKey = sessionsHeaderKey(`project:${sessionProjectNameKey(name)}`)
-      if (!named.has(headerKey)) {
-        named.set(headerKey, name)
+    if (own && !project) {
+      const nameKey = sessionProjectNameKey(own.name)
+      const named = unknown.get(nameKey)
+      if (named) {
+        named.sessions.push(session)
+      } else {
+        unknown.set(nameKey, { project: own, sessions: [session] })
       }
     }
+    const headerKey =
+      project && listedHeaders.has(project.headerKey) ? project.headerKey : unassignedKey
     add(byHeader, headerKey, session)
     places.set(session.id, { kind: 'header', headerKey })
   }
-  const sessionHeaders: SessionsHeader[] = [...named]
-    .sort(([, a], [, b]) => a.localeCompare(b))
-    .map(([key, name]) => ({ key, name }))
-  if (byHeader.has(unassignedKey)) {
-    sessionHeaders.push({ key: unassignedKey, name: null })
+  return {
+    places,
+    byWorkspace,
+    byHeader,
+    sessionHeaders: byHeader.has(unassignedKey) ? [{ key: unassignedKey, name: null }] : [],
+    unknownProjects: [...unknown.values()]
   }
-  return { places, byWorkspace, byHeader, sessionHeaders }
 }
