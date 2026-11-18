@@ -105,8 +105,14 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
   const t = useTranslate()
   const { view } = props
   const keys = new Set<string>()
+  // Under its project's header a row names its workspace alone, not "project / workspace".
+  const projectPrefix = props.project ? `${props.project} / `.toLowerCase() : null
   const row = (session: LiveSession): React.JSX.Element => {
-    const state = props.rowState(session)
+    const shared = props.rowState(session)
+    const state =
+      projectPrefix && shared.workspaceName?.toLowerCase().startsWith(projectPrefix)
+        ? { ...shared, workspaceName: shared.workspaceName.slice(projectPrefix.length) }
+        : shared
     const shown = sessionRowKey(session)
     const key = keys.has(shown) ? session.id : shown
     keys.add(key)
