@@ -169,10 +169,8 @@ export function LiveSessionChat({
               status={messages.phase === 'loading' ? 'loading' : 'ready'}
               agent={agent || null}
               sessionLive={session?.alive === true}
-              // A prompt holds the turn open: its tool call has not run yet.
               agentWorking={
-                session?.alive === true &&
-                (liveSessionStatusGroup(session.status) === 'working' || card !== null)
+                session?.alive === true && liveSessionStatusGroup(session.status) === 'working'
               }
               // The registry has no call that stops a turn.
               canStop={false}
