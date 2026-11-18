@@ -175,7 +175,6 @@
         "failed": "Not delivered"
       },
       "noProject": "No project",
-      "external": "External",
       "loading": "Loading sessions",
       "emptyTitle": "No agent sessions",
       "emptyMessage": "Chats and agent sessions on this computer and its SSH hosts show up here.",

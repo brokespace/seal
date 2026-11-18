@@ -13,6 +13,7 @@ import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { MobileNativeChatImageViewer } from '../../session/native-chat/visual/MobileNativeChatImageViewer'
 import { mermaidDiagramConfig } from './mermaid-diagram-config'
 import { loadPageMermaid } from './mermaid-page-engine'
+import { isWebDomElement } from '../../platform/web-dom-element'
 
 export type MermaidDiagramProps = {
   source: string
@@ -39,7 +40,7 @@ export const MermaidDiagram = memo(function MermaidDiagram({ source, base }: Mer
   useEffect(() => {
     // react-native-web renders View as a div and forwards the ref to it.
     const host = hostRef.current
-    if (!(host instanceof HTMLElement)) {
+    if (!isWebDomElement(host)) {
       return
     }
     let disposed = false
