@@ -9,7 +9,7 @@ export type WorkspaceGroupableLiveSession = Pick<
 > & {
   pinned?: boolean
   machine: { hostId: string; label: string }
-  workspace?: { worktreeId: string; projectKey: string }
+  workspace?: { worktreeId: string; projectKey: string; projectName?: string }
 }
 
 /** The project and workspace a session is listed under. A null name is one the client words itself. */
@@ -30,7 +30,7 @@ export function liveSessionPlaceOf(session: WorkspaceGroupableLiveSession): Live
   if (session.workspace) {
     return {
       projectKey: session.workspace.projectKey,
-      project: folder,
+      project: session.workspace.projectName ?? folder,
       // A checkout at the same path on two machines has one worktree id.
       workspaceKey: `${session.machine.hostId}\n${session.workspace.worktreeId}`,
       workspace: session.cwd

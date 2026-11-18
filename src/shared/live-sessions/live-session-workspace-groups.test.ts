@@ -11,7 +11,7 @@ function session(
   cwd: string | null,
   patch: {
     machine?: typeof LAPTOP
-    workspace?: { worktreeId: string; projectKey: string }
+    workspace?: { worktreeId: string; projectKey: string; projectName?: string }
     pinned?: boolean
   } = {}
 ) {
@@ -60,6 +60,31 @@ describe('groupLiveSessionsByWorkspace', () => {
         [
           ['/code/shop', 'laptop', ['asks', 'idle']],
           ['/srv/shop', 'gpu-box', ['train']]
+        ]
+      ]
+    ])
+  })
+
+  it('names a linked project after its project, not the worktree folder a session runs in', () => {
+    const seal = (worktreeId: string) => ({
+      worktreeId,
+      projectKey: 'github:acme/seal',
+      projectName: 'seal'
+    })
+    const sessions = [
+      session('a', 'working', '/work/seal/context-window', {
+        workspace: seal('seal::/work/seal/context-window')
+      }),
+      session('b', 'idle', '/work/seal/mcp-fixes', {
+        workspace: seal('seal::/work/seal/mcp-fixes')
+      })
+    ]
+    expect(outline(groupLiveSessionsByWorkspace(sessions))).toEqual([
+      [
+        'seal',
+        [
+          ['/work/seal/context-window', 'laptop', ['a']],
+          ['/work/seal/mcp-fixes', 'laptop', ['b']]
         ]
       ]
     ])

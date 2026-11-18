@@ -27,7 +27,7 @@ function linkHostId(row: HostRow): string {
 /** Every workspace of this process's catalog a session can attach to. */
 export async function readLinkableWorkspaces(
   runtime: Pick<OrcaRuntimeService, 'listManagedWorktrees'>,
-  store: Pick<Store, 'getRepos' | 'getFolderWorkspaces'>
+  store: Pick<Store, 'getRepos' | 'getFolderWorkspaces' | 'getProjectGroups'>
 ): Promise<LinkableWorkspace[]> {
   const { worktrees } = await runtime.listManagedWorktrees(undefined, Number.MAX_SAFE_INTEGER)
   const repos = store.getRepos()
@@ -42,6 +42,7 @@ export async function readLinkableWorkspaces(
       {
         worktreeId: worktree.id,
         projectKey: getProjectIdentityKey(repo),
+        projectName: repo.displayName,
         hostId: isServedHere(repo)
           ? LOCAL_EXECUTION_HOST_ID
           : getWorktreeExecutionHostId(worktree, repo),
@@ -49,12 +50,17 @@ export async function readLinkableWorkspaces(
       }
     ]
   })
-  const folders = store.getFolderWorkspaces().map((folder): LinkableWorkspace => ({
-    worktreeId: folderWorkspaceKey(folder.id),
-    projectKey: folder.projectGroupId,
-    hostId: linkHostId(folder),
-    path: folder.folderPath
-  }))
+  const groups = new Map(store.getProjectGroups().map((group) => [group.id, group.name]))
+  const folders = store.getFolderWorkspaces().map((folder): LinkableWorkspace => {
+    const projectName = groups.get(folder.projectGroupId)
+    return {
+      worktreeId: folderWorkspaceKey(folder.id),
+      projectKey: folder.projectGroupId,
+      ...(projectName ? { projectName } : {}),
+      hostId: linkHostId(folder),
+      path: folder.folderPath
+    }
+  })
   return [...listed, ...folders]
 }
 
@@ -71,7 +77,9 @@ export function storedSessionWorkspace(
     return folder ? { worktreeId, projectKey: folder.projectGroupId } : null
   }
   const repo = store.getRepo(getRepoIdFromWorktreeId(worktreeId))
-  return repo ? { worktreeId, projectKey: getProjectIdentityKey(repo) } : null
+  return repo
+    ? { worktreeId, projectKey: getProjectIdentityKey(repo), projectName: repo.displayName }
+    : null
 }
 
 /** The last listing of linkable workspaces; read behind the callers, never in front of them. */
