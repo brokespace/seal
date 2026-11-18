@@ -150,7 +150,16 @@ async function reconcileHost(hostId: string): Promise<void> {
   ) {
     return
   }
-  if (!(await sendRegister(client, token, filter)) || hostsById.get(hostId) !== state) {
+  const outcome = await sendRegister(client, token, filter)
+  if (hostsById.get(hostId) !== state) {
+    return
+  }
+  if (outcome === 'no-gateway' && isCurrent()) {
+    // Relay-free hosts: present their socket notifications locally until a new connection retries.
+    state.supported = false
+    return
+  }
+  if (outcome !== 'registered') {
     return
   }
   if (generation !== consentGeneration) {

@@ -35,11 +35,14 @@ export const pushRouteUnregister = bindDeferredRpcOperation(
 
 const REQUEST_TIMEOUT_MS = 5_000
 
+/** `no-gateway`: the host cannot push at all, so its socket is the only delivery route. */
+export type PushRegisterOutcome = 'registered' | 'no-gateway' | 'failed'
+
 export async function sendRegister(
   client: UnvalidatedRpcRequestPort,
   token: MobilePushToken,
   filter: MobilePushFilter
-): Promise<boolean> {
+): Promise<PushRegisterOutcome> {
   const params: Omit<MobilePushRegisterInput, 'deviceId'> = {
     platform: token.platform,
     token: token.token,
@@ -51,9 +54,15 @@ export async function sendRegister(
     .catch(() => null)
   const registration = reply && pushRouteRegister.interpret(reply)
   if (!registration?.accepted) {
-    return false
+    return 'failed'
   }
-  return registration.value?.registered === true
+  const value = registration.value
+  if (value?.registered === true) {
+    return 'registered'
+  }
+  return value?.reason === 'gateway_unreachable' || value?.reason === 'gateway_rejected'
+    ? 'no-gateway'
+    : 'failed'
 }
 
 export async function sendUnregister(
