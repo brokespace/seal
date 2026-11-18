@@ -3,14 +3,9 @@ import type { SealProvider } from '../../shared/seal-accounts/seal-accounts-conf
 import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
 import type { SealLaunchPick } from '../../shared/seal-accounts/seal-launch-account-pick'
 import type { SealSessionAssignment } from '../../shared/seal-accounts/seal-accounts-status'
-import {
-  SEAL_CODEX_ACCOUNT_ID_ENV,
-  SEAL_SYSTEM_ACCOUNT
-} from '../../shared/seal-accounts/seal-launch-env'
-import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth/runtime-auth-types'
 import { getSystemCodexHomePath } from '../codex/configuration/homes/codex-home-paths'
 import { getSealAccountManager, type SealAccountManager } from './seal-account-manager'
-import { pinClaudeLaunch } from './seal-claude-launch-pin'
+import { routeSealLaunch, type SealLaunchRoute } from './seal-spawn-account'
 import { pickSealLaunch, sealProjectIdentity } from './seal-launch-pick-context'
 
 /**
@@ -20,11 +15,8 @@ import { pickSealLaunch, sealProjectIdentity } from './seal-launch-pick-context'
  */
 type ChatRecord = Pick<AgentSessionRecord, 'sessionId' | 'provider' | 'location'>
 
-export type SealChatLaunch = {
-  env: Record<string, string>
-  /** Claude's pinned config dir; null for Codex, whose pin travels in `env`. */
-  claudeAuth: ClaudeRuntimeAuthPreparation | null
-}
+/** `claudeAuth` is Claude's pinned config dir; null for Codex, whose pin travels in `env`. */
+export type SealChatLaunch = SealLaunchRoute
 
 function chatProvider(record: ChatRecord): SealProvider | null {
   // WSL chats keep Orca's own routing, as WSL terminal launches do.
@@ -58,9 +50,14 @@ function pickChatAccount(
   })
 }
 
-/** The subscription login a chat runs on; API keys and the host's own selection are left alone. */
-function chatLogin(pick: SealLaunchPick): SealAccountCandidate | null {
-  return pick.kind === 'account' && pick.candidate.kind === 'oauth' ? pick.candidate : null
+function pickedAccount(pick: SealLaunchPick): SealAccountCandidate | null {
+  return pick.kind === 'account' ? pick.candidate : null
+}
+
+/** A login the chat is pinned to; the host's selected account and API keys keep the host's home. */
+function pinnedLogin(pick: SealLaunchPick): SealAccountCandidate | null {
+  const candidate = pickedAccount(pick)
+  return candidate && candidate.kind !== 'api-key' && !candidate.active ? candidate : null
 }
 
 function claudeAccountId(manager: SealAccountManager, candidate: SealAccountCandidate) {
@@ -93,7 +90,7 @@ export function sealChatAccountHome(record: ChatRecord): string | null {
     return null
   }
   try {
-    const candidate = chatLogin(pickChatAccount(manager, provider, record))
+    const candidate = pinnedLogin(pickChatAccount(manager, provider, record))
     return candidate ? chatHome(manager, provider, candidate) : null
   } catch (error) {
     console.warn('[seal-accounts] Could not read a chat’s account; using the selected one:', error)
@@ -156,24 +153,19 @@ export async function prepareSealChatLaunch(
     console.warn('[seal-accounts] Chat account pick failed; using the selected account:', error)
     return null
   }
-  const login = chatLogin(pick)
+  const picked = pickedAccount(pick)
   const account =
-    login ?? manager.candidates(provider).find((candidate) => candidate.active) ?? null
+    picked ?? manager.candidates(provider).find((candidate) => candidate.active) ?? null
   recordChat(manager, provider, record, pick, account)
-  if (!login) {
+  if (!picked) {
     return null
   }
-  if (provider === 'codex') {
-    return {
-      env: { ...env, [SEAL_CODEX_ACCOUNT_ID_ENV]: login.localId ?? SEAL_SYSTEM_ACCOUNT },
-      claudeAuth: null
-    }
-  }
-  const pin = await pinClaudeLaunch({
-    router: manager.services.claudeRuntimeAuth.router,
-    dataRoot: manager.dataRoot,
-    accountId: claudeAccountId(manager, login),
-    env
-  })
-  return { env: pin.env, claudeAuth: pin.preparation }
+  // The same routing a terminal `claude` or `codex` gets, so both run on the picked account.
+  return routeSealLaunch(
+    manager,
+    provider,
+    picked,
+    { env, claudeAuth: null },
+    provider === 'claude'
+  )
 }

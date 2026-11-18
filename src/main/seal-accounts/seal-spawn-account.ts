@@ -43,9 +43,14 @@ function launchedProvider(input: SealSpawnAccountInput): SealProvider | null {
   return input.launchAgent === 'codex' ? 'codex' : null
 }
 
-type Applied = { env: Record<string, string>; claudeAuth: ClaudeRuntimeAuthPreparation | null }
+export type SealLaunchRoute = {
+  env: Record<string, string>
+  claudeAuth: ClaudeRuntimeAuthPreparation | null
+}
+type Applied = SealLaunchRoute
 
-async function routeTo(
+/** Routes one launch, a terminal agent's or a chat's, to the account Seal picked for it. */
+export async function routeSealLaunch(
   manager: SealAccountManager,
   provider: SealProvider,
   candidate: SealAccountCandidate,
@@ -170,7 +175,13 @@ export async function applySealSpawnAccount(
     }
     if (pick.kind === 'account' && !(launched === null && pick.candidate.kind === 'api-key')) {
       try {
-        applied = await routeTo(manager, provider, pick.candidate, applied, input.isClaudeLaunch)
+        applied = await routeSealLaunch(
+          manager,
+          provider,
+          pick.candidate,
+          applied,
+          input.isClaudeLaunch
+        )
         changed = true
       } catch (error) {
         if (ref) {
