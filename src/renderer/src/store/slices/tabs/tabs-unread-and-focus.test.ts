@@ -7,8 +7,7 @@ import { makeOpenFile } from '../editor/types/open-file.test-fixture'
 import { drawTabsFromMain } from './tabs-drawn-from-main.test-fixture'
 import { layoutApplyTestTransport } from '@/runtime/workspace-layout/testing/layout-apply-test-transport.test-fixture'
 import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../../../shared/layout-owner-switch'
-import { localAndSshTwinRows } from '@/lib/workspace/ownership/workspace-twin-rows.test-fixture'
-import type { AppState } from '../../types'
+import { makeWorktree } from '../worktrees/worktree.test-fixture'
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() } }))
 
@@ -74,10 +73,18 @@ describe('TabsSlice', () => {
 
     // The Files tab and other host-routed panels read the selection; it must follow the shown tab's machine.
     it('selects the copy of a twin workspace the activated tab runs on', () => {
-      const twin = localAndSshTwinRows('repo1', WT)
+      const repo = { path: '/tmp/repo', displayName: 'repo', badgeColor: '#000', addedAt: 1 }
       store.setState({
-        repos: twin.repos as unknown as AppState['repos'],
-        worktreesByRepo: twin.worktreesByRepo as unknown as AppState['worktreesByRepo'],
+        repos: [
+          { ...repo, id: 'repo1', executionHostId: 'local' },
+          { ...repo, id: 'repo1', connectionId: 'box', executionHostId: 'ssh:box' }
+        ],
+        worktreesByRepo: {
+          repo1: [
+            makeWorktree({ id: WT, repoId: 'repo1', hostId: 'local' }),
+            makeWorktree({ id: WT, repoId: 'repo1', hostId: 'ssh:box' })
+          ]
+        },
         activeWorktreeId: WT,
         activeWorkspaceExecutionHostId: 'local'
       })

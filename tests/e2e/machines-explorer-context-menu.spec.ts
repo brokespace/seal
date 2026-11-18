@@ -94,6 +94,7 @@ test.skip(localSshdUnavailableReason() !== null, localSshdUnavailableReason() ??
 
 test('every file context-menu action works on local, Seal-server and SSH machines', async (// oxlint-disable-next-line no-empty-pattern -- This test owns the app launch: it needs the sshd agent socket.
 {}, testInfo) => {
+  // Starts an sshd, a paired Seal server and the app, then connects both transports.
   test.setTimeout(10 * 60_000)
   const sshd = await startLocalSshdMachines([{ username: SSH_USER, loginShell: '/bin/bash' }])
   const appEnv = { SSH_AUTH_SOCK: sshd.agentSocket }
