@@ -22,6 +22,7 @@ import { createStructuredSessionInput } from './structured-session-input'
 import { createStructuredSessionJournalDetails } from './structured-session-journal-detail'
 import { createStructuredJournalTexts } from './structured-session-journal-texts'
 import { structuredLiveSession } from './structured-session-record'
+import { deleteChatTranscripts } from './structured-session-transcript-deletion'
 
 export type StructuredSessionAccess = {
   /** One record per chat this process's host owns. `sessions()` is synchronous: serve it from a cache. */
@@ -34,6 +35,8 @@ export type StructuredSessionAccess = {
   userTexts(sessionId: string, from: number): Promise<UserText[]>
   /** Ends the chat's agent (Remove with stop). True when it is stopped or was not running. */
   stop(sessionId: string): Promise<boolean>
+  /** Deletes the provider's transcript of the chat, found by its session id when the record names no file. */
+  deleteTranscripts(session: LiveSession): Promise<void>
   dispose(): void
 }
 
@@ -247,6 +250,7 @@ export function createStructuredSessionAccess(
       }
       return !current.loadedSessionIds().includes(sessionId)
     },
+    deleteTranscripts: deleteChatTranscripts,
     dispose: () => {
       disposed = true
       stopWatchingHeld()

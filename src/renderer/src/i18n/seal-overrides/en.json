@@ -856,7 +856,7 @@
           "stopRemoveDescription": "The agent process ends now and the session is hidden from Seal for good, even after a rescan. Its transcript stays on disk.",
           "stopRemoveAction": "Stop and remove",
           "removeTitle": "Remove {{count}} session(s) from Seal?",
-          "removeDescription": "Removed sessions stay hidden, even after Seal rescans. A running agent keeps running where it is, and nothing on disk changes.",
+          "removeDescription": "Removed sessions stay hidden, even after Seal rescans. A running agent keeps running where it is and a Seal chat’s tab closes; nothing on disk changes.",
           "removeAction": "Remove from Seal",
           "deleteTitle": "Delete {{count}} session(s) and their transcripts?",
           "deleteDescription": "A running agent is stopped first. These files are deleted for good; the conversation cannot be resumed afterwards:",

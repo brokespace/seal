@@ -10,6 +10,7 @@ import { LiveSessionJsonStore } from '../live-session-json-store'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import { sideBySideHosts } from '../hosts/side-by-side-host-run'
 import { stopAgentScript } from './session-take-over'
+import type { StructuredSessionAccess } from '../sources/structured-session-source'
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 
 type Removal = { sessionId: string; removedAt: number }
@@ -86,7 +87,7 @@ export async function removeFromOwner(
     server: {
       remove(sessionId: string, request: LiveRemoveRequest): Promise<'removed' | 'still_running'>
     } | null
-    chats: { stop(chatSessionId: string): Promise<boolean> } | null
+    chats: Pick<StructuredSessionAccess, 'stop' | 'deleteTranscripts'> | null
     host: LiveSessionHost | null
   }
 ): Promise<'removed' | 'still_running'> {
@@ -103,7 +104,13 @@ export async function removeFromOwner(
     }
     // The chat's host ends its agent: a signal to the pid would leave the host holding a dead chat.
     const stopped = !request.stop || ((await owner.chats?.stop(chat)) ?? true)
-    return stopped ? 'removed' : 'still_running'
+    if (!stopped) {
+      return 'still_running'
+    }
+    if (request.deleteTranscripts) {
+      await owner.chats?.deleteTranscripts(session)
+    }
+    return 'removed'
   }
   return owner.host ? removeFromHost(session, owner.host, request) : 'removed'
 }

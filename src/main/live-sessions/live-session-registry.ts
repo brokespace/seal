@@ -123,8 +123,9 @@ export class LiveSessionRegistry {
     }
   }
 
-  get(sessionId: string): LiveSession | null {
-    return this.published.get(sessionId)
+  /** `orRemoved`: a session the user removed, as its machine still reports it. */
+  get(sessionId: string, orRemoved = false): LiveSession | null {
+    return this.published.get(sessionId) ?? (orRemoved ? this.published.removed(sessionId) : null)
   }
 
   /** Seal resumed a closed session headless as `pid`: the transcript's fresh writes are its own. */
@@ -323,8 +324,8 @@ export class LiveSessionRegistry {
       this.statusHold.settle(session, this.hosts.get(session.machine.hostId)?.scans ?? 0, now)
     )
     // A server's records were settled by its own registry.
-    const merged = [...local, ...(this.deps.federation?.source.sessions() ?? [])]
-      .filter((session) => !this.deps.isRemoved?.(session))
+    const merged = this.published
+      .withoutRemoved(this.deps.isRemoved, local, this.deps.federation?.source.sessions() ?? [])
       .map((session) => this.deps.annotate?.(session) ?? session)
       .map((session) => this.deps.link?.(session) ?? session)
       .map((session) => this.decorator?.(session) ?? session)

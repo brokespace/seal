@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
+import { useAppStore } from '@/store/index'
 import { errorMessage } from '../../../../../shared/error-message'
 import { liveSessionTranscriptFiles } from '../../../../../shared/live-sessions/live-session-transcript-files'
 import type {
@@ -29,7 +30,7 @@ import {
   useLiveSessionDialog,
   type LiveSessionDialog
 } from './live-session-dialog-store'
-import { removeRequestFor, type LiveSessionDangerKind } from './live-session-menu'
+import { chatTabsClosedBy, removeRequestFor, type LiveSessionDangerKind } from './live-session-menu'
 
 const close = (): void => liveSessionDialogStore.show(null)
 
@@ -233,7 +234,7 @@ function dangerCopy(
         ),
         description: t(
           'auto.components.live-sessions.danger.removeDescription',
-          'Removed sessions stay hidden, even after Seal rescans. A running agent keeps running where it is, and nothing on disk changes.'
+          'Removed sessions stay hidden, even after Seal rescans. A running agent keeps running where it is and a Seal chat’s tab closes; nothing on disk changes.'
         ),
         action: t('auto.components.live-sessions.danger.removeAction', 'Remove from Seal')
       }
@@ -293,6 +294,10 @@ function DangerDialog({
       ? sessions.flatMap((session) => liveSessionTranscriptFiles(session))
       : []
   const confirm = () => {
+    const state = useAppStore.getState()
+    for (const tabId of chatTabsClosedBy(danger, sessions, state.unifiedTabsByWorktree)) {
+      state.closeUnifiedTab(tabId)
+    }
     // The host hides the sessions at once and stops them behind that: the dialog does not wait for it.
     void removeLiveSessions(removeRequestFor(danger, sessions), sessions, t)
     // A bulk action is over once it ran.
