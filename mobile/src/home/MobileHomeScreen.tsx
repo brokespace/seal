@@ -193,11 +193,7 @@ export function MobileHomeScreen() {
                     onOpenTasks={openTasks}
                   />
                 ) : id === 'agents' ? (
-                  <MobileHomeAgentsTab
-                    data={data}
-                    bottomInset={contentBottom}
-                    handlers={agentActions.handlers}
-                  />
+                  <MobileHomeAgentsTab data={data} bottomInset={contentBottom} />
                 ) : id === 'usage' ? (
                   <MobileHomeUsageTab
                     hosts={data.sortedHosts}
