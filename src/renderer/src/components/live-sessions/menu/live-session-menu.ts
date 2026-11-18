@@ -68,7 +68,7 @@ export type LiveSessionMenuEffects = {
   copy: (text: string, what: 'session-id' | 'resume-command') => void
   swapAccount: (session: LiveSession, accountKey: string) => void
   takeOver: (session: LiveSession) => void
-  openWorktree: (worktreeId: string) => void
+  openWorktree: (worktreeId: string, session: LiveSession) => void
   openMachine: (session: LiveSession) => void
   revealTranscript: (session: LiveSession) => void
   /** Shows what will happen and only acts once the user agrees. */
@@ -217,7 +217,7 @@ export function runLiveSessionMenuItem(
       return effects.takeOver(session)
     case 'open-worktree':
       if (context.worktreeId) {
-        effects.openWorktree(context.worktreeId)
+        effects.openWorktree(context.worktreeId, session)
       }
       return
     case 'open-machine':

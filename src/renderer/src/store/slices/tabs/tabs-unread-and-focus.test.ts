@@ -7,6 +7,8 @@ import { makeOpenFile } from '../editor/types/open-file.test-fixture'
 import { drawTabsFromMain } from './tabs-drawn-from-main.test-fixture'
 import { layoutApplyTestTransport } from '@/runtime/workspace-layout/testing/layout-apply-test-transport.test-fixture'
 import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../../../shared/layout-owner-switch'
+import { localAndSshTwinRows } from '@/lib/workspace/ownership/workspace-twin-rows.test-fixture'
+import type { AppState } from '../../types'
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() } }))
 
@@ -68,6 +70,29 @@ describe('TabsSlice', () => {
       } finally {
         main.close()
       }
+    })
+
+    // The Files tab and other host-routed panels read the selection; it must follow the shown tab's machine.
+    it('selects the copy of a twin workspace the activated tab runs on', () => {
+      const twin = localAndSshTwinRows('repo1', WT)
+      store.setState({
+        repos: twin.repos as unknown as AppState['repos'],
+        worktreesByRepo: twin.worktreesByRepo as unknown as AppState['worktreesByRepo'],
+        activeWorktreeId: WT,
+        activeWorkspaceExecutionHostId: 'local'
+      })
+      const sshTab = store.getState().createUnifiedTab(WT, 'terminal', {
+        executionHostId: 'ssh:box'
+      })
+      const localTab = store.getState().createUnifiedTab(WT, 'terminal', {
+        executionHostId: 'local'
+      })
+
+      store.getState().activateTab(sshTab.id)
+      expect(store.getState().activeWorkspaceExecutionHostId).toBe('ssh:box')
+
+      store.getState().activateTab(localTab.id)
+      expect(store.getState().activeWorkspaceExecutionHostId).toBe('local')
     })
   })
 
