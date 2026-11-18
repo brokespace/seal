@@ -1,5 +1,8 @@
 import React from 'react'
+import { toast } from 'sonner'
 import { useTranslate } from '@/i18n/use-translate'
+import { formatClipboardFilePath } from '@/lib/clipboard/clipboard-file-path'
+import { describeClipboardWriteFailure } from '@/lib/clipboard/clipboard-write-failure'
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -15,7 +18,7 @@ export function MachineExplorerMenu({
   menuRow,
   menuDir,
   selectedPaths,
-  machineKind,
+  machine,
   onOpen,
   editorLabel,
   onOpenInEditor,
@@ -24,14 +27,24 @@ export function MachineExplorerMenu({
   menuRow: EntryRow | null
   menuDir: string | null
   selectedPaths: string[]
-  machineKind: MachineSummary['connection']
+  machine: Pick<MachineSummary, 'connection' | 'executionHostId'>
   onOpen: (row: EntryRow) => void
   editorLabel: string
   onOpenInEditor: (row: EntryRow) => void
   actions: MachineFileActions
 }): React.JSX.Element {
   const t = useTranslate()
-  const isRemote = machineKind !== 'local'
+  const isRemote = machine.connection !== 'local'
+  const copyPath = (path: string): void => {
+    window.api.ui
+      .writeClipboardText(formatClipboardFilePath(path, machine.executionHostId))
+      .catch((error: unknown) =>
+        toast.error(
+          describeClipboardWriteFailure(error) ??
+            t('auto.components.machines.menu.copyPathFailed', 'Could not copy the path.')
+        )
+      )
+  }
   return (
     <ContextMenuContent className="min-w-44">
       {menuRow ? (
@@ -50,7 +63,7 @@ export function MachineExplorerMenu({
         </ContextMenuItem>
       ) : null}
       {menuRow ? (
-        <ContextMenuItem onSelect={() => void navigator.clipboard.writeText(menuRow.path)}>
+        <ContextMenuItem onSelect={() => copyPath(menuRow.path)}>
           {t('auto.components.machines.menu.copyPath', 'Copy path')}
         </ContextMenuItem>
       ) : null}

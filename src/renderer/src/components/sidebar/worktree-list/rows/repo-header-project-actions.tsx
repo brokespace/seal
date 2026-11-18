@@ -84,7 +84,7 @@ function getWorktreeVisibilityMenuLabel(
 
 export type RepoHeaderProjectActions = {
   getWorktreeVisibilityDefaults: (repo: Repo) => WorktreeVisibilityDefaults | undefined
-  onOpenRepoSettings: (projectId: string, sectionId?: string) => void
+  onOpenRepoSettings: (repo: Repo, sectionId?: string) => void
   onOpenProjectOverview: (repo: Repo) => void
   onOpenWorktreeVisibility: (repo: Repo) => void
   onCreateGroupFromRepo: (repo: Repo) => void
@@ -175,20 +175,18 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
             openItemsInSplitView([{ kind: 'project', ...projectOverviewTargetFor(repo) }], zone)
           }
         />
-        <DropdownMenuItem onSelect={() => actions.onOpenRepoSettings(repo.id)}>
+        <DropdownMenuItem onSelect={() => actions.onOpenRepoSettings(repo)}>
           <SlidersHorizontal className="size-3.5" />
           {t('auto.components.sidebar.WorktreeList.2cdffbc728', 'Project Settings')}
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() =>
-            actions.onOpenRepoSettings(repo.id, getRepositoryAccountsSectionId(repo.id))
-          }
+          onSelect={() => actions.onOpenRepoSettings(repo, getRepositoryAccountsSectionId(repo.id))}
         >
           <UserRound className="size-3.5" />
           {t('seal.accounts.project.menu', 'Account Settings')}
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() => actions.onOpenRepoSettings(repo.id, getRepositoryIconSectionId(repo.id))}
+          onSelect={() => actions.onOpenRepoSettings(repo, getRepositoryIconSectionId(repo.id))}
         >
           <Shapes className="size-3.5" />
           {t('auto.components.sidebar.WorktreeList.e82d3589a1', 'Change Project Icon')}

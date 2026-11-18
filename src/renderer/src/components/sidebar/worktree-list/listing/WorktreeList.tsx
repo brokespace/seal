@@ -12,6 +12,7 @@ import { useRepoMap } from '@/store/repos/use-repository-catalog'
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { Repo } from '../../../../../../shared/repo-types'
 import { openHeaderCreateComposer } from '../rows/header-create-workspace-target'
+import { openProjectSettings } from '@/components/project-overview/project-overview-actions'
 import {
   getRepoExecutionHostId,
   getSettingsFocusedExecutionHostId
@@ -103,8 +104,6 @@ const WorktreeList = React.memo(function WorktreeList({
   const sortBy = useAppStore((s) => s.sortBy)
   const projectOrderBy = useAppStore((s) => s.projectOrderBy)
   const openModal = useAppStore((s) => s.openModal)
-  const openSettingsPage = useAppStore((s) => s.openSettingsPage)
-  const openSettingsTarget = useAppStore((s) => s.openSettingsTarget)
   const activeView = useAppStore((s) => s.activeView)
   const activeModal = useAppStore((s) => s.activeModal)
   const pendingRevealWorktree = useAppStore((s) => s.pendingRevealWorktree)
@@ -205,13 +204,6 @@ const WorktreeList = React.memo(function WorktreeList({
     markSidebarWorktreeActiveImmediately(worktreeId, rowKey, !isSessionOnViewIn(worktreeId))
   }, [])
 
-  const handleOpenRepoSettings = useCallback(
-    (projectId: string, sectionId?: string) => {
-      openSettingsTarget({ pane: 'repo', repoId: projectId, ...(sectionId ? { sectionId } : {}) })
-      openSettingsPage()
-    },
-    [openSettingsPage, openSettingsTarget]
-  )
   const handleOpenWorktreeVisibility = useCallback(
     (repo: Repo) => {
       openModal('worktree-visibility', { repoId: repo.id, hostId: getRepoExecutionHostId(repo) })
@@ -342,7 +334,7 @@ const WorktreeList = React.memo(function WorktreeList({
         onToggleAllProjects={projectCollapseKeys.length > 0 ? handleToggleAllProjects : undefined}
         collapsedGroups={effectiveCollapsedGroups}
         handleCreateForRepo={openHeaderCreateComposer}
-        handleOpenRepoSettings={handleOpenRepoSettings}
+        handleOpenRepoSettings={openProjectSettings}
         handleOpenWorktreeVisibility={handleOpenWorktreeVisibility}
         handleShowImportedWorktrees={externalWorktreeCards.handleShowImportedWorktrees}
         handleKeepImportedWorktreesHidden={externalWorktreeCards.handleKeepImportedWorktreesHidden}
