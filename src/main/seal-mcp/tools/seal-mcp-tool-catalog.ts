@@ -39,13 +39,19 @@ const HOME_CHAT_EXPOSED = {
   list_skills: { scopes: ['read'], risk: 'read', machineArgs: MACHINE, defaultsToLocal: true },
   load_skill: { scopes: ['read'], risk: 'read', machineArgs: MACHINE, defaultsToLocal: true },
   message_session: { scopes: ['sessions'], risk: 'write' },
+  take_over_session: {
+    scopes: ['sessions', 'destructive'],
+    risk: 'destructive',
+    description:
+      'Take over an agent session that runs outside Seal: Seal stops that process and resumes the same conversation in a Seal pane, where the user can watch it and you can keep messaging it. Needs Seal open with a workspace on that machine. May wait for the user to approve it in the Seal app.'
+  },
   start_session: {
     scopes: ['sessions'],
     risk: 'write',
     machineArgs: MACHINE,
     defaultsToLocal: true,
     description:
-      'Start a coding agent session on any machine. With worktree, the agent starts in that existing workspace (see list_workspaces); with project, Seal creates a new worktree on a feature branch first (see list_projects). The session shows up in Seal and in list_sessions; follow it with read_session and steer it with message_session.'
+      'Start a coding agent on any machine as a Seal chat, the same as the New chat button, with the agent, model and first prompt you choose. With worktree, it starts in that existing workspace (see list_workspaces); with cwd, in the workspace that holds that folder; with project, Seal creates a new worktree on a feature branch first (see list_projects). The answer gives the session id; follow it with read_session, steer it with message_session and end it with stop_session.'
   },
   read_file: { scopes: ['files'], risk: 'read', machineArgs: MACHINE },
   write_file: { scopes: ['files'], risk: 'write', machineArgs: MACHINE },
@@ -105,6 +111,17 @@ export const SEAL_MCP_RPC_TOOLS = {
     },
     scopes: ['read'],
     risk: 'read'
+  },
+  answer_permission: {
+    description:
+      "Answer the question a session waits on when list_sessions or read_session shows it as needs-permission: pick one of the options it lists (allow once, always allow, deny, ...). Answer only what the user's instructions cover.",
+    shape: {
+      session_id: z.string().min(1).describe('Session id from list_sessions'),
+      prompt_id: z.string().min(1).describe('The prompt id the session shows'),
+      option_id: z.string().min(1).describe('One of the option ids the session shows')
+    },
+    scopes: ['sessions'],
+    risk: 'write'
   },
   stop_session: {
     description:

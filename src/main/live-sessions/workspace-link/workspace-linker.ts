@@ -56,19 +56,17 @@ export type WorkspaceLinkerDeps = {
   log?: (message: string, error?: unknown) => void
 }
 
+/** Where a session belongs: the folder it started in, so changing folder never moves it to another project. */
 function folderPlace(session: LiveSession): FolderPlace | null {
-  if (!session.cwd) {
+  const cwd = session.startCwd ?? session.cwd
+  if (!cwd) {
     return null
   }
   const hostId =
     session.machine.kind === 'local'
       ? LOCAL_EXECUTION_HOST_ID
       : liveSessionExecutionHost(session.machine)
-  return {
-    hostId,
-    cwd: session.cwd,
-    key: `${hostId}\0${normalizeRuntimePathForComparison(session.cwd)}`
-  }
+  return { hostId, cwd, key: `${hostId}\0${normalizeRuntimePathForComparison(cwd)}` }
 }
 
 function sessionWorkspace(workspace: SessionWorkspace): SessionWorkspace {

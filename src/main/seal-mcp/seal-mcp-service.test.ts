@@ -155,7 +155,8 @@ describe('SealMcpService scopes', () => {
       'write_file',
       'transfer_file',
       'list_projects',
-      'list_workspaces'
+      'list_workspaces',
+      'answer_permission'
     ])
   })
 
@@ -397,7 +398,19 @@ describe('SealMcpService start_session with a machine allowlist', () => {
     const allowed = await callTool(token, 'start_session', { prompt: 'go', worktree: 'w-1' })
     expect(allowed.isError).toBe(false)
     expect(host.cliRuns).toEqual([
-      ['agent', 'launch', '--agent', 'claude', '--worktree', 'id:w-1', '--prompt', 'go', '--json']
+      [
+        'agent',
+        'launch',
+        '--worktree',
+        'id:w-1',
+        '--agent',
+        'claude',
+        '--surface',
+        'chat',
+        '--prompt',
+        'go',
+        '--json'
+      ]
     ])
   })
 
@@ -422,6 +435,8 @@ describe('SealMcpService start_session with a machine allowlist', () => {
         'run-1',
         '--agent',
         'claude',
+        '--surface',
+        'chat',
         '--prompt',
         'train',
         '--host',

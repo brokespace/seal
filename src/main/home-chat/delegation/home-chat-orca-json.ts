@@ -35,6 +35,36 @@ export function agentTerminalHandle(json: unknown): string | null {
   return typeof handle === 'string' && handle ? handle : null
 }
 
+/** `agent launch --json` or `worktree create --agent --json`: the chat session it started, if one. */
+export function launchedChatSessionId(json: unknown): string | null {
+  const outcome = field(result(json), 'outcome') ?? field(result(json), 'launch', 'outcome')
+  const id = field(outcome, 'kind') === 'structured' ? field(outcome, 'sessionId') : undefined
+  return typeof id === 'string' && id ? id : null
+}
+
+/** `worktree list --json`: each workspace's id, folder and host. */
+export function listedWorktrees(
+  json: unknown
+): { id: string; repoId: string; path: string; hostId: string | null }[] {
+  const rows = field(result(json), 'worktrees')
+  return (Array.isArray(rows) ? rows : []).flatMap((row) => {
+    const id = field(row, 'id')
+    const path = field(row, 'path')
+    const repoId = field(row, 'repoId')
+    const hostId = field(row, 'hostId')
+    return typeof id === 'string' && typeof path === 'string'
+      ? [
+          {
+            id,
+            path,
+            repoId: typeof repoId === 'string' ? repoId : '',
+            hostId: typeof hostId === 'string' ? hostId : null
+          }
+        ]
+      : []
+  })
+}
+
 export function worktreeSelector(json: unknown): string | null {
   const worktree = field(result(json), 'worktree')
   const id = field(worktree, 'id')

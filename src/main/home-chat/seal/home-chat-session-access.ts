@@ -5,8 +5,10 @@ import type {
   AgentSessionSurface,
   LiveMessage,
   LiveSession,
+  LiveSessionPermissionPrompt,
   LiveSessionRegistrySnapshot,
   LiveSessionStatus,
+  LiveTranscriptCursor,
   LiveTranscriptPage
 } from '../../../shared/live-sessions/live-session-types'
 import {
@@ -19,6 +21,8 @@ const MAX_MESSAGE_CHARS = 1_500
 /** How long a send waits to learn whether the message reached the session or failed. */
 const SEND_SETTLE_MS = 20_000
 const SEND_POLL_MS = 200
+/** How far back a latest-turn read looks for the message that started the turn. */
+const MAX_TURN_PAGES = 10
 
 export type HomeChatSessionSummary = {
   id: string
@@ -28,6 +32,8 @@ export type HomeChatSessionSummary = {
   machineLabel: string
   /** A Seal chat, an agent in a Seal pane, or a session found running outside Seal. */
   surface: AgentSessionSurface['kind']
+  /** A Seal chat's own session id, as `agent launch` reports it. */
+  chatSessionId: string | null
   cwd: string | null
   /** The project and workspace it is listed under, as `seal sessions list` shows them. */
   place: LiveSessionPlace
@@ -42,6 +48,26 @@ export type HomeChatSessionSummary = {
   /** Its agent process runs; a chat at rest has none. */
   alive: boolean
   canTakeOver: boolean
+  /** The question it waits on while `needs-permission`, with the options that answer it. */
+  permission: LiveSessionPermissionPrompt | null
+}
+
+export type HomeChatTranscriptRead = {
+  limit: number
+  /** Read the messages before this offset: a page's `start`, to page back. Null reads the newest. */
+  before: LiveTranscriptCursor | null
+  /** Only the newest turn: the last user message and everything after it. */
+  latestTurn: boolean
+  /** Keep long messages whole instead of shortening each one. */
+  fullText: boolean
+}
+
+export type HomeChatTranscriptExcerpt = {
+  text: string
+  /** Offset of the oldest message shown; pass as `before` to read further back. */
+  start: LiveTranscriptCursor
+  /** Older messages exist before `start`. */
+  more: boolean
 }
 
 export type HomeChatSessionDelivery = {
@@ -55,7 +81,10 @@ export type HomeChatSessionAccess = {
   list: () => Promise<{ sessions: HomeChatSessionSummary[]; errors: string[] }>
   /** The id a session goes by now: a new chat or agent gets another once its agent names it. */
   currentId: (sessionId: string) => string
-  transcript: (sessionId: string, limit: number) => Promise<string>
+  transcript: (
+    sessionId: string,
+    read: HomeChatTranscriptRead
+  ) => Promise<HomeChatTranscriptExcerpt>
   send: (sessionId: string, text: string) => Promise<HomeChatSessionDelivery>
 }
 
@@ -64,7 +93,11 @@ export type HomeChatLiveSessions = {
   registry: { currentId: (sessionId: string) => string }
   snapshot: () => LiveSessionRegistrySnapshot
   refresh: () => Promise<void>
-  transcriptPage: (sessionId: string, before: null, limit?: number) => Promise<LiveTranscriptPage>
+  transcriptPage: (
+    sessionId: string,
+    before: LiveTranscriptCursor | null,
+    limit?: number
+  ) => Promise<LiveTranscriptPage>
   send: (request: { sessionId: string; messageId: string; text: string }) => Promise<LiveMessage>
   messages: (sessionId?: string) => LiveMessage[]
 }
@@ -76,6 +109,7 @@ function summarize(session: LiveSession): HomeChatSessionSummary {
     machineId: liveSessionMachineId(session.machine),
     machineLabel: session.machine.label,
     surface: session.surface.kind,
+    chatSessionId: session.surface.kind === 'chat' ? session.surface.sessionId : null,
     cwd: session.cwd,
     place: liveSessionPlaceOf(session),
     worktreeId: session.workspace?.worktreeId ?? null,
@@ -85,7 +119,8 @@ function summarize(session: LiveSession): HomeChatSessionSummary {
     lastActivityAt: session.lastActivityAt,
     active: isActiveLiveSession(session),
     alive: session.alive,
-    canTakeOver: session.capabilities.takeOver
+    canTakeOver: session.capabilities.takeOver,
+    permission: session.status === 'needs-permission' ? session.permission : null
   }
 }
 
@@ -96,17 +131,46 @@ function blockText(block: NativeChatMessage['blocks'][number]): string {
   return block.type === 'tool-call' ? `[ran ${block.name}]` : ''
 }
 
-function renderSessionTranscript(messages: readonly NativeChatMessage[]): string {
+function renderSessionTranscript(
+  messages: readonly NativeChatMessage[],
+  fullText: boolean
+): string {
   const lines = messages.flatMap((message) => {
     const text = message.blocks.map(blockText).filter(Boolean).join('\n').trim()
     if (!text) {
       return []
     }
     const clipped =
-      text.length > MAX_MESSAGE_CHARS ? `${text.slice(0, MAX_MESSAGE_CHARS)} ...` : text
+      !fullText && text.length > MAX_MESSAGE_CHARS
+        ? `${text.slice(0, MAX_MESSAGE_CHARS)} ...`
+        : text
     return [`${message.role}: ${clipped}`]
   })
-  return lines.join('\n\n') || 'The transcript has no readable messages yet.'
+  return lines.join('\n\n') || 'The transcript has no readable messages here.'
+}
+
+const isUserTurnStart = (message: NativeChatMessage): boolean =>
+  message.role === 'user' && message.blocks.some((block) => block.type === 'text')
+
+/** The newest turn: pages back from `before` until the user message that started it. */
+async function readLatestTurn(
+  live: HomeChatLiveSessions,
+  sessionId: string,
+  read: HomeChatTranscriptRead
+): Promise<{ messages: NativeChatMessage[]; start: LiveTranscriptCursor; more: boolean }> {
+  let messages: NativeChatMessage[] = []
+  let page = await live.transcriptPage(sessionId, read.before, read.limit)
+  for (let pages = 1; ; pages++) {
+    messages = [...page.messages, ...messages]
+    const from = messages.findLastIndex(isUserTurnStart)
+    if (from !== -1) {
+      return { messages: messages.slice(from), start: page.start, more: from > 0 || page.more }
+    }
+    if (!page.more || pages >= MAX_TURN_PAGES) {
+      return { messages, start: page.start, more: page.more }
+    }
+    page = await live.transcriptPage(sessionId, page.start, read.limit)
+  }
 }
 
 function delivery(message: LiveMessage): HomeChatSessionDelivery {
@@ -140,10 +204,17 @@ export function createHomeChatSessionAccess(deps: {
       }
     },
     currentId: (sessionId) => deps.live()?.registry.currentId(sessionId) ?? sessionId,
-    transcript: async (sessionId, limit) =>
-      renderSessionTranscript(
-        (await requireLive().transcriptPage(sessionId, null, limit)).messages
-      ),
+    transcript: async (sessionId, read) => {
+      const live = requireLive()
+      const page = read.latestTurn
+        ? await readLatestTurn(live, sessionId, read)
+        : await live.transcriptPage(sessionId, read.before, read.limit)
+      return {
+        text: renderSessionTranscript(page.messages, read.fullText),
+        start: page.start,
+        more: page.more
+      }
+    },
     send: async (sessionId, text) => {
       const live = requireLive()
       let message = await live.send({ sessionId, messageId: randomUUID(), text })

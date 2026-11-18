@@ -16,8 +16,22 @@ export const HOME_CHAT_SEAL_TOOLS = {
   },
   read_session: {
     description:
-      "Read the newest messages of an agent session's transcript (what the user asked it and what it answered and ran).",
-    shape: { session_id: sessionId, limit: z.number().int().min(1).max(100).optional() }
+      'Read an agent session: its status (and the question it waits on, if any), then its transcript: what it was asked and what it answered and ran. Shows the newest messages; page back through the whole history with before, which each answer gives. latest_turn shows only the newest turn: the last message it was sent and everything since.',
+    shape: {
+      session_id: sessionId,
+      limit: z.number().int().min(1).max(100).optional().describe('Messages per read (default 20)'),
+      before: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe('Read the messages before this point: the value an earlier read_session gave'),
+      latest_turn: z.boolean().optional().describe('Only the newest turn'),
+      full_text: z
+        .boolean()
+        .optional()
+        .describe('Keep long messages whole (default: each is shortened to 1,500 characters)')
+    }
   },
   message_session: {
     description:
@@ -31,16 +45,28 @@ export const HOME_CHAT_SEAL_TOOLS = {
   },
   start_session: {
     description:
-      'Start a coding agent session on any machine. With worktree, the agent starts in that existing workspace; with project, Seal creates a new worktree on a feature branch first. The session shows up in Seal like any other and in list_sessions. For work you want to supervise to completion and be notified about, prefer spawn_subagent.',
+      'Start a coding agent on any machine as a Seal chat, the same as the New chat button. With worktree, it starts in that existing workspace; with cwd, in the workspace that holds that folder; with project, Seal creates a new worktree on a feature branch first. The session shows up in Seal like any other and in list_sessions; the answer gives its id. For work you want to supervise to completion and be notified about, prefer spawn_subagent.',
     shape: {
-      prompt: z.string().min(1).describe('The first message for the agent'),
+      prompt: z
+        .string()
+        .optional()
+        .describe('The first message for the agent; leave out to open the chat idle'),
       agent: z.string().optional().describe('Agent id: claude (default), codex, ...'),
+      model: z
+        .string()
+        .optional()
+        .describe("The agent's model id, e.g. opus or gpt-5-codex (default: the agent's own)"),
+      effort: z.string().optional().describe('Reasoning effort for that model; needs model'),
       machine: z.string().optional().describe('Machine id or label; defaults to this computer'),
-      project: z.string().optional().describe('Project id or name (see seal_cli project list)'),
+      project: z.string().optional().describe('Project id or name'),
       worktree: z
         .string()
         .optional()
         .describe('Existing workspace selector, e.g. "path:/srv/app" or "worktree:<id>"'),
+      cwd: z
+        .string()
+        .optional()
+        .describe('A folder on the machine: the chat starts in the Seal workspace that holds it'),
       name: z.string().optional().describe('Name for the new worktree when project is given')
     }
   },

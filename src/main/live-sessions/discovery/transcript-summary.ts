@@ -58,6 +58,8 @@ export type TranscriptSummary = TranscriptTurn & {
   provider: LiveSessionProvider
   providerSessionId: string
   cwd: string | null
+  /** The folder it started in, from the transcript's first records. */
+  startCwd: string | null
   title: string | null
   /** The title is a name the user gave the session in the agent, not a prompt or the agent's summary. */
   titleNamed?: true
@@ -181,11 +183,13 @@ export function summarizeClaudeTranscript(input: TranscriptEnds): TranscriptSumm
   const all = [...head, ...tail]
   const id = basename(input.path).replace(/\.jsonl$/, '')
   let cwd: string | null = null
+  let startCwd: string | null = null
   let customTitle: string | null = null
   let summary: string | null = null
   let approvalMode: string | null = null
   for (const record of all) {
     cwd = str(record.cwd) ?? cwd
+    startCwd ??= cwd
     if (record.type === 'custom-title') {
       customTitle = str(record.customTitle) ?? customTitle
     } else if (record.type === 'summary') {
@@ -203,6 +207,7 @@ export function summarizeClaudeTranscript(input: TranscriptEnds): TranscriptSumm
     provider: 'claude',
     providerSessionId: id,
     cwd,
+    startCwd,
     title: customTitle ?? summary ?? (firstPrompt ? oneLine(firstPrompt, 80) : null),
     ...(customTitle ? { titleNamed: true as const } : {}),
     ...claudePhase(tail.length > 0 ? tail : head),
@@ -227,6 +232,7 @@ export function summarizeCodexRollout(input: TranscriptEnds): TranscriptSummary 
   const all = [...head, ...tail]
   let id = UUID.exec(basename(input.path))?.[1] ?? basename(input.path)
   let cwd: string | null = null
+  let startCwd: string | null = null
   let headless: boolean | null = null
   let spawn: TranscriptRecord | null = null
   let meta: TranscriptRecord | null = null
@@ -237,10 +243,12 @@ export function summarizeCodexRollout(input: TranscriptEnds): TranscriptSummary 
       headless ??= payload?.source === 'exec' || payload?.originator === 'codex_exec'
       id = str(payload?.id) ?? id
       cwd = str(payload?.cwd) ?? cwd
+      startCwd ??= cwd
       meta ??= payload
       spawn ??= rec(rec(rec(payload?.source)?.subagent)?.thread_spawn)
     } else if (record.type === 'turn_context') {
       cwd = str(payload?.cwd) ?? cwd
+      startCwd ??= cwd
       approvalMode = str(payload?.approval_policy) ?? approvalMode
     }
   }
@@ -253,6 +261,7 @@ export function summarizeCodexRollout(input: TranscriptEnds): TranscriptSummary 
     provider: 'codex',
     providerSessionId: id,
     cwd,
+    startCwd,
     title: firstPrompt ? oneLine(firstPrompt, 80) : null,
     ...codexPhase(tail.length > 0 ? tail : head),
     approvalMode,

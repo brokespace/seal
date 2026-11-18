@@ -264,6 +264,7 @@ export class HostSessionScanner {
         ...summary,
         title: summary.title ?? cached?.summary.title ?? null,
         cwd: summary.cwd ?? cached?.summary.cwd ?? null,
+        startCwd: summary.startCwd ?? cached?.summary.startCwd ?? null,
         firstAt: summary.firstAt ?? cached?.summary.firstAt ?? null,
         lastMessage: summary.lastMessage ?? cached?.summary.lastMessage ?? null,
         context,
