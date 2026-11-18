@@ -127,7 +127,7 @@ function windowSessionName(
 }
 
 /** Reads the clock as the agent rows' own selector does: each new `rows` carries a fresh decay state. */
-function windowSessionBuilder(
+export function windowSessionBuilder(
   worktreeId: string,
   all: readonly LiveSession[]
 ): WorkspaceSessionListInputs['build'] {

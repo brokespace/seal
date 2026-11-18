@@ -214,6 +214,11 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
       set({ showAgentModels: show })
       window.api.ui.set({ showAgentModels: show }).catch(console.error)
     },
+    hideSidebarWorkspaces: true,
+    setHideSidebarWorkspaces: (hide) => {
+      set({ hideSidebarWorkspaces: hide })
+      window.api.ui.set({ hideSidebarWorkspaces: hide }).catch(console.error)
+    },
     agentActivityDisplayMode: DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE,
     setAgentActivityDisplayMode: (mode) => {
       const normalized = normalizeAgentActivityDisplayMode(mode)

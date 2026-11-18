@@ -1,11 +1,12 @@
 import React from 'react'
-import { Ellipsis, Plus, RefreshCw } from 'lucide-react'
+import { Ellipsis, EyeOff, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/class-names'
@@ -15,6 +16,7 @@ import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { FolderWorkspacePathStatus } from '../../../../../../shared/folder-workspaces/folder-workspace-path-status'
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
 import { getFolderProjectGroupRefreshHandler } from './project-group-folder-refresh'
+import { setProjectGroupHidden } from '../../hidden-projects/set-project-hidden'
 import { REPO_HEADER_ACTION_BUTTON_CLASS } from './repo-header-action-button-class'
 import {
   handleRepoHeaderActionPointerDown,
@@ -22,11 +24,24 @@ import {
   stopRepoHeaderMenuEvent
 } from './header-event-guards'
 
+type HeaderGroup = ProjectGroup | { id: null } | undefined
+
+/** The group behind a header when a folder backs it; null for any other header. */
+export function folderProjectGroupOf(group: HeaderGroup): ProjectGroup | null {
+  return group && 'parentPath' in group && group.parentPath ? group : null
+}
+
+/** The group behind a header when Seal made it for sessions; null for any other header. */
+export function sessionProjectGroupOf(group: HeaderGroup): ProjectGroup | null {
+  return group && 'sessionProject' in group && group.sessionProject ? group : null
+}
+
 export function ProjectGroupHeaderMenu({
   groupId,
   hostId,
   label,
   projectGroup,
+  sessionProjectGroup,
   onRefreshProjectGroup,
   onRename,
   onDelete
@@ -36,6 +51,8 @@ export function ProjectGroupHeaderMenu({
   hostId?: ExecutionHostId
   label: string
   projectGroup: ProjectGroup | null
+  /** A project Seal made for sessions: it reads as a project, and can be hidden like one. */
+  sessionProjectGroup: ProjectGroup | null
   onRefreshProjectGroup?: (projectGroup: ProjectGroup) => void
   onRename: (groupId: string, currentName: string, hostId?: ExecutionHostId) => void
   onDelete: (groupId: string, groupName: string, hostId?: ExecutionHostId) => void
@@ -51,11 +68,23 @@ export function ProjectGroupHeaderMenu({
           size="icon-xs"
           className={REPO_HEADER_ACTION_BUTTON_CLASS}
           data-repo-header-action=""
-          aria-label={t(
-            'auto.components.sidebar.WorktreeList.79465e9034',
-            'Group actions for {{value0}}',
-            { value0: label }
-          )}
+          aria-label={
+            sessionProjectGroup
+              ? t(
+                  'auto.components.sidebar.WorktreeList.609633a9e6',
+                  'Project actions for {{value0}}',
+                  {
+                    value0: label
+                  }
+                )
+              : t(
+                  'auto.components.sidebar.WorktreeList.79465e9034',
+                  'Group actions for {{value0}}',
+                  {
+                    value0: label
+                  }
+                )
+          }
           onClick={(event) => event.stopPropagation()}
           onKeyDown={stopRepoHeaderKeyboardToggle}
           onPointerDown={handleRepoHeaderActionPointerDown}
@@ -81,12 +110,40 @@ export function ProjectGroupHeaderMenu({
             {t('auto.components.sidebar.WorktreeList.refreshProjectGroup', 'Refresh projects')}
           </DropdownMenuItem>
         ) : null}
-        <DropdownMenuItem onSelect={() => onRename(groupId, label, hostId)}>
-          {t('auto.components.sidebar.WorktreeList.4d7b73658c', 'Rename group')}
-        </DropdownMenuItem>
-        <DropdownMenuItem variant="destructive" onSelect={() => onDelete(groupId, label, hostId)}>
-          {t('auto.components.sidebar.WorktreeList.902115cdbe', 'Delete group')}
-        </DropdownMenuItem>
+        {sessionProjectGroup ? (
+          <>
+            <DropdownMenuItem onSelect={() => onRename(groupId, label, hostId)}>
+              <Pencil className="size-3.5" />
+              {t('seal.sessionProjects.rename', 'Rename Project')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => void setProjectGroupHidden(sessionProjectGroup, true, label)}
+            >
+              <EyeOff className="size-3.5" />
+              {t('sidebar.hiddenProjects.hideFromSidebar', 'Hide from Sidebar')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={() => onDelete(groupId, label, hostId)}
+            >
+              <Trash2 className="size-3.5" />
+              {t('auto.components.sidebar.WorktreeList.c83968f87f', 'Remove Project')}
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <>
+            <DropdownMenuItem onSelect={() => onRename(groupId, label, hostId)}>
+              {t('auto.components.sidebar.WorktreeList.4d7b73658c', 'Rename group')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={() => onDelete(groupId, label, hostId)}
+            >
+              {t('auto.components.sidebar.WorktreeList.902115cdbe', 'Delete group')}
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -164,13 +164,11 @@ export function useLiveSessionMenuContext(session: LiveSession): LiveSessionMenu
   const { links } = useLiveSessionLinks()
   const accounts = useLocalSealAccounts()
   const projects = useSessionProjectChoices(session)
-  const windowWorktreeId = windowAgentSessionWorktreeId(session)
   return {
-    worktreeId: links.get(session.id)?.worktreeId ?? windowWorktreeId,
+    worktreeId: links.get(session.id)?.worktreeId ?? windowAgentSessionWorktreeId(session),
     swapAccounts: liveSessionSwapTargets(session, accounts),
     projects,
-    canTakeOver: canTakeOver(session),
-    listed: windowWorktreeId === null
+    canTakeOver: canTakeOver(session)
   }
 }
 

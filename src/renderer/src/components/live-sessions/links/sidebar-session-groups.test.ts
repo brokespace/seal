@@ -35,11 +35,12 @@ function group(
   return {
     cards: [...groups.byWorkspace].map(([id, list]) => [id, ids(list)]),
     headers: [...groups.byHeader].map(([key, list]) => [key, ids(list)]),
-    brought: groups.sessionHeaders.map(({ key, name }) => [key, name])
+    brought: groups.sessionHeaders.map(({ key, name }) => [key, name]),
+    unknown: groups.unknownProjects.map(({ project }) => project.name)
   }
 }
 
-it('gives every session with a folder a project, and leaves only one without a folder unassigned', () => {
+it("lists a session under its folder's project, else with no project until that project is made", () => {
   expect(
     group(
       [
@@ -64,13 +65,10 @@ it('gives every session with a folder a project, and leaves only one without a f
     cards: [['repo-1::/code/alpharidge-app', ['on-card']]],
     headers: [
       [HEADER, ['same-name', 'in-repo']],
-      ['active-agents:project:fitness', ['fitness']],
-      ['active-agents:unassigned', ['no-folder']]
+      ['active-agents:unassigned', ['fitness', 'no-folder']]
     ],
-    brought: [
-      ['active-agents:project:fitness', 'fitness'],
-      ['active-agents:unassigned', null]
-    ]
+    brought: [['active-agents:unassigned', null]],
+    unknown: ['fitness']
   })
 })
 
@@ -97,18 +95,15 @@ it('lists a session under the project the user moved it to, whatever its folder 
   ).toEqual({
     cards: [],
     headers: [
-      ['active-agents:project:fitness', ['off-card']],
-      [HEADER, ['to-listed']],
-      ['active-agents:project:ops', ['named']]
+      ['active-agents:unassigned', ['off-card', 'named']],
+      [HEADER, ['to-listed']]
     ],
-    brought: [
-      ['active-agents:project:fitness', 'fitness'],
-      ['active-agents:project:ops', 'Ops']
-    ]
+    brought: [['active-agents:unassigned', null]],
+    unknown: ['fitness', 'Ops']
   })
 })
 
-it('brings a header for a project while the list draws none for it', () => {
+it('lists a session with no project while the list draws no header for its project', () => {
   expect(
     group(
       [sampleLiveSession('same-name', { cwd: '/srv/alpharidge-app', project: 'alpharidge-app' })],
@@ -117,7 +112,8 @@ it('brings a header for a project while the list draws none for it', () => {
     )
   ).toEqual({
     cards: [],
-    headers: [['active-agents:project:alpharidge-app', ['same-name']]],
-    brought: [['active-agents:project:alpharidge-app', 'alpharidge-app']]
+    headers: [['active-agents:unassigned', ['same-name']]],
+    brought: [['active-agents:unassigned', null]],
+    unknown: []
   })
 })

@@ -32,13 +32,8 @@ const GROUPS = {
 }
 
 it('brings a header to the list only while it has a session row to show', () => {
-  expect(listedSessionHeaders(GROUPS, { machine: null, status: null }, SAMPLE_NOW, 'None')).toEqual(
-    [
-      { key: FITNESS, label: 'fitness', project: 'fitness', count: 2 },
-      { key: UNASSIGNED, label: 'None', project: null, count: 1 }
-    ]
-  )
-  expect(
-    listedSessionHeaders(GROUPS, { machine: null, status: 'working' }, SAMPLE_NOW, 'None')
-  ).toEqual([{ key: FITNESS, label: 'fitness', project: 'fitness', count: 1 }])
+  expect(listedSessionHeaders(GROUPS, SAMPLE_NOW, 'None')).toEqual([
+    { key: FITNESS, label: 'fitness', project: 'fitness', count: 2 },
+    { key: UNASSIGNED, label: 'None', project: null, count: 1 }
+  ])
 })

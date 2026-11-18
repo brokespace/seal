@@ -1,4 +1,9 @@
 import { normalizeRuntimePathForComparison } from '../../../shared/cross-platform-path'
+import { getRepoExecutionHostId } from '../../../shared/execution-host'
+import {
+  isExplicitlyImportedExternalWorktreePath,
+  mergeExternalWorktreeInboxPaths
+} from '../../../shared/external-worktree-inbox'
 import type { Repo } from '../../../shared/repo-types'
 import type { Store } from '../../persistence/loading-store/store'
 import type { OrcaRuntimeService } from '../../runtime/orca-runtime'
@@ -7,7 +12,7 @@ import type { WorkspacePlan } from './workspace-link-rules'
 export type CreatableWorkspacePlan = Exclude<WorkspacePlan, { kind: 'unassigned' }>
 
 export type WorkspaceCreationDeps = {
-  runtime: Pick<OrcaRuntimeService, 'addRepo' | 'removeProject'>
+  runtime: Pick<OrcaRuntimeService, 'addRepo' | 'removeProject' | 'updateRepo'>
   store: Pick<Store, 'getRepos' | 'updateRepo'>
   log?: (message: string, error?: unknown) => void
 }
@@ -53,6 +58,34 @@ export class WorkspaceCreation {
       `[live-sessions] created project "${repo.displayName}" at ${repo.path} for a running session`
     )
     return { repo: marked ?? repo, created: true }
+  }
+
+  /** Lists a worktree of the project that Seal hides as made outside it, as importing it from the sidebar does. */
+  async importWorktree(repo: Repo, path: string): Promise<void> {
+    const hostId = getRepoExecutionHostId(repo)
+    const current =
+      this.deps.store
+        .getRepos()
+        .find((row) => row.id === repo.id && getRepoExecutionHostId(row) === hostId) ?? repo
+    if (isExplicitlyImportedExternalWorktreePath(path, current)) {
+      return
+    }
+    await this.deps.runtime.updateRepo(
+      { selector: `id:${repo.id}`, hostId },
+      {
+        importedExternalWorktreePaths: mergeExternalWorktreeInboxPaths(
+          current.importedExternalWorktreePaths,
+          [path]
+        ),
+        externalWorktreeInboxBaselinePaths: mergeExternalWorktreeInboxPaths(
+          current.externalWorktreeInboxBaselinePaths,
+          [path]
+        )
+      }
+    )
+    this.deps.log?.(
+      `[live-sessions] listed worktree ${path} of "${repo.displayName}" for a running session`
+    )
   }
 
   /** Forgets the project in Seal; its folder stays. */

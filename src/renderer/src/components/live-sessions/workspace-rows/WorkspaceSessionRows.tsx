@@ -14,11 +14,9 @@ import { liveSessionRowOpenMode } from '../menu/live-session-menu-effects'
 import { openAgentSession } from '../open/open-agent-session'
 import { LiveSessionRow, type LiveSessionRowProps } from '../row/LiveSessionRow'
 import { useLiveSessionRowState } from '../row/use-live-session-row-state'
-import { LiveSessionStatusDot } from '../status/LiveSessionStatusDot'
 import { FoldChevron } from './FoldChevron'
 import { pickSidebarSessionRow } from './session-row-picking'
 import { WORKTREE_NATIVE_CONTEXT_MENU_ATTR } from '@/components/sidebar/workspace-actions/context-menu/worktree-context-menu-policy'
-import { useSidebarSessionFilters } from './sidebar-session-filter-store'
 import {
   buildWorkspaceSessionRows,
   sessionRowKey,
@@ -36,6 +34,8 @@ export type WorkspaceSessionRowListProps = {
   worktreeId: string | null
   /** The project those are listed under, which a row in a folder of that name need not repeat. */
   project?: string | null
+  /** Sessions of the hidden workspaces listed here: each row names its workspace, whatever the project's name. */
+  inWorkspaces?: ReadonlySet<string>
   view: WorkspaceSessionRowsView
   finishedOpen: boolean
   rowState: (session: LiveSession) => WorkspaceSessionRowState
@@ -105,8 +105,14 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
   const t = useTranslate()
   const { view } = props
   const keys = new Set<string>()
+  // Under its project's header a row names its workspace alone, not "project / workspace".
+  const projectPrefix = props.project ? `${props.project} / `.toLowerCase() : null
   const row = (session: LiveSession): React.JSX.Element => {
-    const state = props.rowState(session)
+    const shared = props.rowState(session)
+    const state =
+      projectPrefix && shared.workspaceName?.toLowerCase().startsWith(projectPrefix)
+        ? { ...shared, workspaceName: shared.workspaceName.slice(projectPrefix.length) }
+        : shared
     const shown = sessionRowKey(session)
     const key = keys.has(shown) ? session.id : shown
     keys.add(key)
@@ -117,7 +123,9 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
         // The card above the row names the workspace; a row no card holds names its place itself.
         showPlace={
           props.worktreeId === null &&
-          (state.workspaceName ?? session.project)?.toLowerCase() !== props.project?.toLowerCase()
+          (props.inWorkspaces?.has(session.id) === true ||
+            (state.workspaceName ?? session.project)?.toLowerCase() !==
+              props.project?.toLowerCase())
         }
         {...state}
         // Tab stops on the row of the session on screen, in its place; arrow keys reach the others from the list.
@@ -135,7 +143,6 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
     top === null
       ? t('auto.components.live-sessions.sessionRows.label', 'Agent sessions')
       : liveSessionsCountLabel(t, view.running.length, top)
-  const hiddenTop = topLiveSessionStatus(view.hidden)
   return (
     <div
       role="group"
@@ -174,23 +181,6 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
           {props.finishedOpen ? view.finished.map(row) : null}
         </>
       ) : null}
-      {hiddenTop !== null ? (
-        // What the card's badge kept saying while a filter narrowed the list: how many run here and the most urgent of them.
-        <p
-          data-workspace-sessions-hidden
-          title={liveSessionsCountLabel(t, view.hidden.length, hiddenTop)}
-          className="flex h-5 min-w-0 items-center gap-1.5 px-1.5 text-2xs leading-none text-muted-foreground"
-        >
-          <LiveSessionStatusDot status={hiddenTop} />
-          <span className="min-w-0 truncate">
-            {t(
-              'auto.components.live-sessions.sessionRows.hiddenByFilters',
-              '{{count}} hidden by filters',
-              { count: view.hidden.length }
-            )}
-          </span>
-        </p>
-      ) : null}
     </div>
   )
 }
@@ -209,17 +199,13 @@ export function useSessionRowList(
   sessions: readonly LiveSession[],
   finishedKey: string
 ): SessionRowList {
-  const filters = useSidebarSessionFilters()
   const now = useLiveSessionClock()
   const sharedRowState = useLiveSessionRowState()
   const picked = useLiveSessionMarks().picked
   const machineName = useSessionMachineName()
   const finishedOpen = useAppStore((state) => state.collapsedGroups.has(finishedKey))
   const toggleCollapsedGroup = useAppStore((state) => state.toggleCollapsedGroup)
-  const view = useMemo(
-    () => buildWorkspaceSessionRows(sessions, filters, now),
-    [sessions, filters, now]
-  )
+  const view = useMemo(() => buildWorkspaceSessionRows(sessions, now), [sessions, now])
   const rowState = useCallback(
     (session: LiveSession): WorkspaceSessionRowState => {
       const { workspaceName, account, unread, current, highlighted } = sharedRowState(session)
@@ -262,7 +248,7 @@ const WorkspaceSessionRowsBody = React.memo(function WorkspaceSessionRowsBody({
 }): React.JSX.Element | null {
   const list = useSessionRowList(sessions, workspaceFinishedOpenKey(worktreeId))
   const { view } = list
-  if (view.running.length === 0 && view.finished.length === 0 && view.hidden.length === 0) {
+  if (view.running.length === 0 && view.finished.length === 0) {
     return null
   }
   return <WorkspaceSessionRowList worktreeId={worktreeId} {...list} className={className} />

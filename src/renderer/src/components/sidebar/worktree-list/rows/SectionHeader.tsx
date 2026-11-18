@@ -43,7 +43,9 @@ import { RepoScanUnavailableIndicator } from './RepoScanUnavailableIndicator'
 import { LiveSessionsBadge } from '@/components/live-sessions/links/LiveSessionsBadge'
 import {
   ProjectGroupCreateWorkspaceButton,
-  ProjectGroupHeaderMenu
+  folderProjectGroupOf,
+  ProjectGroupHeaderMenu,
+  sessionProjectGroupOf
 } from './project-group-header-actions'
 import {
   RepoHeaderCreateWorkspaceButton,
@@ -153,14 +155,8 @@ export function renderWorktreeSectionHeaderRow(
     headerKey: row.key,
     badgeColor: row.repo?.badgeColor
   })
-  const folderBackedProjectGroup =
-    isProjectGroupHeader &&
-    !row.repo &&
-    row.projectGroup &&
-    'parentPath' in row.projectGroup &&
-    row.projectGroup.parentPath
-      ? row.projectGroup
-      : null
+  const headerGroup = isProjectGroupHeader && !row.repo ? row.projectGroup : undefined
+  const folderBackedProjectGroup = folderProjectGroupOf(headerGroup)
   const projectGroupPathStatus = folderBackedProjectGroup
     ? ctx.getCachedFolderWorkspacePathStatus({
         scope: 'project-group',
@@ -371,6 +367,7 @@ export function renderWorktreeSectionHeaderRow(
                 hostId={projectGroupHostIdForHeader}
                 label={label}
                 projectGroup={folderBackedProjectGroup}
+                sessionProjectGroup={sessionProjectGroupOf(headerGroup)}
                 onRefreshProjectGroup={ctx.onRefreshProjectGroup}
                 onRename={ctx.onRenameProjectGroup}
                 onDelete={ctx.onDeleteProjectGroup}

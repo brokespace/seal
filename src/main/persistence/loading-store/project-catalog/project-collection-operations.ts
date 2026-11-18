@@ -138,6 +138,12 @@ export class ProjectCollectionOperations {
     return getProjectGroupOperations(this).deleteProjectGroup(groupId)
   }
 
+  ensureSessionProjectGroups(
+    ...args: Parameters<ProjectGroupPersistenceOperations['ensureSessionProjectGroups']>
+  ): ProjectGroup[] {
+    return getProjectGroupOperations(this).ensureSessionProjectGroups(...args)
+  }
+
   updateProjectGroups(
     mutations: Parameters<ProjectGroupPersistenceOperations['updateProjectGroups']>[0]
   ): ProjectGroup[] | null {

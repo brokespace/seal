@@ -10,6 +10,8 @@ export class PublishedSessions {
   private readonly published = new Map<string, { session: LiveSession; json: string }>()
   /** Ids a session had before its agent named it: a fresh agent is `pid-<pid>` until its first prompt. */
   private readonly renamed = new Map<string, string>()
+  /** Sessions the user removed, held back from consumers; a second removal still acts on them. */
+  private held = new Map<string, LiveSession>()
 
   list(): LiveSession[] {
     return [...this.published.values()].map((entry) => entry.session)
@@ -17,6 +19,20 @@ export class PublishedSessions {
 
   get(sessionId: string): LiveSession | null {
     return this.published.get(this.currentId(sessionId))?.session ?? null
+  }
+
+  removed(sessionId: string): LiveSession | null {
+    return this.held.get(sessionId) ?? null
+  }
+
+  /** The sessions to publish from all sources: all but the removed ones, which are kept aside. */
+  withoutRemoved(
+    isRemoved: ((session: LiveSession) => boolean) | undefined,
+    ...sources: readonly LiveSession[][]
+  ): LiveSession[] {
+    const sessions = sources.flat()
+    this.held = new Map(sessions.filter((s) => isRemoved?.(s)).map((s) => [s.id, s]))
+    return sessions.filter((session) => !this.held.has(session.id))
   }
 
   /** The id a session goes by now, following its renames. */

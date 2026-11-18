@@ -9,7 +9,9 @@ import {
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { sampleSessionSurface } from '../../../../../shared/live-sessions/live-session-surface.test-fixture'
 import {
+  chatTabsClosedBy,
   LIVE_SESSION_MENU_ITEM_IDS,
+  liveSessionMenuItems,
   removeRequestFor,
   type LiveSessionMenuContext,
   type LiveSessionMenuEffects,
@@ -74,8 +76,7 @@ const context: LiveSessionMenuContext = {
     ],
     moved: false
   },
-  canTakeOver: true,
-  listed: true
+  canTakeOver: true
 }
 
 /** What selecting each item must do, and nothing else. */
@@ -193,8 +194,7 @@ describe('session menu', () => {
               worktreeId: null,
               swapAccounts: [],
               projects: { choices: [], moved: false },
-              canTakeOver: false,
-              listed: true
+              canTakeOver: false
             }}
             kit={DROPDOWN_MENU_KIT}
             effects={recordingEffects()}
@@ -253,5 +253,25 @@ describe('what a confirmed action asks for', () => {
       stop: false,
       deleteTranscripts: true
     })
+  })
+
+  it('takes a removed chat out with its tab, and offers Delete on a row with no record', () => {
+    const chat: LiveSession = {
+      ...session,
+      transcriptPath: null,
+      surface: { kind: 'chat', sessionId: 'chat-1', tabId: 'agent-session:chat-1' }
+    }
+    expect(
+      chatTabsClosedBy('remove', [chat], {
+        'repo-1::/srv/shop': [
+          { id: 'tab-term', contentType: 'terminal', entityId: 'term-1' },
+          { id: 'tab-chat', contentType: 'agent-session', entityId: 'chat-1' }
+        ]
+      })
+    ).toEqual(['tab-chat'])
+    expect(
+      liveSessionMenuItems(chat, context).find(({ id }) => id === 'delete-with-transcripts')
+        ?.disabled
+    ).toBe(false)
   })
 })

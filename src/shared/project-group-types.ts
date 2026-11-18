@@ -1,4 +1,5 @@
 import type { RepoHookSettings } from './orca-yaml-hook-types'
+import type { LiveSessionProject } from './live-sessions/live-session-types'
 export type ProjectGroupCreatedFrom = 'manual' | 'folder-scan' | 'migration'
 
 export type ProjectGroup = {
@@ -16,13 +17,17 @@ export type ProjectGroup = {
   rootProjectOrder?: number
   isCollapsed: boolean
   color: string | null
+  /** Epoch ms the user hid it from the sidebar; absent while listed. */
+  hiddenAt?: number
+  /** The project its sessions' folder named when Seal made it for them; renaming keeps it theirs. */
+  sessionProject?: LiveSessionProject
   createdAt: number
   updatedAt: number
 }
 
 export type ProjectGroupUpdate = Partial<
   Pick<ProjectGroup, 'name' | 'isCollapsed' | 'tabOrder' | 'color' | 'hookSettings'>
-> & { rootProjectOrder?: number | null }
+> & { rootProjectOrder?: number | null; hiddenAt?: number | null }
 
 export type ProjectGroupMutation = { groupId: string; updates: ProjectGroupUpdate }
 

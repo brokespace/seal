@@ -13,7 +13,7 @@ const BULK_ACTIONS = [
   'delete-with-transcripts'
 ] as const satisfies readonly LiveSessionDangerKind[]
 
-export function SessionSelectionBarView({
+function SessionSelectionBarView({
   pickedSessions
 }: {
   /** The picked sessions the registry still has. */

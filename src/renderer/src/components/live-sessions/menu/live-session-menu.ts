@@ -8,6 +8,7 @@ import type {
 import type { AgentSessionFocusTarget } from '../chat/agent-session-focus-requests'
 import type { SessionProjectChoices } from '../links/session-project-choices'
 import type { AgentSessionOpenMode } from '../open/agent-session-open-mode'
+import { isChatTabOf, type TabContent } from '../open/agent-session-tab-match'
 
 export const LIVE_SESSION_MENU_ITEM_IDS = [
   'open',
@@ -51,8 +52,6 @@ export type LiveSessionMenuContext = {
   /** Projects it can be listed under, and whether the user already chose one. */
   projects: SessionProjectChoices
   canTakeOver: boolean
-  /** False while only this window knows the session: the registry has no record to act on yet. */
-  listed: boolean
 }
 
 /** Everything a menu item can do. Views implement these once; every menu surface shares them. */
@@ -101,25 +100,11 @@ const DESTRUCTIVE: ReadonlySet<LiveSessionMenuItemId> = new Set([
   'delete-with-transcripts'
 ])
 
-/** What a session can do before the registry lists it: be opened, named and found. */
-const NEEDS_NO_RECORD: ReadonlySet<LiveSessionMenuItemId> = new Set([
-  'open',
-  'open-new-tab',
-  'open-split',
-  'copy-session-id',
-  'copy-resume-command',
-  'open-worktree',
-  'open-machine'
-])
-
 function isDisabled(
   id: LiveSessionMenuItemId,
   session: LiveSession,
   context: LiveSessionMenuContext
 ): boolean {
-  if (!context.listed && !NEEDS_NO_RECORD.has(id)) {
-    return true
-  }
   switch (id) {
     case 'open':
     case 'open-new-tab':
@@ -153,8 +138,10 @@ function isDisabled(
     case 'open-worktree':
       return context.worktreeId === null
     case 'reveal-transcript':
-    case 'delete-with-transcripts':
       return session.transcriptPath === null
+    case 'delete-with-transcripts':
+      // A chat's host finds its transcript by the provider's session id; deleting closes its tab either way.
+      return session.transcriptPath === null && session.surface.kind !== 'chat'
     case 'stop':
     case 'stop-and-remove':
       return !session.alive
@@ -266,4 +253,21 @@ export function removeRequestFor(
         deleteTranscripts: true
       }
   }
+}
+
+/** The chat tabs a confirmed action closes: a chat leaves Seal the way its tab closes, on its own host. */
+export function chatTabsClosedBy(
+  kind: LiveSessionDangerKind,
+  sessions: readonly Pick<LiveSession, 'surface'>[],
+  tabsByWorktree: Readonly<Record<string, readonly (TabContent & { id: string })[]>>
+): string[] {
+  if (kind === 'stop') {
+    return []
+  }
+  const tabs = Object.values(tabsByWorktree).flat()
+  return sessions.flatMap(({ surface }) =>
+    surface.kind === 'chat'
+      ? tabs.filter((tab) => isChatTabOf(tab, surface.sessionId)).map((tab) => tab.id)
+      : []
+  )
 }

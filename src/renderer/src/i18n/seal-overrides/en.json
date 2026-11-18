@@ -856,7 +856,7 @@
           "stopRemoveDescription": "The agent process ends now and the session is hidden from Seal for good, even after a rescan. Its transcript stays on disk.",
           "stopRemoveAction": "Stop and remove",
           "removeTitle": "Remove {{count}} session(s) from Seal?",
-          "removeDescription": "Removed sessions stay hidden, even after Seal rescans. A running agent keeps running where it is, and nothing on disk changes.",
+          "removeDescription": "Removed sessions stay hidden, even after Seal rescans. A running agent keeps running where it is and a Seal chat’s tab closes; nothing on disk changes.",
           "removeAction": "Remove from Seal",
           "deleteTitle": "Delete {{count}} session(s) and their transcripts?",
           "deleteDescription": "A running agent is stopped first. These files are deleted for good; the conversation cannot be resumed afterwards:",
@@ -908,30 +908,22 @@
           "quietFor": "Last activity",
           "subagentCount": "{{running}} of {{count}} subagents running",
           "account": "Account",
-          "hostError": "Could not scan {{host}}: {{error}}",
           "finished": "Recently finished",
           "stopPicking": "Done selecting",
           "startPicking": "Select sessions",
           "settings": "Idle sessions and notifications…",
-          "noMatch": "No sessions match.",
           "pickedCount": "{{count}} selected",
           "bulkStop": "Stop",
           "bulkRemove": "Remove",
-          "bulkDelete": "Delete"
+          "bulkDelete": "Delete",
+          "hideWorkspaces": "Hide workspaces",
+          "hideWorkspacesAria": "List each project’s agent sessions in place of its workspaces"
         },
         "sessionRows": {
           "machine": "Machine",
-          "filterByMachine": "Filter sessions by machine",
-          "scanFailed": "Some machines could not be scanned",
-          "allMachines": "All machines",
-          "filterByStatus": "Filter sessions by status",
-          "allStatuses": "All statuses",
-          "clearFilter": "Clear filter",
           "toolbarTitle": "Sessions",
-          "options": "Session options",
           "label": "Agent sessions",
           "finished": "Recently finished · {{count}}",
-          "hiddenByFilters": "{{count}} hidden by filters",
           "statusAttention": "Needs you"
         },
         "workspaceGroups": {
@@ -940,7 +932,6 @@
         },
         "workspace": {
           "actions": "Session actions",
-          "loading": "Looking for sessions",
           "backToSession": "Back to session",
           "subagentOf": "Subagent: {{title}}"
         },
@@ -2721,6 +2712,9 @@
       "reconnecting": "Reconnecting to {{machine}}…",
       "promptReadOnly": "Seal can’t answer this prompt. Answer it where the session runs.",
       "answerFailed": "Seal couldn’t answer this prompt."
+    },
+    "sessionProjects": {
+      "rename": "Rename Project"
     },
     "projectMerge": {
       "action": "Merge into project",

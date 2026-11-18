@@ -8,10 +8,32 @@ import {
   getProjectGroupHeaderKey,
   isProjectSectionGroupKey
 } from '../../../../../../shared/sidebar-list/sections/group-keys'
-import { withProjectSessionRows } from '../../../../../../shared/sidebar-list/sections/project-session-rows'
+import { useAppStore } from '@/store/index'
+import { setHiddenWorkspaceHeaders } from '@/components/live-sessions/workspace-rows/hidden-workspace-headers'
+import {
+  withProjectSessionRows,
+  withSessionsInPlaceOfWorkspaces
+} from '../../../../../../shared/sidebar-list/sections/project-session-rows'
 
 const NO_PROJECT_HEADERS: ReadonlySet<string> = new Set()
 const NO_ROWS: HostSectionRow[] = []
+
+/** Each workspace's project header, also under a folded header: the header lists the workspace's sessions in its place. */
+function workspaceHeaders(rows: readonly HostSectionRow[]): Map<string, string> {
+  const headers = new Map<string, string>()
+  for (const row of rows) {
+    if (row.type === 'header' && isProjectSectionGroupKey(row.key)) {
+      for (const worktreeId of row.worktreeIds ?? []) {
+        headers.set(worktreeId, row.key)
+      }
+    } else if (row.type === 'project-sessions') {
+      for (const { worktreeId } of row.workspaces ?? []) {
+        headers.set(worktreeId, row.headerKey)
+      }
+    }
+  }
+  return headers
+}
 
 type ListedProjects = {
   sectionRows: HostSectionRow[]
@@ -50,7 +72,7 @@ export function getListedProjectHeaderKeys(
  * The list's rows with the sessions no workspace holds: right under their project's header, and
  * after the last workspace under a header of their own for a project the list has none for.
  * `groupBy` is null while the list has no workspace to show; only a list grouped by project has
- * project headers to list under.
+ * project headers to list under, and lists every session there while its workspaces are hidden.
  */
 export function useProjectSessionRows(
   { sectionRows, occurrencePlan, effectiveCollapsedGroups }: ListedProjects,
@@ -58,6 +80,7 @@ export function useProjectSessionRows(
   groupBy: string | null
 ): HostSectionRow[] {
   const listsProjects = groupBy === 'repo'
+  const hideWorkspaces = useAppStore((state) => state.hideSidebarWorkspaces) && listsProjects
   const listed = useMemo(
     () =>
       listsProjects
@@ -72,16 +95,23 @@ export function useProjectSessionRows(
   const headerKeys = [...useSidebarSessionGroups().byHeader.keys()].sort().join('\n')
   const sessionHeaders = useListedSessionHeaders()
   const rows = groupBy === null ? NO_ROWS : sectionRows
-  return useMemo(
-    () =>
-      headerKeys
-        ? withProjectSessionRows(
-            rows,
-            new Set(headerKeys.split('\n')),
-            effectiveCollapsedGroups,
-            sessionHeaders
-          )
-        : rows,
-    [rows, headerKeys, effectiveCollapsedGroups, sessionHeaders]
+  const result = useMemo(() => {
+    if (hideWorkspaces) {
+      return withSessionsInPlaceOfWorkspaces(rows, effectiveCollapsedGroups, sessionHeaders)
+    }
+    return headerKeys
+      ? withProjectSessionRows(
+          rows,
+          new Set(headerKeys.split('\n')),
+          effectiveCollapsedGroups,
+          sessionHeaders
+        )
+      : rows
+  }, [hideWorkspaces, rows, headerKeys, effectiveCollapsedGroups, sessionHeaders])
+  useLayoutEffect(
+    () => setHiddenWorkspaceHeaders(hideWorkspaces ? workspaceHeaders(result) : null),
+    [hideWorkspaces, result]
   )
+  useLayoutEffect(() => () => setHiddenWorkspaceHeaders(null), [])
+  return result
 }

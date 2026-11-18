@@ -34,6 +34,10 @@ import {
   type WorkspaceViewSection
 } from '../../../../../../shared/workspace-view/workspace-view-options'
 import { useTranslate } from '@/i18n/use-translate'
+import { EyeOff } from 'lucide-react'
+import { windowListsLiveSessions } from '@/components/live-sessions/workspace-rows/SidebarSessions'
+import { SessionsOptionsMenuItems } from '@/components/live-sessions/workspace-rows/SessionsOptionsMenuItems'
+import { FilterToggleRow } from './FilterToggleRow'
 import { SidebarGroupByToggle } from './SidebarGroupByToggle'
 import { withoutHiddenRepos } from '../../../../../../shared/hidden-projects'
 
@@ -126,12 +130,30 @@ function HostsOptionItem({
 }
 
 function GroupByOptionItem(): JSX.Element {
+  const t = useTranslate()
   const groupBy = useAppStore((s) => s.groupBy)
   const setGroupBy = useAppStore((s) => s.setGroupBy)
+  const hideWorkspaces = useAppStore((s) => s.hideSidebarWorkspaces)
+  const setHideWorkspaces = useAppStore((s) => s.setHideSidebarWorkspaces)
   return (
-    <div className="px-2 pt-0.5 pb-1">
-      <SidebarGroupByToggle groupBy={groupBy} setGroupBy={setGroupBy} />
-    </div>
+    <>
+      <div className="px-2 pt-0.5 pb-1">
+        <SidebarGroupByToggle groupBy={groupBy} setGroupBy={setGroupBy} />
+      </div>
+      {/* Only projects have sessions of their own to list in their workspaces' place. */}
+      {groupBy === 'repo' && windowListsLiveSessions() ? (
+        <FilterToggleRow
+          icon={<EyeOff className="size-3.5" />}
+          label={t('auto.components.live-sessions.sidebar.hideWorkspaces', 'Hide workspaces')}
+          ariaLabel={t(
+            'auto.components.live-sessions.sidebar.hideWorkspacesAria',
+            'List each project’s agent sessions in place of its workspaces'
+          )}
+          checked={hideWorkspaces}
+          onChange={setHideWorkspaces}
+        />
+      ) : null}
+    </>
   )
 }
 
@@ -355,6 +377,12 @@ export function WorkspaceOptionsMenuItems({
           })}
         </Fragment>
       ))}
+      {windowListsLiveSessions() ? (
+        <>
+          <DropdownMenuSeparator />
+          <SessionsOptionsMenuItems />
+        </>
+      ) : null}
     </>
   )
 }

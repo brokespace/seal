@@ -12,6 +12,9 @@ import {
   normalizeProjectGroupName
 } from '../../../shared/project-groups'
 import { getNextRootProjectOrder } from '../../../shared/root-project-order'
+import { getRuntimePathBasename } from '../../../shared/cross-platform-path'
+import { sessionProjectNameKey } from '../../../shared/live-sessions/live-session-project'
+import type { LiveSessionProject } from '../../../shared/live-sessions/live-session-types'
 import { folderWorkspaceKey } from '../../../shared/workspace-scope'
 import { removeWorkspaceSessionOwnersEverywhere } from '../restoring-sessions/session-owner-removal'
 
@@ -124,12 +127,63 @@ export class ProjectGroupPersistenceOperations {
     if (updates.hookSettings !== undefined) {
       group.hookSettings = updates.hookSettings
     }
+    if (updates.hiddenAt === null) {
+      delete group.hiddenAt
+    } else if (updates.hiddenAt !== undefined && Number.isFinite(updates.hiddenAt)) {
+      group.hiddenAt = updates.hiddenAt
+    }
     group.updatedAt = Date.now()
+  }
+
+  /**
+   * Makes a project for each session project nothing is named for yet: no group, no repo, and,
+   * unless the user asked for it by name (`explicit`), none they removed before. Returns those made.
+   */
+  ensureSessionProjectGroups(
+    projects: readonly LiveSessionProject[],
+    explicit: boolean
+  ): ProjectGroup[] {
+    const known = new Set<string>()
+    for (const group of this.state.projectGroups ?? []) {
+      known.add(sessionProjectNameKey(group.name))
+      if (group.sessionProject) {
+        known.add(sessionProjectNameKey(group.sessionProject.name))
+        known.add(group.sessionProject.key)
+      }
+    }
+    for (const repo of this.state.repos) {
+      known.add(sessionProjectNameKey(repo.displayName))
+      known.add(sessionProjectNameKey(getRuntimePathBasename(repo.path)))
+    }
+    const dismissed = new Set(this.state.dismissedSessionProjects ?? [])
+    const created: ProjectGroup[] = []
+    for (const project of projects) {
+      const nameKey = sessionProjectNameKey(project.name)
+      if (!nameKey || known.has(nameKey) || known.has(project.key)) {
+        continue
+      }
+      if (dismissed.has(nameKey)) {
+        if (!explicit) {
+          continue
+        }
+        dismissed.delete(nameKey)
+        this.state.dismissedSessionProjects = [...dismissed]
+        this.scheduleSave(['dismissedSessionProjects'])
+      }
+      const group = this.createProjectGroup({ name: project.name, createdFrom: 'manual' })
+      group.sessionProject = { key: project.key, name: project.name }
+      this.scheduleSave(['projectGroups'])
+      known.add(nameKey)
+      known.add(project.key)
+      created.push(group)
+    }
+    return created
   }
 
   deleteProjectGroup(groupId: string): boolean {
     const before = this.state.projectGroups?.length ?? 0
     const deletedGroupIds = getProjectGroupSubtreeIds(this.state.projectGroups ?? [], groupId)
+    this.dismissSessionProjects(deletedGroupIds)
     this.state.projectGroups = (this.state.projectGroups ?? []).filter(
       (group) => !deletedGroupIds.has(group.id)
     )
@@ -165,5 +219,21 @@ export class ProjectGroupPersistenceOperations {
       'mobileClientTabSelectionsByDeviceId'
     ])
     return true
+  }
+
+  /** A project made for sessions that the user removes stays removed: its sessions list with no project. */
+  private dismissSessionProjects(groupIds: ReadonlySet<string>): void {
+    const names = (this.state.projectGroups ?? []).flatMap((group) =>
+      groupIds.has(group.id) && group.sessionProject
+        ? [sessionProjectNameKey(group.sessionProject.name), sessionProjectNameKey(group.name)]
+        : []
+    )
+    if (names.length === 0) {
+      return
+    }
+    this.state.dismissedSessionProjects = [
+      ...new Set([...(this.state.dismissedSessionProjects ?? []), ...names])
+    ]
+    this.scheduleSave(['dismissedSessionProjects'])
   }
 }

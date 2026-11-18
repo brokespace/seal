@@ -271,7 +271,7 @@ function Rows(): React.JSX.Element {
     >
       <WorkspaceSessionRowList
         worktreeId={null}
-        view={buildWorkspaceSessionRows(ROWS, { machine: null, status: null }, SAMPLE_NOW)}
+        view={buildWorkspaceSessionRows(ROWS, SAMPLE_NOW)}
         finishedOpen={false}
         rowState={(session) => ({
           workspaceName: null,

@@ -38,6 +38,7 @@ export function registerRepoHandlers(
   ipcMain.removeHandler('projectGroups:checkHooks')
   ipcMain.removeHandler('projectGroups:list')
   ipcMain.removeHandler('projectGroups:create')
+  ipcMain.removeHandler('projectGroups:ensureSessionProjects')
   ipcMain.removeHandler('projectGroups:update')
   ipcMain.removeHandler('projectGroups:updateMany')
   ipcMain.removeHandler('projectGroups:delete')
