@@ -15,10 +15,7 @@ import {
 import { normalizeFeatureInteractions } from '../../../../../shared/feature-interactions'
 import { normalizeContextualTourIds } from '../../../../../shared/contextual-tours'
 import { normalizeFeatureTipIds } from '../../../../../shared/feature-tips'
-import {
-  DEFAULT_HIDE_SLEEPING_WORKSPACES,
-  normalizeAgentActivityDisplayMode
-} from '../../../../../shared/constants'
+import { DEFAULT_HIDE_SLEEPING_WORKSPACES } from '../../../../../shared/constants'
 import { normalizeWorktreeCardProperties } from '../../../../../shared/worktree/row-display/card-properties'
 import {
   normalizeActivityGroupBy,
@@ -49,13 +46,13 @@ import {
   withWslMovedRepoIds,
   withWslMovedSetupScriptDismissals
 } from '../../repos/wsl-moved-repo-ui-retention'
-
 import {
   type PersistedUIWriteBaseline,
   capturePersistedUIWriteBaseline,
   diffPersistedUIWriteFields
 } from './persisted-ui-write-baseline'
 import {
+  hydrateSidebarDisplay,
   hydrateTrustedOrcaHooks,
   hydrateUnexpectedSignoutDismissal,
   normalizeHydratedVisibleWorkspaceHostIds,
@@ -182,8 +179,7 @@ export function createUiHydrationActions(set: UISliceSet, _get: UISliceGet): Par
           editorFontZoomLevel: ui.editorFontZoomLevel ?? 0,
           worktreeCardProperties: normalizeWorktreeCardProperties(ui.worktreeCardProperties),
           _worktreeCardModeDefaulted: ui._worktreeCardModeDefaulted === true,
-          showAgentModels: ui.showAgentModels !== false,
-          agentActivityDisplayMode: normalizeAgentActivityDisplayMode(ui.agentActivityDisplayMode),
+          ...hydrateSidebarDisplay(ui),
           workspaceStatuses: normalizeWorkspaceStatuses(ui.workspaceStatuses),
           workspaceBoardOpacity: clampWorkspaceBoardOpacity(ui.workspaceBoardOpacity),
           workspaceBoardColumnWidth: clampWorkspaceBoardColumnWidth(ui.workspaceBoardColumnWidth),

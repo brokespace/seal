@@ -3,6 +3,7 @@ import { normalizeExplorerDisplayRootByWorktree } from '../../../../../shared/fi
 import type { AppState } from '../../types'
 import type { PersistedTrustedOrcaHooks } from '../../../../../shared/orca-yaml-hook-types'
 import type { PersistedUIState } from '../../../../../shared/persisted-ui-state-types'
+import { normalizeAgentActivityDisplayMode } from '../../../../../shared/constants'
 import type {
   ActivityBarPosition,
   TaskViewPresetId,
@@ -261,5 +262,16 @@ export function sanitizeExplorerPreferences(
       ui.explorerDisplayRootByWorktree
     ),
     showDotfilesByWorktree: sanitizeShowDotfilesByWorktree(ui.showDotfilesByWorktree)
+  }
+}
+
+/** How the sidebar shows agents: what it lists in place of workspaces and what each card names. */
+export function hydrateSidebarDisplay(
+  ui: PersistedUIState
+): Pick<UISlice, 'showAgentModels' | 'hideSidebarWorkspaces' | 'agentActivityDisplayMode'> {
+  return {
+    showAgentModels: ui.showAgentModels !== false,
+    hideSidebarWorkspaces: ui.hideSidebarWorkspaces !== false,
+    agentActivityDisplayMode: normalizeAgentActivityDisplayMode(ui.agentActivityDisplayMode)
   }
 }

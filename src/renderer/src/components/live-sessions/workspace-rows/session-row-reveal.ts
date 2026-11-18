@@ -16,10 +16,7 @@ import { liveSessionMarksStore, useLiveSessionMarks } from '../live-session-mark
 import { liveSessionRegistryStore } from '../live-session-registry-store'
 import type { SidebarSessionPlace } from '../links/sidebar-session-groups'
 import { readSidebarSessionGroups } from '../links/use-workspace-sessions'
-import {
-  matchesSidebarSessionFilters,
-  sidebarSessionFilterStore
-} from './sidebar-session-filter-store'
+import { hiddenWorkspaceHeader } from './hidden-workspace-headers'
 import { headerSessionGroup, sessionGroupFinishedOpenKey } from './session-fold-keys'
 import { SESSION_GROUP, SIDEBAR_LIST } from './sidebar-session-row-dom'
 import { workspaceFinishedOpenKey } from './workspace-session-rows-model'
@@ -67,22 +64,15 @@ export function scrollSidebarSessionRowIntoView(row: HTMLElement): void {
   requestVirtualizedScrollAnchorRecord(list)
 }
 
-/** Asks for the rows of several sessions at once. A filter that lists any of them stays on, so it is that one the list goes to. */
+/** Asks for the rows of several sessions at once: the list goes to the first of them. */
 export function revealFirstListedSession(sessionIds: readonly string[]): void {
-  const filters = sidebarSessionFilterStore.getState()
-  const sessions = liveSessionRegistryStore.getState().sessions
-  const listed = sessionIds.find((id) => {
-    const session = sessions.find((s) => s.id === id)
-    return session !== undefined && matchesSidebarSessionFilters(session, filters)
-  })
-  liveSessionMarksStore.reveal(listed ?? sessionIds[0])
+  if (sessionIds.length > 0) {
+    liveSessionMarksStore.reveal(sessionIds[0])
+  }
 }
 
-/** Stops what hides a session's row: the filters, the fold of its header, and for an ended one the line it sits behind. */
+/** Stops what hides a session's row: the fold of its header, and for an ended one the line it sits behind. */
 function unhideSessionRow(session: LiveSession, place: SidebarSessionPlace | undefined): void {
-  if (!matchesSidebarSessionFilters(session, sidebarSessionFilterStore.getState())) {
-    sidebarSessionFilterStore.clear()
-  }
   if (!place) {
     return
   }
@@ -99,6 +89,13 @@ function unhideSessionRow(session: LiveSession, place: SidebarSessionPlace | und
   }
 }
 
+/** Where the list shows a session's row: a hidden workspace's sessions sit under its header. */
+function listedPlace(sessionId: string): SidebarSessionPlace | undefined {
+  const place = readSidebarSessionGroups().places.get(sessionId)
+  const headerKey = place?.kind === 'workspace' ? hiddenWorkspaceHeader(place.worktreeId) : null
+  return headerKey ? { kind: 'header', headerKey } : place
+}
+
 /**
  * Runs `show` once for each session asked for from elsewhere (a badge, a fresh launch, the
  * palette), then fades the row's ring. `show` gets where the sidebar lists the session and
@@ -111,7 +108,7 @@ function useSessionRowRevealRequest(
   // Read at the moment of the request: later session updates must not move the list again.
   const showAtRequest = useLatestHandler((sessionId: string) => {
     const session = liveSessionRegistryStore.getState().sessions.find((s) => s.id === sessionId)
-    return session ? show(session, readSidebarSessionGroups().places.get(session.id)) : null
+    return session ? show(session, listedPlace(session.id)) : null
   })
   useEffect(() => {
     const stop = reveal ? showAtRequest(reveal.sessionId) : null

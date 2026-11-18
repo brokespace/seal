@@ -131,6 +131,8 @@ export function renderProjectSessionsVirtualRow(args: {
         headerKey={args.row.headerKey}
         project={args.row.project}
         groupDepth={args.row.groupDepth}
+        workspaces={args.row.workspaces}
+        headerSessions={args.row.headerSessions}
       />
     </NoticeRowFrame>
   )

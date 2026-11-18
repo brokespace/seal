@@ -4,29 +4,37 @@ import { isWebClientLocation } from '@/app-shell/platform/web-client-location'
 import { useSidebarScrollSectionHosts } from '@/components/sidebar/sidebar-scroll-sections'
 import { useSidebarSessionRowKeyboard } from './session-row-keyboard'
 import { useSidebarSessionRowReveal } from './session-row-reveal'
-import { SidebarSessionsToolbar } from './SidebarSessionsToolbar'
+import { SessionSelectionBar } from './SessionSelectionBar'
+
+/** Windows without the registry (a paired web client) have no sessions to list. */
+export function windowListsLiveSessions(): boolean {
+  // Why both: the web client answers for every missing part of `window.api`.
+  return !isWebClientLocation() && Boolean(window.api?.liveSessions?.onEvent)
+}
 
 function SidebarSessionsBody(): React.JSX.Element | null {
   const hosts = useSidebarScrollSectionHosts()
-  // Why after the first commit: the Projects header is portaled into the same host and must stay ahead of the toolbar.
+  // Why after the first commit: the Projects header is portaled into the same host and must stay ahead of the bar.
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   useSidebarSessionRowKeyboard()
   useSidebarSessionRowReveal()
-  return mounted && hosts ? createPortal(<SidebarSessionsToolbar />, hosts.pinnedHeader) : null
+  return mounted && hosts
+    ? createPortal(
+        <div className="px-3 pb-1 empty:hidden">
+          <SessionSelectionBar />
+        </div>,
+        hosts.pinnedHeader
+      )
+    : null
 }
 
 /**
- * What the sidebar list shows of sessions besides their rows: the toolbar pinned over the whole
- * list. It also makes those rows one keyboard list with the workspaces, and reveals one asked for.
+ * What the sidebar list does with sessions besides their rows: the bulk actions pinned over the
+ * list while sessions are selected, one keyboard list with the workspaces, and a row asked for revealed.
  */
 const SidebarSessions = React.memo(function SidebarSessions() {
-  // Windows without the registry (a paired web client) have no sessions to list or filter.
-  // Why both: the web client answers for every missing part of `window.api`.
-  if (isWebClientLocation() || !window.api?.liveSessions?.onEvent) {
-    return null
-  }
-  return <SidebarSessionsBody />
+  return windowListsLiveSessions() ? <SidebarSessionsBody /> : null
 })
 
 export default SidebarSessions

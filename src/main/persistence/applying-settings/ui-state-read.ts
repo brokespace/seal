@@ -50,6 +50,7 @@ export function getPersistedUI(
     ),
     worktreeCardProperties: normalizeWorktreeCardProperties(state.ui?.worktreeCardProperties),
     showAgentModels: state.ui?.showAgentModels !== false,
+    hideSidebarWorkspaces: state.ui?.hideSidebarWorkspaces !== false,
     agentActivityDisplayMode: normalizeAgentActivityDisplayMode(state.ui?.agentActivityDisplayMode),
     workspaceStatuses: normalizeWorkspaceStatuses(state.ui?.workspaceStatuses),
     workspaceBoardOpacity: clampWorkspaceBoardOpacity(state.ui?.workspaceBoardOpacity),

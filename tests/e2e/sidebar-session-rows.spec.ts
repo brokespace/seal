@@ -175,3 +175,55 @@ test('compact and classic cards, with or without inline agents, keep every sessi
     await removeSeedWorkspaces(orcaPage, [workspace])
   }
 })
+
+test('with workspaces hidden, a project lists its sessions, each naming its workspace', async ({
+  electronApp,
+  orcaPage
+}, testInfo) => {
+  test.skip(
+    process.platform === 'win32',
+    'The stub agents are found through the POSIX process table'
+  )
+  test.setTimeout(180_000)
+  await showSidebar(orcaPage)
+  const workspaces = await addSeedWorkspaces(orcaPage, 2)
+  try {
+    const sessions = await Promise.all(
+      workspaces.map((workspace, index) =>
+        seedLiveSession(electronApp, {
+          cwd: workspace.path,
+          status: index === 0 ? 'waiting-input' : 'working',
+          title: `Hidden-view session ${index}`
+        })
+      )
+    )
+    await waitForLiveSessions(orcaPage, {
+      [sessions[0].id]: 'waiting-input',
+      [sessions[1].id]: 'working'
+    })
+    await expect(workspaceRows(orcaPage, workspaces[0])).toHaveCount(1)
+
+    await orcaPage.getByRole('button', { name: 'Workspace options' }).click()
+    const toggle = orcaPage.getByRole('switch', {
+      name: 'List each project’s agent sessions in place of its workspaces'
+    })
+    await expect(toggle).toHaveAttribute('aria-checked', 'false')
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-checked', 'true')
+    await orcaPage.keyboard.press('Escape')
+
+    const sidebar = orcaPage.locator('[data-worktree-sidebar]')
+    await expect(sidebar.locator('[data-worktree-card-surface]')).toHaveCount(0)
+    await expect(orcaPage.locator('[data-sidebar-sessions-toolbar]')).toHaveCount(0)
+    for (const [index, session] of sessions.entries()) {
+      const row = sidebar.locator(`[data-session-group] [data-live-session-row="${session.id}"]`)
+      await expect(row).toBeVisible()
+      await expect(row).toContainText(workspaces[index].name)
+    }
+    await sidebar.screenshot({ path: testInfo.outputPath('sidebar-workspaces-hidden.png') })
+  } finally {
+    await stopAllSeededSessions()
+    await orcaPage.evaluate(() => window.__store!.getState().setHideSidebarWorkspaces(false))
+    await removeSeedWorkspaces(orcaPage, workspaces)
+  }
+})
