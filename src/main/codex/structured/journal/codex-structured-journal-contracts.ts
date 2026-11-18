@@ -1,3 +1,4 @@
+import type { CodexAutoCompactSettings } from '../../../../shared/agent-session/agent-auto-compact-settings'
 import type { AgentJournalItemIdentity } from '../../../../shared/agent-session/journal/agent-session-journal-identity'
 import type { AgentSessionAccountKind } from '../../../../shared/agent-session/agent-session-availability'
 import type {
@@ -43,6 +44,8 @@ export type CodexJournalTranslatorDeps = {
   /** Use the journal row identity so replay computes the same settlement key. */
   onUserMessageEcho?: (clientMessageId: string, identity: AgentJournalItemIdentity) => void
   primaryThreadId?: () => string | null
+  /** Where the host's Codex config compacts on its own, once the session has read it. */
+  autoCompact?: () => CodexAutoCompactSettings | null
   /** Submission origin for one exact client message still awaiting its echo. */
   dispatchEchoes?: CodexDispatchEchoes
   dispatchRequestOrigin?: (clientMessageId: string) => CodexDispatchRequestOrigin | null

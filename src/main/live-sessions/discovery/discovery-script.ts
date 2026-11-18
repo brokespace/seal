@@ -3,6 +3,7 @@
 
 import { TRANSCRIPT_LOG_MARKS, TURN_TAIL_WINDOW_FACTOR } from './transcript-turn-tail'
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
+import { autoCompactConfigSection, type AgentConfigRoots } from './host-auto-compact-config'
 
 export type DiscoveryScriptOptions = {
   /** Transcripts untouched for longer than this are not live, unless a running agent owns them. */
@@ -24,6 +25,8 @@ export type DiscoveryScriptOptions = {
   headKnown: string[]
   /** Jobs to look for among the processes no agent runs; none asks nothing of the host. */
   jobs?: readonly HostJobQuery[]
+  /** Config roots, besides the default ones, that the transcripts read so far live under. */
+  configRoots?: AgentConfigRoots
 }
 
 /** A job that outlived the call that started it, as a host can find it among its processes. */
@@ -139,7 +142,7 @@ for f in "$HOME"/.config/sisomewhere/agents/*.json; do
   [ -n "$hp" ] && [ -n "$ht" ] && kill -0 "$hp" 2>/dev/null && pin "$hp" hook claude "$ht"
 done
 sort -u "$PINS" | sed 's/^/@@PIN /'
-${transcriptSection(options)}rm -f "$PINS" "$SUBREADS"
+${autoCompactConfigSection(options.configRoots ?? { claude: [], codex: [] })}${transcriptSection(options)}rm -f "$PINS" "$SUBREADS"
 echo "@@DONE"
 `
 }

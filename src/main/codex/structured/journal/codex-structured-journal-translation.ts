@@ -245,7 +245,8 @@ function createCodexTranslation(
           attributionFor,
           threadId: event.threadId,
           params: event.params,
-          capturedAt: deps.now?.() ?? Date.now()
+          capturedAt: deps.now?.() ?? Date.now(),
+          autoCompact: deps.autoCompact?.() ?? null
         })
       }
       if (event.method === 'item/started' || event.method === 'item/completed') {

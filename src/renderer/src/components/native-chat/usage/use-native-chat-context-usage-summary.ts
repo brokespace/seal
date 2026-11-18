@@ -71,7 +71,16 @@ function mergeTranscriptContextUsage(
   const measured = [decoded, recorded]
     .filter(isContextUsageMeasured)
     .sort((left, right) => (right.updatedAt ?? 0) - (left.updatedAt ?? 0))[0]
-  return measured ? { ...measured, ...compaction } : unmeasuredContextUsage(compaction)
+  // Only the host knows where its agent compacts; the point holds for the same model and window.
+  const threshold =
+    recorded.autoCompactAtTokens !== undefined &&
+    measured?.model === recorded.model &&
+    measured?.windowTokens === recorded.windowTokens
+      ? { autoCompactAtTokens: recorded.autoCompactAtTokens }
+      : {}
+  return measured
+    ? { ...measured, ...threshold, ...compaction }
+    : unmeasuredContextUsage(compaction)
 }
 
 /**

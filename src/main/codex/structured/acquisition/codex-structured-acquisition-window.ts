@@ -1,3 +1,4 @@
+import type { CodexAutoCompactSettings } from '../../../../shared/agent-session/agent-auto-compact-settings'
 import { CodexAppliedSettings } from '../catalog/codex-structured-applied-settings'
 import type { CodexAppServerConnection } from '../../app-server/codex-app-server-connection-types'
 import '../prompts/codex-structured-prompt-replies'
@@ -10,6 +11,8 @@ export const MAX_CODEX_ACQUISITION_BUFFER_BYTES = 4 * 1024 * 1024
 export class CodexAcquisitionWindow {
   readonly appliedSettings = new CodexAppliedSettings()
   readonly prompts = new CodexPromptRegistry()
+  /** Where the host's Codex config compacts on its own, once open has read it. */
+  autoCompact: CodexAutoCompactSettings | null = null
   /** Null until the spawn resolves; the handshake can already emit events. */
   connection: CodexAppServerConnection | null = null
   private readonly buffered: (() => void)[] = []
