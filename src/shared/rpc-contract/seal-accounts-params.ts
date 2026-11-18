@@ -16,11 +16,12 @@ export const SealAccountsStatusParams = z
 
 export const SealAccountsSetConfigParams = z.object({ config: SealAccountsConfigSchema }).strict()
 
-/** The desktop that manages a fleet pushes its config and tells the host which machine it is. */
+/** A desktop carries the fleet's config to a host; the newer of the two is kept. */
 export const SealAccountsApplyFleetConfigParams = z
   .object({
     config: SealAccountsConfigSchema,
-    machineKey: z.string().trim().min(1).max(512)
+    /** Sent by older desktops, which named each host by their own server id. */
+    machineKey: z.string().trim().min(1).max(512).optional()
   })
   .strict()
 
@@ -35,8 +36,10 @@ export const SealAccountsSetAutoSwapParams = z
 export const SealAccountsSetPolicyParams = z
   .object({
     scope: z.enum(['project', 'machine']),
-    /** Project match pattern, or machine key (`local`, `runtime:<id>`, `ssh:<id>`). */
+    /** Project match pattern, or machine key (`host:<installation id>`, or legacy `local`/`runtime:<id>`). */
     target: z.string().trim().min(1).max(512),
+    /** With scope `project`: the rule applies on this machine only. */
+    machine: z.string().trim().min(1).max(512).optional(),
     provider: Provider,
     label: z.string().trim().max(120).optional(),
     allow: z.array(AccountRef).max(200).optional(),

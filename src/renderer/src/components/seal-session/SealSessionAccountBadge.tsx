@@ -5,7 +5,7 @@ import { getRuntimeTargetForWorktreeOwner } from '@/lib/files/access/file-owner-
 import type { RuntimeClientTarget } from '../../../../shared/runtime-client-target'
 import type { SealSessionLiveSwapMode } from '../../../../shared/seal-accounts/seal-accounts-status'
 import { SealSessionAccountMenu } from './SealSessionAccountMenu'
-import { sessionForTab } from './seal-session-account-view'
+import { sessionForChat, sessionForTab } from './seal-session-account-view'
 import { mutateSealHost } from './seal-session-status-store'
 import { useSealHostSnapshot } from './use-seal-host-snapshot'
 
@@ -17,18 +17,29 @@ function ownerEnvironment(target: RuntimeClientTarget | null): string | null {
   return target.kind === 'local' ? '' : target.environmentId
 }
 
-/** The account a Seal-launched agent in this tab runs on, with a menu to move it. */
-export function SealTabAccountBadge({
+/**
+ * The account a Seal-launched agent runs on, with its usage and a menu to move it: a chat by its
+ * session id, or a terminal agent by its tab.
+ */
+export function SealSessionAccountBadge({
   tabId,
-  worktreeId
+  chatSessionId,
+  worktreeId,
+  runtimeEnvironmentId,
+  className = 'mr-1'
 }: {
-  tabId: string
+  tabId?: string
+  chatSessionId?: string
   worktreeId: string | null | undefined
+  /** The host a chat runs on, when the caller knows it better than the workspace's owner. */
+  runtimeEnvironmentId?: string | null
+  className?: string
 }) {
   const t = useTranslate()
-  const environment = useAppStore((state) =>
+  const ownerEnvironmentId = useAppStore((state) =>
     ownerEnvironment(getRuntimeTargetForWorktreeOwner(state, worktreeId))
   )
+  const environment = runtimeEnvironmentId ?? ownerEnvironmentId
   const target = useMemo<RuntimeClientTarget | null>(
     () =>
       environment === null
@@ -39,13 +50,18 @@ export function SealTabAccountBadge({
     [environment]
   )
   const snapshot = useSealHostSnapshot(target)
-  const session = snapshot ? sessionForTab(snapshot.status.sessions, tabId) : null
+  const sessions = snapshot?.status.sessions ?? []
+  const session = chatSessionId
+    ? sessionForChat(sessions, chatSessionId)
+    : tabId
+      ? sessionForTab(sessions, tabId)
+      : null
   if (!target || !snapshot || !session) {
     return null
   }
   return (
     <SealSessionAccountMenu
-      className="mr-1"
+      className={className}
       session={session}
       candidates={snapshot.status.providers[session.provider].candidates}
       readAt={snapshot.readAt}

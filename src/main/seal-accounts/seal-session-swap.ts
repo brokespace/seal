@@ -175,10 +175,19 @@ export async function swapSealSession(
     throw new Error(`This session already runs on ${request.to.label}.`)
   }
   let outcome: Awaited<ReturnType<typeof deliver>>
-  try {
-    outcome = await deliver(manager, session, request)
-  } catch (error) {
-    outcome = { delivery: 'failed', home: session.profileHome ?? null, note: errorMessage(error) }
+  if (session.chat) {
+    // A chat relaunches on its pick between turns; the choice outranks the policy from now on.
+    outcome = {
+      delivery: 'resume',
+      home: null,
+      note: 'The chat continues on it from its next message.'
+    }
+  } else {
+    try {
+      outcome = await deliver(manager, session, request)
+    } catch (error) {
+      outcome = { delivery: 'failed', home: session.profileHome ?? null, note: errorMessage(error) }
+    }
   }
   const entry: SealSessionSwapEntry = {
     at: manager.now(),
@@ -201,6 +210,9 @@ export async function swapSealSession(
     if (entry.delivery !== 'failed') {
       target.accountKey = request.to.key
       target.accountLabel = request.to.label
+    }
+    if (target.chat) {
+      target.choice = request.to.key
     }
   })
   const verb = entry.delivery === 'failed' ? 'could not move' : `moved (${entry.delivery})`

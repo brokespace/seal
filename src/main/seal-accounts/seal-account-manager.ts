@@ -8,6 +8,7 @@ import {
   type SealAccountsConfig,
   type SealProvider
 } from '../../shared/seal-accounts/seal-accounts-config'
+import { newerFleetConfig, SealFleetHost, type SealFleetConfigApplied } from './seal-fleet-host'
 import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
 import { buildSealCandidates } from '../../shared/seal-accounts/seal-account-candidate-builder'
 import { parseSealAccountKey } from '../../shared/seal-accounts/seal-account-key'
@@ -16,10 +17,6 @@ import {
   type ResolvedSealPolicy,
   type SealProjectIdentity
 } from '../../shared/seal-accounts/seal-account-policy'
-import {
-  decideAutoSwap,
-  describeAutoSwapDecision
-} from '../../shared/seal-accounts/seal-auto-swap-decision'
 import { findCandidateByRef } from '../../shared/seal-accounts/seal-launch-account-pick'
 import type {
   SealAccountsStatus,
@@ -33,7 +30,8 @@ import { runSealAccountsMigration } from './seal-account-migration'
 import { SealLoginExpiryCache } from './seal-login-expiry'
 import { readSealSystemLogins } from './seal-system-login'
 import { sealSystemLoginStatus } from './seal-system-login-listing'
-import { recordSealHostSwap, type SealSwapQuarantineUpdate } from './seal-host-swap'
+import { recordSealHostSwap } from './seal-host-swap'
+import { SealHostAutoSwap } from './seal-host-auto-swap'
 import { createSealSignInFlows, type SealSignInFlows } from './seal-account-sign-in'
 import { SealAccountsStore } from './seal-accounts-store'
 import { SealApiKeyVault } from './seal-api-key-vault'
@@ -43,14 +41,14 @@ import { installSealLiveUsageOwner } from './seal-live-usage-owner'
 import { createSealUsagePoller, sealAccountsInUse, withUsageSchedule } from './seal-usage-schedule'
 import { startSealSessionWatch } from './seal-session-watch'
 
-const EVALUATE_DEBOUNCE_MS = 2_000
-
 export type SealAccountManagerDeps = {
   store: Pick<Store, 'getRepo' | 'getSettings'>
   services: ProviderAccountServices
   dataRoot?: string
   now?: () => number
   fetchUsage?: SealUsageFetch
+  /** This host's installation id, which names it in machine rules on every desktop. */
+  installationId?: () => Promise<string | undefined>
 }
 
 /** One host's account brain: candidates, claude-swap auto-swap, and per-launch picks. */
@@ -59,20 +57,16 @@ export class SealAccountManager {
   readonly store: SealAccountsStore
   readonly vault: SealApiKeyVault
   readonly now: () => number
-  private readonly lastDecision: Record<SealProvider, { at: number; summary: string } | null> = {
-    claude: null,
-    codex: null
-  }
+  readonly autoSwap = new SealHostAutoSwap(this)
   private unsubscribeUsage: (() => void) | null = null
   readonly usage: SealUsagePoller
   /** When an agent running on each account last printed a limit stop. */
   readonly limitStops = new Map<SealAccountKey, number>()
-  private evaluateTimer: ReturnType<typeof setTimeout> | null = null
-  private evaluating: Promise<unknown> = Promise.resolve()
   readonly loginExpiry = new SealLoginExpiryCache()
   /** Resolves once saved accounts were merged into one list on this start. */
   migrated: Promise<void> = Promise.resolve()
   private signInFlows: SealSignInFlows | null = null
+  readonly host = new SealFleetHost(() => this.machineKey)
 
   constructor(readonly deps: SealAccountManagerDeps) {
     this.dataRoot = deps.dataRoot ?? getAppEnvironment().getPath('userData')
@@ -89,6 +83,7 @@ export class SealAccountManager {
   }
 
   start(): void {
+    this.host.load(this.deps.installationId)
     this.unsubscribeUsage = this.services.rateLimits.onStateChange(() => this.scheduleEvaluation())
     this.usage.sync()
     this.migrated = runSealAccountsMigration(this).catch((error: unknown) => {
@@ -99,7 +94,7 @@ export class SealAccountManager {
   dispose(): void {
     this.unsubscribeUsage?.()
     this.usage.dispose()
-    clearTimeout(this.evaluateTimer ?? undefined)
+    this.autoSwap.dispose()
   }
 
   getConfig(): SealAccountsConfig {
@@ -149,7 +144,11 @@ export class SealAccountManager {
   }
 
   policy(provider: SealProvider, project: SealProjectIdentity | null): ResolvedSealPolicy {
-    return resolveSealPolicy(this.getConfig(), { provider, machineKey: this.machineKey, project })
+    return resolveSealPolicy(this.getConfig(), {
+      provider,
+      machineKeys: this.host.machineKeys(),
+      project
+    })
   }
 
   status(): SealAccountsStatus {
@@ -160,11 +159,13 @@ export class SealAccountManager {
         candidates: this.candidates(entry),
         machineAllow: machine.allow,
         machineDefault: machine.defaultKey,
-        lastDecision: this.lastDecision[entry]
+        lastDecision: this.autoSwap.lastDecision[entry]
       }
     }
     return {
       machineKey: state.machineKey,
+      ...(this.host.hostKey ? { hostKey: this.host.hostKey } : {}),
+      machineKeys: this.host.machineKeys(),
       config: this.getConfig(),
       providers: { claude: provider('claude'), codex: provider('codex') },
       quarantine: state.quarantine,
@@ -196,73 +197,22 @@ export class SealAccountManager {
     await this.usage.readAll()
   }
 
-  private anyAutoSwapEnabled(): boolean {
-    return SEAL_PROVIDERS.some((provider) => this.getConfig().autoSwap[provider].enabled)
-  }
-
   private scheduleEvaluation(): void {
-    if (!this.anyAutoSwapEnabled() || this.evaluateTimer) {
-      return
-    }
-    this.evaluateTimer = setTimeout(() => {
-      this.evaluateTimer = null
-      for (const provider of SEAL_PROVIDERS) {
-        void this.evaluate(provider).catch((error: unknown) => {
-          console.warn(`[seal-accounts] ${provider} auto-swap check failed:`, error)
-        })
-      }
-    }, EVALUATE_DEBOUNCE_MS)
-    this.evaluateTimer.unref?.()
+    this.autoSwap.schedule()
   }
 
-  /** One claude-swap pass. Only the host selection moves, so running sessions keep their login. */
   evaluate(
     provider: SealProvider,
     options: { force?: boolean } = {}
   ): Promise<SealSwapEvent | null> {
-    const run = this.evaluating.then(async () => {
-      const config = this.getConfig()
-      const state = this.store.getState()
-      const settings = config.autoSwap[provider]
-      const decision = decideAutoSwap({
-        settings: options.force ? { ...settings, enabled: true } : settings,
-        candidates: this.candidates(provider),
-        policy: this.policy(provider, null),
-        quarantine: state.quarantine,
-        lastSwapAt: options.force ? null : (state.lastSwapAt[provider] ?? null),
-        now: this.now()
-      })
-      this.lastDecision[provider] = { at: this.now(), summary: describeAutoSwapDecision(decision) }
-      if (decision.kind !== 'swap') {
-        return null
-      }
-      return this.recordSwap(provider, decision.to, decision.reason, (next, at) => {
-        for (const key of decision.quarantine) {
-          next.quarantine[key] = {
-            until: at + settings.quarantineMinutes * 60_000,
-            reason: 'Login stopped working'
-          }
-        }
-      })
-    })
-    this.evaluating = run.catch(() => {})
-    return run
+    return this.autoSwap.evaluate(provider, options)
   }
 
   swapTo(provider: SealProvider, ref: string): Promise<SealSwapEvent> {
     const candidate = this.requireCandidate(provider, ref)
-    return this.recordSwap(provider, candidate, 'manual', (next) => {
+    return recordSealHostSwap(this, provider, candidate, 'manual', (next) => {
       delete next.quarantine[candidate.key]
     })
-  }
-
-  private recordSwap(
-    provider: SealProvider,
-    to: SealAccountCandidate,
-    reason: SealSwapEvent['reason'],
-    updateQuarantine: SealSwapQuarantineUpdate
-  ): Promise<SealSwapEvent> {
-    return recordSealHostSwap(this, provider, to, reason, updateQuarantine)
   }
 
   requireCandidate(provider: SealProvider, ref: string): SealAccountCandidate {
@@ -292,16 +242,28 @@ export class SealAccountManager {
     this.store.saveConfig({ ...config, updatedAt: this.now() })
     this.usage.sync()
     this.scheduleEvaluation()
+    this.host.configSaved()
   }
 
-  applyFleetConfig(config: SealAccountsConfig, machineKey: string): void {
-    // API keys never travel with the config; each host keeps the ones sealed in its own keychain.
-    this.store.saveConfig({ ...config, apiKeys: this.getConfig().apiKeys })
-    this.store.updateState((next) => {
-      next.machineKey = machineKey
-    })
-    this.usage.sync()
-    this.scheduleEvaluation()
+  /**
+   * Every Seal host keeps the fleet's config; the newest edit wins wherever it was made. API keys
+   * never travel with it: each host keeps the ones sealed in its own keychain.
+   */
+  applyFleetConfig(config: SealAccountsConfig, machineKey?: string): SealFleetConfigApplied {
+    const newer = newerFleetConfig(this.getConfig(), config)
+    if (machineKey && machineKey !== this.machineKey) {
+      // Older desktops still name hosts by their own server id; rules saved that way keep matching.
+      this.store.updateState((next) => {
+        next.machineKey = machineKey
+      })
+    }
+    if (newer) {
+      this.store.saveConfig(newer)
+      this.usage.sync()
+      this.scheduleEvaluation()
+    }
+    const shared = { ...this.getConfig(), apiKeys: [] }
+    return { applied: newer !== null, config: shared, hostKey: this.host.hostKey }
   }
 
   pinWorkspace(worktreeId: string, provider: SealProvider, ref: string | null): void {

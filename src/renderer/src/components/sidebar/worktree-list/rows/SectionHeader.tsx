@@ -1,3 +1,4 @@
+import { repoHeaderContextMenuHandler } from './repo-header-context-menu'
 import {
   getRootProjectHeaderKey,
   getRootProjectHeaderOccurrenceKey
@@ -224,6 +225,7 @@ export function renderWorktreeSectionHeaderRow(
                 )
               : undefined
           }
+          onContextMenu={isRepoHeader ? repoHeaderContextMenuHandler(row.key) : undefined}
           data-repo-header-id={projectIdForHeader}
           data-repo-header-index={repoHeaderIndex}
           data-repo-header-bucket={repoHeaderBucketKey}
@@ -392,6 +394,7 @@ export function renderWorktreeSectionHeaderRow(
                 label={label}
                 projectGroups={ctx.projectGroups}
                 actions={ctx.projectActions}
+                headerKey={row.key}
               />
             ) : null}
 

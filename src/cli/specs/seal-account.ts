@@ -116,22 +116,25 @@ export const SEAL_ACCOUNT_COMMAND_SPECS: CommandSpec[] = [
     path: ['account', 'policy', 'set'],
     summary: 'Restrict or default the accounts a project or machine uses',
     usage:
-      'seal account policy set --agent claude|codex (--project <pattern> | --machine <key>) [--allow <ref,ref>] [--default <ref|none>] [--label <name>] [--json]',
+      'seal account policy set --agent claude|codex [--project <pattern>] [--machine <key|here>] [--allow <ref,ref>] [--default <ref|none>] [--label <name>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'agent', 'project', 'machine', 'allow', 'default', 'label'],
     notes: [
       '--project matches a git remote (`github.com/acme/api`), repo path, folder or display name; `*` globs, exact rules win.',
-      '--machine is `local` or `runtime:<environment-id>`. Project and machine allow-lists intersect; the project default wins.',
+      '--machine is a `host:<installation-id>` key (see `seal account policy list`) or `here` for the machine this CLI talks to.',
+      'With both, the project rule applies on that machine only and replaces the project’s rule for every machine there.',
+      'Project and machine allow-lists intersect; the project default wins.',
       '--allow "" allows every account again.'
     ],
     examples: [
       'seal account policy set --agent claude --project "github.com/acme/*" --allow work,work-backup --default work',
-      'seal account policy set --agent codex --machine runtime:gpu-box --default ci'
+      'seal account policy set --agent codex --machine here --default ci',
+      'seal account policy set --agent claude --project basis-quant-2 --machine here --default work'
     ]
   },
   {
     path: ['account', 'policy', 'rm'],
     summary: 'Remove a project or machine account rule',
-    usage: 'seal account policy rm (--project <pattern> | --machine <key>) [--json]',
+    usage: 'seal account policy rm [--project <pattern>] [--machine <key|here>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'project', 'machine']
   },
   {

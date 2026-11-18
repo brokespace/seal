@@ -86,3 +86,19 @@ export const getSealAccountsSearchEntries = createLocalizedCatalog((): SettingsS
     ]
   }
 ])
+
+export const getSealProjectAccountsSearchEntry = createLocalizedCatalog(
+  (): SettingsSearchEntry => ({
+    title: translate('seal.accounts.search.project.title', 'Project accounts'),
+    description: translate(
+      'seal.accounts.search.project.description',
+      'Which Claude and Codex accounts this project’s sessions use, on every machine or on one.'
+    ),
+    keywords: [
+      ...translateSearchKeyword('seal.accounts.search.keyword.claude', 'claude'),
+      ...translateSearchKeyword('seal.accounts.search.keyword.codex', 'codex'),
+      ...translateSearchKeyword('seal.accounts.search.keyword.account', 'account'),
+      ...translateSearchKeyword('seal.accounts.search.keyword.machine', 'machine')
+    ]
+  })
+)

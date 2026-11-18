@@ -15,6 +15,8 @@ export type SealPolicyEdit = {
   scope: 'project' | 'machine'
   /** Project match pattern, or machine key. */
   target: string
+  /** A project rule for one machine only; absent is the project's rule on every machine. */
+  machine?: string
   provider: SealProvider
   label?: string
   allow?: SealAccountKey[]
@@ -43,8 +45,12 @@ export function withPolicyEdit(
   })
   const label = edit.label !== undefined ? { label: edit.label } : {}
   if (edit.scope === 'project') {
-    const index = config.projects.findIndex((rule) => rule.match === edit.target)
-    const rule = config.projects[index] ?? { match: edit.target }
+    const index = config.projects.findIndex(
+      (rule) => rule.match === edit.target && rule.machine === edit.machine
+    )
+    const rule =
+      config.projects[index] ??
+      (edit.machine ? { match: edit.target, machine: edit.machine } : { match: edit.target })
     const next = { ...rule, ...label, [edit.provider]: patch(rule[edit.provider]) }
     return { ...config, projects: replaceRule(config.projects, index, edit.remove ? null : next) }
   }
@@ -153,4 +159,31 @@ export function withAccountOrder(
     const saved = Object.entries(next.profiles).find(([entry]) => sealAccountKeysMatch(entry, key))
     return withProfile(next, key, { ...saved?.[1], priority: (index + 1) * PRIORITY_STEP })
   }, config)
+}
+
+/** Moves rules saved under old machine keys to new ones; the same object when nothing moved. */
+export function withMachineKeysRenamed(
+  config: SealAccountsConfig,
+  renames: ReadonlyMap<string, string>
+): SealAccountsConfig {
+  const renamed = (key: string): string => renames.get(key) ?? key
+  const taken = new Set(config.machines.map((rule) => rule.machine))
+  // A rule already saved under the new key wins over the old one.
+  const machines = config.machines.flatMap((rule) => {
+    const next = renamed(rule.machine)
+    if (next === rule.machine) {
+      return [rule]
+    }
+    return taken.has(next) ? [] : [{ ...rule, machine: next }]
+  })
+  const projects = config.projects.map((rule) =>
+    rule.machine && renamed(rule.machine) !== rule.machine
+      ? { ...rule, machine: renamed(rule.machine) }
+      : rule
+  )
+  const changed =
+    machines.length !== config.machines.length ||
+    machines.some((rule, index) => rule !== config.machines[index]) ||
+    projects.some((rule, index) => rule !== config.projects[index])
+  return changed ? { ...config, machines, projects } : config
 }

@@ -8,7 +8,8 @@ import {
   Plug,
   RefreshCw,
   SquareTerminal,
-  Trash2
+  Trash2,
+  UserRound
 } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '@/components/ui/button'
@@ -43,6 +44,7 @@ import {
   serverInstallStatusText
 } from '../server-install/seal-server-install-copy'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import { MachineAccountsDialog } from './MachineAccountsDialog'
 import { MachineEditDialog } from './MachineEditDialog'
 import { MachineSessionList } from './MachineSessionList'
 import { MachineStatusDot, MachineVitalsStrip, useMachineStatusLabel } from './MachineVitals'
@@ -77,6 +79,7 @@ export function MachineDetail({
   const statusLabel = useMachineStatusLabel()
   const [editing, setEditing] = useState<SshTarget | null>(null)
   const [removing, setRemoving] = useState(false)
+  const [accountsOpen, setAccountsOpen] = useState(false)
   const explorerRef = useRef<MachineFileExplorerHandle>(null)
   const [opened, setOpened] = useState<{ machineId: string; kind: MachineResourceKind } | null>(
     null
@@ -215,6 +218,10 @@ export function MachineDetail({
                       )}
                 </DropdownMenuItem>
               ) : null}
+              <DropdownMenuItem onSelect={() => setAccountsOpen(true)}>
+                <UserRound />
+                {t('auto.components.machines.detail.accounts', 'Accounts…')}
+              </DropdownMenuItem>
               {machine.connection !== 'local' ? <DropdownMenuSeparator /> : null}
               {machine.sshTargetId ? (
                 <DropdownMenuItem onSelect={() => void editSshDetails()}>
@@ -286,6 +293,7 @@ export function MachineDetail({
         folderRequest={folderRequest}
         unreachableText={view && installStatus ? serverInstallProgressText(t, view) : null}
       />
+      <MachineAccountsDialog machine={machine} open={accountsOpen} onOpenChange={setAccountsOpen} />
       <MachineEditDialog
         machineId={machine.id}
         target={editing}

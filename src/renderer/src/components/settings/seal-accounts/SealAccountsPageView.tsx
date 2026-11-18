@@ -70,6 +70,26 @@ export type SealAccountsPageViewProps = {
   claudeOptions?: React.ReactNode
   /** For fixtures: the dialog to show on first render. */
   initialDialog?: PageDialog | null
+  /** Only this machine's accounts, rules and sessions; fleet-wide settings stay on the full page. */
+  machineId?: string
+}
+
+/** One machine's slice of the fleet: the accounts signed in there and its sessions. */
+function overviewForMachine(overview: SealFleetOverview, machineId: string): SealFleetOverview {
+  const held = (account: SealFleetAccount) =>
+    account.machines.some((presence) => presence.machineId === machineId)
+  const groups: Record<SealAccountGroup, SealFleetAccount[]> = {
+    claude: overview.groups.claude.filter(held),
+    codex: overview.groups.codex.filter(held),
+    apiKeys: overview.groups.apiKeys.filter(held)
+  }
+  return {
+    ...overview,
+    groups,
+    sessions: overview.sessions.filter((session) => session.machineId === machineId),
+    swaps: overview.swaps.filter((swap) => swap.machineId === machineId),
+    total: SEAL_ACCOUNT_GROUPS.reduce((sum, group) => sum + groups[group].length, 0)
+  }
 }
 
 /** Every Claude, Codex and API-key account in one place, with auto-swap, rules and history. */
@@ -82,7 +102,8 @@ export function SealAccountsPageView({
   signIn,
   actions,
   claudeOptions,
-  initialDialog = null
+  initialDialog = null,
+  machineId
 }: SealAccountsPageViewProps): React.JSX.Element {
   const t = useTranslate()
   const [dialog, setDialog] = useState<PageDialog | null>(initialDialog)
@@ -107,6 +128,10 @@ export function SealAccountsPageView({
   const allAccounts = SEAL_ACCOUNT_GROUPS.flatMap((group) => overview.groups[group])
   const pushTargets = overview.machines.filter((machine) => !machine.home && machine.reachable)
   const machineCount = overview.machines.length
+  const scopedMachine = machineId
+    ? (overview.machines.find((machine) => machine.id === machineId) ?? null)
+    : null
+  const shown = scopedMachine ? overviewForMachine(overview, scopedMachine.id) : overview
   const actionsFor = (account: SealFleetAccount) => ({
     onUse: () => actions.use(account),
     onRelogin: () => setDialog({ kind: 'relogin', account }),
@@ -122,23 +147,32 @@ export function SealAccountsPageView({
           className="min-w-0 flex-1 text-sm text-muted-foreground"
           data-slot="seal-accounts-summary"
         >
-          {overview.total === 0
-            ? t('seal.accounts.summary.none', 'No accounts yet.')
-            : machineCount > 1
-              ? overview.total === 1
-                ? t('seal.accounts.summary.fleetOne', '1 account across {{value0}} machines.', {
-                    value0: machineCount
-                  })
-                : t(
-                    'seal.accounts.summary.fleet',
-                    '{{value0}} accounts across {{value1}} machines.',
-                    { value0: overview.total, value1: machineCount }
-                  )
-              : overview.total === 1
-                ? t('seal.accounts.summary.one', '1 account on this computer.')
-                : t('seal.accounts.summary.local', '{{value0}} accounts on this computer.', {
-                    value0: overview.total
-                  })}
+          {scopedMachine
+            ? shown.total === 1
+              ? t('seal.accounts.summary.machineOne', '1 account on {{value0}}.', {
+                  value0: scopedMachine.label
+                })
+              : t('seal.accounts.summary.machine', '{{value0}} accounts on {{value1}}.', {
+                  value0: shown.total,
+                  value1: scopedMachine.label
+                })
+            : overview.total === 0
+              ? t('seal.accounts.summary.none', 'No accounts yet.')
+              : machineCount > 1
+                ? overview.total === 1
+                  ? t('seal.accounts.summary.fleetOne', '1 account across {{value0}} machines.', {
+                      value0: machineCount
+                    })
+                  : t(
+                      'seal.accounts.summary.fleet',
+                      '{{value0}} accounts across {{value1}} machines.',
+                      { value0: overview.total, value1: machineCount }
+                    )
+                : overview.total === 1
+                  ? t('seal.accounts.summary.one', '1 account on this computer.')
+                  : t('seal.accounts.summary.local', '{{value0}} accounts on this computer.', {
+                      value0: overview.total
+                    })}
         </p>
         <Button variant="ghost" size="sm" onClick={actions.refresh} disabled={refreshing}>
           <RefreshCw className={cn(refreshing && 'animate-spin motion-reduce:animate-none')} />
@@ -161,7 +195,52 @@ export function SealAccountsPageView({
         onDismissNotice={actions.dismissNotice}
       />
 
-      {overview.total === 0 ? (
+      {machineId && !scopedMachine ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          {t('seal.accounts.machine.unknown', 'Seal has not read this machine’s accounts yet.')}
+        </p>
+      ) : scopedMachine ? (
+        <>
+          {SEAL_ACCOUNT_GROUPS.map((group) => (
+            <SealAccountGroupSection
+              key={group}
+              group={group}
+              accounts={shown.groups[group]}
+              status={status}
+              now={now}
+              pushTargets={pushTargets}
+              onAdd={() => setDialog({ kind: 'add', group })}
+              onReorder={actions.reorder}
+              actionsFor={actionsFor}
+            />
+          ))}
+          {scopedMachine.runsSeal ? (
+            <SealRulesSection
+              id={`seal-machine-rules-${scopedMachine.id}`}
+              scope={{ kind: 'machine', machine: scopedMachine }}
+              status={status}
+              accounts={allAccounts}
+              machines={overview.machines.filter((machine) => machine.runsSeal)}
+              onSave={actions.saveRule}
+              onRemove={actions.removeRule}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {t(
+                'seal.accounts.machine.loginsOnlyRules',
+                'This machine is reached over SSH only, so it takes pushed logins but no rules. Connect it through its Seal server to choose its accounts.'
+              )}
+            </p>
+          )}
+          <SealSessionsSection
+            overview={shown}
+            status={status}
+            now={now}
+            onSwap={actions.swapSession}
+            onSetLiveSwap={actions.setSessionLiveSwap}
+          />
+        </>
+      ) : overview.total === 0 ? (
         <SealAccountsOnboarding
           status={status}
           onAdd={(group) => setDialog({ kind: 'add', group })}

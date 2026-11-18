@@ -13,7 +13,8 @@ import {
   // `Shapes` is lucide-react's own export name; exempted in config/oxlint-anti-slop.json.
   Shapes,
   SlidersHorizontal,
-  Trash2
+  Trash2,
+  UserRound
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -29,7 +30,14 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { translate } from '@/i18n/i18n'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
-import { getRepositoryIconSectionId } from '@/components/settings/repository/repository-settings-targets'
+import {
+  getRepositoryAccountsSectionId,
+  getRepositoryIconSectionId
+} from '@/components/settings/repository/repository-settings-targets'
+import {
+  closeRepoHeaderContextMenu,
+  useRepoHeaderContextMenuRequested
+} from './repo-header-context-menu'
 import { WslMoveProjectMenuItem } from '@/components/wsl-move/WslMoveProjectMenuItem'
 import { ProjectMergeMenuItem } from '@/components/project-merge/ProjectMergeMenuItem'
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
@@ -93,7 +101,8 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
   hostRepos,
   label,
   projectGroups,
-  actions
+  actions,
+  headerKey
 }: {
   repo: Repo
   /** A header spanning hosts: every copy it shows, which Hide hides together. */
@@ -101,12 +110,22 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
   label: string
   projectGroups: readonly ProjectGroup[]
   actions: RepoHeaderProjectActions
+  /** The header row's key; a right-click there opens this menu. */
+  headerKey?: string
 }): React.JSX.Element {
   const t = useTranslate()
   // Memoized: subscribe so a language change still repaints its labels.
   useTranslation()
+  const [opened, setOpened] = React.useState(false)
+  const contextRequested = useRepoHeaderContextMenuRequested(headerKey)
+  const onOpenChange = (open: boolean): void => {
+    setOpened(open)
+    if (!open && headerKey) {
+      closeRepoHeaderContextMenu(headerKey)
+    }
+  }
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu modal={false} open={opened || contextRequested} onOpenChange={onOpenChange}>
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
@@ -159,6 +178,14 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
         <DropdownMenuItem onSelect={() => actions.onOpenRepoSettings(repo.id)}>
           <SlidersHorizontal className="size-3.5" />
           {t('auto.components.sidebar.WorktreeList.2cdffbc728', 'Project Settings')}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() =>
+            actions.onOpenRepoSettings(repo.id, getRepositoryAccountsSectionId(repo.id))
+          }
+        >
+          <UserRound className="size-3.5" />
+          {t('seal.accounts.project.menu', 'Account Settings')}
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => actions.onOpenRepoSettings(repo.id, getRepositoryIconSectionId(repo.id))}

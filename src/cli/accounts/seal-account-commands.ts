@@ -66,13 +66,32 @@ function worktreeId(ctx: HandlerContext): string | undefined {
   return getOptionalStringFlag(ctx.flags, 'worktree-id') ?? process.env.ORCA_WORKTREE_ID
 }
 
-function policyTarget(ctx: HandlerContext): { scope: 'project' | 'machine'; target: string } {
+type PolicyTarget = { scope: 'project' | 'machine'; target: string; machine?: string }
+
+/** `--machine here` names the machine the CLI talks to by its `host:` key. */
+async function machineKey(ctx: HandlerContext, value: string): Promise<string> {
+  if (value !== 'here') {
+    return value
+  }
+  const { result } = await status(ctx)
+  return result.hostKey ?? result.machineKey
+}
+
+/** `--project` alone applies everywhere; with `--machine` it applies on that machine only. */
+async function policyTarget(ctx: HandlerContext): Promise<PolicyTarget> {
   const project = getOptionalStringFlag(ctx.flags, 'project')
   const machine = getOptionalStringFlag(ctx.flags, 'machine')
-  if (Boolean(project) === Boolean(machine)) {
-    throw new RuntimeClientError('invalid_argument', 'Pass exactly one of --project or --machine')
+  if (!project && !machine) {
+    throw new RuntimeClientError('invalid_argument', 'Pass --project, --machine, or both')
   }
-  return project ? { scope: 'project', target: project } : { scope: 'machine', target: machine! }
+  if (project) {
+    return {
+      scope: 'project',
+      target: project,
+      ...(machine ? { machine: await machineKey(ctx, machine) } : {})
+    }
+  }
+  return { scope: 'machine', target: await machineKey(ctx, machine!) }
 }
 
 async function status(ctx: HandlerContext, refreshUsage = false) {
@@ -214,7 +233,7 @@ export const SEAL_ACCOUNT_HANDLERS: Record<string, CommandHandler> = {
   'account policy set': async (ctx) => {
     const defaultRef = getOptionalStringFlag(ctx.flags, 'default')
     const response = await ctx.client.call<SealAccountsStatus>('seal.accounts.setPolicy', {
-      ...policyTarget(ctx),
+      ...(await policyTarget(ctx)),
       provider: provider(ctx),
       label: getOptionalStringFlagAllowingEmpty(ctx.flags, 'label'),
       allow: list(ctx, 'allow'),
@@ -224,7 +243,7 @@ export const SEAL_ACCOUNT_HANDLERS: Record<string, CommandHandler> = {
   },
   'account policy rm': async (ctx) => {
     const response = await ctx.client.call<SealAccountsStatus>('seal.accounts.setPolicy', {
-      ...policyTarget(ctx),
+      ...(await policyTarget(ctx)),
       provider: 'claude',
       remove: true
     })

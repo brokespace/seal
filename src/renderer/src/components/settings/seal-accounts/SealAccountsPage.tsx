@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { useTranslate } from '@/i18n/use-translate'
 import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
@@ -12,8 +12,8 @@ import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/sea
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { useMachinesInventory } from '../../machines/model/use-machines-inventory'
 import { SealAccountsPageView, type SealAccountsPageActions } from './SealAccountsPageView'
-import { useSealFleet, type SealRemoteMachine } from './use-seal-fleet'
-import { useSealSignIn } from './use-seal-sign-in'
+import { useSealFleet, type SealFleet, type SealRemoteMachine } from './use-seal-fleet'
+import { useSealSignIn, type SealSignInController } from './use-seal-sign-in'
 
 type SyncResult = {
   results: {
@@ -32,6 +32,17 @@ type RemoveResult = {
 
 const NO_REMOTES: readonly SealRemoteMachine[] = []
 const LOCAL_TARGET: RuntimeClientTarget = { kind: 'local' }
+
+/** The id the accounts page lists a machine under. */
+export function sealFleetMachineId(machine: MachineSummary): string | null {
+  if (machine.connection === 'local') {
+    return 'local'
+  }
+  if (machine.connection === 'server') {
+    return machine.runtimeEnvironmentId
+  }
+  return machine.connection === 'ssh' ? machine.id : null
+}
 
 /** A paired Seal server manages its own accounts; a machine reached over SSH only takes logins. */
 function sealRemoteMachine(machine: MachineSummary): SealRemoteMachine[] {
@@ -58,17 +69,17 @@ function errorText(caught: unknown): string {
   return caught instanceof Error ? caught.message : String(caught)
 }
 
-type SealAccountsPageProps = {
-  target: RuntimeClientTarget
-  /** Claude-wide option rows, shown under the Claude accounts. */
-  claudeOptions?: React.ReactNode
+/** Every account surface reads and changes the fleet through this. */
+export type SealAccountsControl = {
+  fleet: SealFleet
+  actions: SealAccountsPageActions
+  signIn: SealSignInController
 }
 
-function SealAccountsPageForHost({
-  target,
-  remotes,
-  claudeOptions
-}: SealAccountsPageProps & { remotes: readonly SealRemoteMachine[] }): React.JSX.Element {
+function useSealAccountsControl(
+  target: RuntimeClientTarget,
+  remotes: readonly SealRemoteMachine[]
+): SealAccountsControl {
   const t = useTranslate()
   const homeLabel =
     target.kind === 'local'
@@ -232,6 +243,7 @@ function SealAccountsPageForHost({
           scope: draft.scope,
           target: draft.target,
           provider: draft.provider,
+          ...(draft.machine ? { machine: draft.machine } : {}),
           ...(draft.label ? { label: draft.label } : {}),
           allow: draft.allow,
           default: draft.default
@@ -241,7 +253,13 @@ function SealAccountsPageForHost({
     removeRule: (rule) =>
       void mutate(
         'seal.accounts.setPolicy',
-        { scope: rule.scope, target: rule.target, provider: rule.provider, remove: true },
+        {
+          scope: rule.scope,
+          target: rule.target,
+          ...(rule.machine ? { machine: rule.machine } : {}),
+          provider: rule.provider,
+          remove: true
+        },
         failed
       ),
     syncRules: async () => {
@@ -275,24 +293,26 @@ function SealAccountsPageForHost({
     dismissNotice: () => void mutate('seal.accounts.dismissNotice', {}, failed)
   }
 
-  return (
-    <SealAccountsPageView
-      overview={fleet.overview}
-      status={fleet.status}
-      error={fleet.error}
-      refreshing={fleet.refreshing}
-      now={fleet.readAt}
-      signIn={signIn}
-      actions={actions}
-      claudeOptions={claudeOptions}
-    />
-  )
+  return { fleet, actions, signIn }
+}
+
+type SealAccountsProps = {
+  target: RuntimeClientTarget
+  children: (control: SealAccountsControl) => ReactNode
+}
+
+function SealAccountsForHost({
+  target,
+  remotes,
+  children
+}: SealAccountsProps & { remotes: readonly SealRemoteMachine[] }): React.JSX.Element {
+  return <>{children(useSealAccountsControl(target, remotes))}</>
 }
 
 /** The desktop manages the fleet: its own accounts plus the copies on every paired machine. */
-function SealAccountsPageForFleet({
-  claudeOptions
-}: Pick<SealAccountsPageProps, 'claudeOptions'>): React.JSX.Element {
+function SealAccountsForFleet({
+  children
+}: Pick<SealAccountsProps, 'children'>): React.JSX.Element {
   const { machines } = useMachinesInventory(getLocalExecutionHostLabel())
   // Keyed by content: the inventory rebuilds its list on every status tick.
   const key = JSON.stringify(machines.flatMap(sealRemoteMachine))
@@ -301,22 +321,52 @@ function SealAccountsPageForFleet({
     return parsed.length > 0 ? parsed : NO_REMOTES
   }, [key])
   return (
-    <SealAccountsPageForHost
-      target={LOCAL_TARGET}
-      remotes={remotes}
-      claudeOptions={claudeOptions}
-    />
+    <SealAccountsForHost target={LOCAL_TARGET} remotes={remotes}>
+      {children}
+    </SealAccountsForHost>
   )
 }
 
-/** Seal's accounts page. A web client manages the server it is served from. */
+/** Seal's accounts as this app manages them. A web client manages the server it is served from. */
+export function SealAccounts({ target, children }: SealAccountsProps): React.JSX.Element {
+  return target.kind === 'local' && window.api.machines ? (
+    <SealAccountsForFleet>{children}</SealAccountsForFleet>
+  ) : (
+    <SealAccountsForHost target={target} remotes={NO_REMOTES}>
+      {children}
+    </SealAccountsForHost>
+  )
+}
+
+type SealAccountsPageProps = {
+  target: RuntimeClientTarget
+  /** Claude-wide option rows, shown under the Claude accounts. */
+  claudeOptions?: React.ReactNode
+  /** Only this machine's accounts, rules and sessions (its id on this page). */
+  machineId?: string
+}
+
+/** Seal's accounts page: every account, where it is signed in and what it is tied to. */
 export function SealAccountsPage({
   target,
-  claudeOptions
+  claudeOptions,
+  machineId
 }: SealAccountsPageProps): React.JSX.Element {
-  return target.kind === 'local' && window.api.machines ? (
-    <SealAccountsPageForFleet claudeOptions={claudeOptions} />
-  ) : (
-    <SealAccountsPageForHost target={target} remotes={NO_REMOTES} claudeOptions={claudeOptions} />
+  return (
+    <SealAccounts target={target}>
+      {({ fleet, actions, signIn }) => (
+        <SealAccountsPageView
+          overview={fleet.overview}
+          status={fleet.status}
+          error={fleet.error}
+          refreshing={fleet.refreshing}
+          now={fleet.readAt}
+          signIn={signIn}
+          actions={actions}
+          claudeOptions={claudeOptions}
+          machineId={machineId}
+        />
+      )}
+    </SealAccounts>
   )
 }

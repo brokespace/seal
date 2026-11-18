@@ -14,6 +14,7 @@ import {
   type NativeChatComposerWorkspaceTarget
 } from './native-chat-composer-workspace'
 import { NativeChatComposerBranchPicker } from './NativeChatComposerBranchPicker'
+import { SealSessionAccountBadge } from '../../../seal-session/SealSessionAccountBadge'
 
 // Trim to cap height so flex centering aligns glyphs with icons; clip x only to keep descenders.
 const FOOTER_TEXT =
@@ -29,7 +30,7 @@ export function NativeChatComposerWorkspace({
   isWorking?: boolean
 }): React.JSX.Element {
   const t = useTranslate()
-  const { worktreeId, runtimeEnvironmentId, sessionPlace } = structuredTransport ?? {}
+  const { worktreeId, runtimeEnvironmentId, sessionPlace, sessionId } = structuredTransport ?? {}
   const hasTransport = structuredTransport !== undefined
   const selector = useMemo(
     () =>
@@ -197,6 +198,13 @@ export function NativeChatComposerWorkspace({
           )}
         </div>
       )}
+      <SealSessionAccountBadge
+        className="ml-auto"
+        worktreeId={rowWorktreeId}
+        {...(hasTransport
+          ? { chatSessionId: sessionId, runtimeEnvironmentId }
+          : { tabId: terminalTabId })}
+      />
     </div>
   )
 }
