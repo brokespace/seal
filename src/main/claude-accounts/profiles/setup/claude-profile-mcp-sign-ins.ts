@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { writeFileAtomically } from '../../../filesystem/atomic-file-publication'
 import { withClaudeConfigLocks } from '../../../seal-accounts/seal-claude-config-lock'
@@ -118,9 +118,9 @@ function forgetNeedsAuth(profileHome: string, servers: readonly string[]): void 
   writeFileAtomically(file, JSON.stringify(next), { mode: 0o600 })
 }
 
-function readSynced(record: string): string[] {
+async function readSynced(record: string): Promise<string[]> {
   try {
-    const value: unknown = JSON.parse(readFileSync(record, 'utf8'))
+    const value: unknown = JSON.parse(await readFile(record, 'utf8'))
     return Array.isArray(value) ? value.filter((key) => typeof key === 'string') : []
   } catch {
     return []
@@ -166,10 +166,11 @@ export async function shareClaudeMcpSignIns(args: {
     }
     const defaults = isRecord(defaultCredentials.mcpOAuth) ? defaultCredentials.mcpOAuth : {}
     const profile = isRecord(profileCredentials.mcpOAuth) ? profileCredentials.mcpOAuth : {}
+    const synced = await readSynced(args.record)
     const plan = planMcpSignIns({
       defaults,
       profile,
-      synced: readSynced(args.record),
+      synced,
       writeDefaults
     })
     let outcome: ClaudeProfileSurfaceOutcome = 'unchanged'
@@ -188,9 +189,7 @@ export async function shareClaudeMcpSignIns(args: {
       )
       outcome = 'merged'
     }
-    if (
-      JSON.stringify(plan.synced.toSorted()) !== JSON.stringify(readSynced(args.record).toSorted())
-    ) {
+    if (JSON.stringify(plan.synced.toSorted()) !== JSON.stringify(synced.toSorted())) {
       writeFileAtomically(args.record, JSON.stringify(plan.synced), { mode: 0o600 })
     }
     return outcome
