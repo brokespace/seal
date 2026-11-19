@@ -1046,6 +1046,7 @@
     "seal.agentPlugins.apply.save",
     "seal.agentPlugins.apply.showPicker",
     "seal.agentPlugins.apply.unknownContents",
+    "seal.agentPlugins.apply.waiting",
     "seal.agentPlugins.kind.agents",
     "seal.agentPlugins.kind.apps",
     "seal.agentPlugins.kind.commands",
