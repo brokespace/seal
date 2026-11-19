@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import {
   AGENT_PLUGIN_LEDGER_PATH,
   parseAgentPluginLedger
@@ -33,6 +34,15 @@ export async function readAgentPluginLedger(
     throw new Error(`${path} is not valid JSON (${parsed.error}); fix or remove it first`)
   }
   return parseAgentPluginLedger(parsed.value)
+}
+
+/** This machine's ledger for a launch to read; null when it is missing or unreadable. */
+export async function readLocalAgentPluginLedger(
+  userHome: string
+): Promise<AgentPluginLedger | null> {
+  const text = await readFile(agentPluginLedgerPath(userHome), 'utf8').catch(() => null)
+  const parsed = text === null ? null : parseJsonObject(text)
+  return parsed?.ok ? parseAgentPluginLedger(parsed.value) : null
 }
 
 async function writeLedger(

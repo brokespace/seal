@@ -1,10 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { isPlainObject } from '../../shared/agent-config/agent-config-values'
-import {
-  AGENT_PLUGIN_LEDGER_PATH,
-  parseAgentPluginLedger
-} from '../../shared/agent-plugins/agent-plugin-ledger'
 import { withPluginRoot } from '../../shared/agent-plugins/agent-plugin-plan'
 import {
   targetsInclude,
@@ -13,6 +9,7 @@ import {
 import type { AgentPluginLedger } from '../../shared/agent-plugins/agent-plugin-types'
 import { oauthAccountKey } from '../../shared/seal-accounts/seal-account-key'
 import { writeFileAtomicallyIfUnchanged } from '../filesystem/atomic-file-publication'
+import { readLocalAgentPluginLedger } from './agent-plugin-ledger-io'
 
 async function readText(path: string): Promise<string | null> {
   return readFile(path, 'utf8').catch(() => null)
@@ -56,12 +53,6 @@ async function rewrite(
   }
 }
 
-async function readLedger(userHome: string): Promise<AgentPluginLedger | null> {
-  const text = await readText(join(userHome, ...AGENT_PLUGIN_LEDGER_PATH.split('/')))
-  const value = text === null ? null : readObject(text)
-  return value ? parseAgentPluginLedger(value) : null
-}
-
 /**
  * Re-applies each Agent plugin's account targets to one Claude account profile, after Seal's
  * setup has copied the default home's settings into it. That copy replaces `enabledPlugins`
@@ -92,7 +83,7 @@ async function applyTargets(args: {
   stateFile: string
   accountKey: string | null
 }): Promise<void> {
-  const ledger = await readLedger(args.userHome)
+  const ledger = await readLocalAgentPluginLedger(args.userHome)
   if (!ledger || ledger.plugins.length === 0) {
     return
   }
