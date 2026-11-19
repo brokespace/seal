@@ -8,12 +8,12 @@ import type {
   SealSessionSwapEntry
 } from '../../shared/seal-accounts/seal-accounts-status'
 import { sessionSwapDelivery } from '../../shared/seal-accounts/seal-session-swap-decision'
-import { codexAccountPluginArgs } from '../agent-plugins/codex-account-plugin-overrides'
 import type { SealAccountManager } from './seal-account-manager'
 import { sealPinnedPointerPath, pinClaudeLaunchToHome } from './seal-claude-launch-pin'
 import { codexLoginJson, copyClaudeLoginInto, sealSessionPointerName } from './seal-session-launch'
 import { provisionClaudeSessionHome, provisionCodexSessionHome } from './seal-session-homes'
 import { reconcileCodexLogin } from './seal-login-copies'
+import { sealConnectorsResumeArgs } from '../seal-connectors/seal-connectors-terminal-launch'
 import { resumeCommandLine, sealSessionTerminal, stopAgentInPane } from './seal-session-terminal'
 
 const MAX_SESSION_HISTORY = 20
@@ -139,6 +139,13 @@ async function deliver(
   if (!(await stopAgentInPane(pane, handle))) {
     return { delivery: 'failed', home: prepared.home, note: 'The agent did not exit to resume.' }
   }
+  const connectorArgs = await sealConnectorsResumeArgs({
+    provider: session.provider,
+    sessionId: session.id,
+    accountKey: request.to.key,
+    worktreeId: session.worktreeId,
+    codexHome: prepared.codexHome ?? session.profileHome ?? null
+  }).catch(() => [])
   await pane.send(handle, {
     text: resumeCommandLine({
       provider: session.provider,
@@ -146,9 +153,7 @@ async function deliver(
       platform: process.platform,
       claudePointer: prepared.claudePointer,
       codexHome: prepared.codexHome,
-      ...(session.provider === 'codex'
-        ? { codexArgs: await codexAccountPluginArgs(request.to.key, prepared.codexHome ?? null) }
-        : {})
+      connectorArgs
     }),
     enter: true
   })

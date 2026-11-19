@@ -1,5 +1,6 @@
 import { findClaudeExecutableIndex } from './agent-launch/startup/agent-resume-launch-command'
 import {
+  isSpliceableStartupCommand,
   quoteStartupArg,
   tokenizeStartupCommand,
   type AgentStartupShell
@@ -10,6 +11,18 @@ export function withClaudeAgentViewPlugin(
   root: string,
   shell: AgentStartupShell
 ): string {
+  return withClaudeCommandArgs(command, ['--plugin-dir', root], shell)
+}
+
+/** Inserts args right after a lone `claude` executable; anything unusual leaves the command alone. */
+export function withClaudeCommandArgs(
+  command: string,
+  args: readonly string[],
+  shell: AgentStartupShell
+): string {
+  if (args.length === 0) {
+    return command
+  }
   const parsed = tokenizeStartupCommand(command, shell)
   if (!parsed.ok) {
     return command
@@ -29,20 +42,16 @@ export function withClaudeAgentViewPlugin(
   ) {
     return command
   }
-  for (let i = 0; i <= parsed.tokens.length; i++) {
-    const start = i === 0 ? 0 : parsed.spans[i - 1].end
-    const end = i === parsed.tokens.length ? command.length : parsed.spans[i].start
-    if (!/^[ \t]*$/.test(command.slice(start, end))) {
-      return command
-    }
-    if (
-      i < parsed.tokens.length &&
-      parsed.spans[i].divergesFromShell &&
-      !(shell === 'powershell' && i === 0 && parsed.tokens[i] === '&')
-    ) {
-      return command
-    }
+  if (
+    !isSpliceableStartupCommand(
+      command,
+      parsed,
+      (token, at) => shell === 'powershell' && at === 0 && token === '&'
+    )
+  ) {
+    return command
   }
   const end = parsed.spans[index].end
-  return `${command.slice(0, end)} --plugin-dir ${quoteStartupArg(root, shell)}${command.slice(end)}`
+  const inserted = args.map((arg) => quoteStartupArg(arg, shell)).join(' ')
+  return `${command.slice(0, end)} ${inserted}${command.slice(end)}`
 }

@@ -6,8 +6,7 @@ import { withMachineKeysRenamed } from '../../shared/seal-accounts/seal-accounts
 import type { SealFleetHost } from './seal-fleet-host'
 import type { SealAccountManager } from './seal-account-manager'
 import type { SealFleetTransport } from './seal-fleet-sync'
-
-const EDIT_SETTLE_MS = 500
+import { replicateNewestWins, startReplicationLoop } from './newest-wins-replication'
 
 /** A machine this desktop reaches through its Seal server. */
 export type SealReplicaTarget = {
@@ -46,48 +45,33 @@ export async function replicateSealConfig(
   targets: readonly SealReplicaTarget[],
   call: SealFleetTransport
 ): Promise<void> {
-  const offer = async (entry: SealReplicaTarget, config: SealAccountsConfig) => {
-    try {
-      const reply = parseReply(
+  await replicateNewestWins({
+    targets,
+    local: () => manager.getConfig(),
+    adopt: (config) => manager.applyFleetConfig(config),
+    offer: async (entry, config) =>
+      parseReply(
         await call(entry.target, 'seal.accounts.applyFleetConfig', { config: shareable(config) })
-      )
-      return { entry, ...reply }
-    } catch {
-      // Offline hosts catch up on a later pass.
-      return null
+      ),
+    afterAdopt: (replies) => {
+      const renames = new Map<string, string>()
+      if (manager.host.hostKey) {
+        renames.set('local', manager.host.hostKey)
+      }
+      for (const reply of replies) {
+        if (reply.hostKey) {
+          renames.set(`runtime:${reply.entry.environmentId}`, reply.hostKey)
+        }
+      }
+      const renamed = withMachineKeysRenamed(manager.getConfig(), renames)
+      if (renamed === manager.getConfig()) {
+        return false
+      }
+      // Saving dates the edit, so it reaches every host on the follow-up pass.
+      manager.saveConfig(renamed)
+      return true
     }
-  }
-  const replies = (
-    await Promise.all(targets.map((entry) => offer(entry, manager.getConfig())))
-  ).filter((reply) => reply !== null)
-  const newest = replies.reduce<SealAccountsConfig | null>(
-    (best, reply) =>
-      reply.config && reply.config.updatedAt > (best?.updatedAt ?? manager.getConfig().updatedAt)
-        ? reply.config
-        : best,
-    null
-  )
-  if (newest) {
-    manager.applyFleetConfig(newest)
-  }
-  const renames = new Map<string, string>()
-  if (manager.host.hostKey) {
-    renames.set('local', manager.host.hostKey)
-  }
-  for (const reply of replies) {
-    if (reply.hostKey) {
-      renames.set(`runtime:${reply.entry.environmentId}`, reply.hostKey)
-    }
-  }
-  const renamed = withMachineKeysRenamed(manager.getConfig(), renames)
-  if (renamed !== manager.getConfig()) {
-    // Saving dates the edit, so it reaches every host on the follow-up pass.
-    manager.saveConfig(renamed)
-    return
-  }
-  const current = manager.getConfig()
-  const behind = replies.filter((reply) => (reply.config?.updatedAt ?? -1) < current.updatedAt)
-  await Promise.all(behind.map((reply) => offer(reply.entry, current)))
+  })
 }
 
 /** Desktop only: keeps every Seal host's copy of the account config the same as this one's. */
@@ -100,36 +84,10 @@ export function startSealConfigReplication(
     onHostOnline: (listener: () => void) => () => void
   }
 ): () => void {
-  let running: Promise<void> | null = null
-  let again = false
-  let settle: ReturnType<typeof setTimeout> | null = null
-  const run = (): void => {
-    if (running) {
-      again = true
-      return
-    }
-    running = replicateSealConfig(manager, deps.targets(), deps.call)
-      .catch((error: unknown) => {
-        console.warn('[seal-accounts] Could not sync account settings with other machines:', error)
-      })
-      .finally(() => {
-        running = null
-        if (again) {
-          again = false
-          run()
-        }
-      })
-  }
-  const unsubscribe = manager.host.onConfigSaved(() => {
-    clearTimeout(settle ?? undefined)
-    settle = setTimeout(run, EDIT_SETTLE_MS)
-    settle.unref?.()
-  })
-  const unsubscribeOnline = deps.onHostOnline(run)
-  run()
-  return () => {
-    unsubscribe()
-    unsubscribeOnline()
-    clearTimeout(settle ?? undefined)
-  }
+  return startReplicationLoop({
+    run: () => replicateSealConfig(manager, deps.targets(), deps.call),
+    onEdit: (listener) => manager.host.onConfigSaved(listener),
+    onHostOnline: deps.onHostOnline,
+    failureMessage: '[seal-accounts] Could not sync account settings with other machines:'
+  }).stop
 }

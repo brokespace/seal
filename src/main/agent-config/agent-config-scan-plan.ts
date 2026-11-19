@@ -8,7 +8,6 @@ import type {
   AgentConfigFileRef,
   AgentConfigScope
 } from '../../shared/agent-config/agent-config-types'
-import { AGENT_PLUGIN_LEDGER_PATH } from '../../shared/agent-plugins/agent-plugin-ledger'
 import type { MachineFileScanRequest } from '../machines/scan/machine-file-scan'
 import { joinRelative, scopeRoot, type ResolvedTarget } from './agent-config-locations'
 
@@ -130,9 +129,7 @@ export function scanPlan(resolved: ResolvedTarget): ScanPlan {
     files: [
       ...instructions.map((item, index) => ({ tag: `i${index}`, path: item.path })),
       ...files.map((item, index) => ({ tag: `f${index}`, path: item.path })),
-      ...claudeExtras,
-      // What Seal's plugin hub put in this agent's files, for marking it on the page.
-      { tag: 'x', path: `~/${AGENT_PLUGIN_LEDGER_PATH}` }
+      ...claudeExtras
     ],
     headBytes: SCAN_HEAD_BYTES
   }

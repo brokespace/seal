@@ -5,7 +5,8 @@ import type { SettingsSearchEntry } from '../search/settings-search'
 const KEYWORDS = [
   'plugins',
   'marketplace',
-  'mcp',
+  'install',
+  'browse',
   'skills',
   'claude plugin',
   'codex plugin',
@@ -15,9 +16,9 @@ const KEYWORDS = [
 export function getAgentPluginsSearchEntries(t: Translate = translate): SettingsSearchEntry[] {
   return [
     {
-      title: t('seal.agentPlugins.title', 'Agent plugins'),
+      title: t('seal.plugins.title', 'Plugins'),
       description: t(
-        'seal.agentPlugins.description',
+        'seal.plugins.description',
         'Install a plugin from Claude Code’s or Codex’s marketplaces once for every agent, account and machine.'
       ),
       keywords: KEYWORDS

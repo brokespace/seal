@@ -1,4 +1,5 @@
 import { withClaudeAgentViewPlugin } from '../../../shared/claude-agent-view-launch'
+import { withSealConnectorsTerminalLaunch } from '../../seal-connectors/seal-connectors-terminal-launch'
 import { resolveStartupShell } from '../../../shared/agent-launch/startup/tui-agent-startup-shell'
 import { resolveLocalWindowsAgentStartupShell } from '../../../shared/windows-terminal-shell'
 import { getAppEnvironment } from '../../../shared/app-environment'
@@ -7,8 +8,6 @@ import { isTuiAgent } from '../../../shared/agent-launch/catalog/tui-agent-confi
 import { withCodexTerminalServerIsolationEnv } from '../../../shared/codex-terminal-server-isolation'
 import { getLegacyOpenCodeEnvKeysToDelete } from '../../opencode/status-hooks/legacy-shared-config-dir'
 import { prepareOpenCodePtyLaunch } from '../../opencode/opencode-pty-launch'
-import { codexHomePluginArgs } from '../../agent-plugins/codex-account-plugin-overrides'
-import { withCodexCommandArgs } from '../../../shared/agent-launch/startup/tui-agent-launch-command'
 import { LEGACY_TERMINAL_SHIM_REMOTE_ENV_KEYS } from '../../pty/shell-startup/legacy-terminal-shim-dir'
 import { PI_PROCESS_OWNER_ENV_KEYS } from '../../pty/shell-startup/pi-process-owner-env'
 import { planCodexNoDaemonLaunch } from '../../pty/shell-startup/codex-no-daemon-launch-command'
@@ -151,24 +150,28 @@ export async function assemblePtySpawnLaunchOptions(input: PtySpawnLaunchOptions
       ? { wsl: { distro: input.expectedWslDistro ?? undefined } }
       : {})
   })
-  const env = openCodeLaunch.env
-  const pluginDir = !connectionId ? env?.ORCA_CLAUDE_AGENT_VIEW_PLUGIN_DIR : undefined
-  const agentLaunchCommand =
+  const pluginDir = !connectionId
+    ? openCodeLaunch.env?.ORCA_CLAUDE_AGENT_VIEW_PLUGIN_DIR
+    : undefined
+  const pluginCommand =
     pluginDir && openCodeLaunch.command
       ? withClaudeAgentViewPlugin(openCodeLaunch.command, pluginDir, shell)
       : openCodeLaunch.command
-  const launchCommand =
-    agentLaunchCommand &&
-    launchAgent === 'codex' &&
-    !connectionId &&
-    input.codexRuntime !== 'wsl' &&
-    !input.preAdoptedStablePane
-      ? withCodexCommandArgs(
-          agentLaunchCommand,
-          await codexHomePluginArgs(input.selectedCodexHomePath),
-          shell
-        )
-      : agentLaunchCommand
+  // Remote and WSL launches keep the agent's own MCP config: Seal's relay is this host's loopback.
+  const connectors =
+    connectionId || input.codexRuntime === 'wsl'
+      ? { command: pluginCommand, env: openCodeLaunch.env }
+      : await withSealConnectorsTerminalLaunch({
+          agent: launchAgent,
+          command: pluginCommand,
+          env: openCodeLaunch.env,
+          sessionId: input.sessionId,
+          worktreeId: args.worktreeId,
+          shell,
+          codexHome: input.selectedCodexHomePath
+        })
+  const env = connectors.env
+  const launchCommand = connectors.command
   promoteAgentTeamsShimPath(env, input.requestedAgentTeamsPath)
   const spawnOptions: PtySpawnOptions = {
     cols: args.cols,

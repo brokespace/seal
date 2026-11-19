@@ -13,6 +13,8 @@ import { waitForPromiseWithSignal } from '../../../shared/abort-signal-reason'
 import type { AiVaultConversationCopy } from '../../../shared/ai-vault/resume/ai-vault-resume-preparation'
 import { resolveSessionFilePath } from '../../native-chat/session-file-resolver'
 import { resolveOmpSessionsDir } from '../../ai-vault/scanners/omp/omp-session-root'
+import { acpLaunchMcpServers } from '../launch/acp-launch-mcp-servers'
+import type { SessionConnectorPlan } from '../../../shared/seal-connectors/session-connector-args'
 import { AcpRpcError } from '../transport/acp-errors'
 import { acpAgentName } from '../session/acp-structured-agent-definitions'
 import type { AcpStructuredConnection } from '../process/acp-structured-connection'
@@ -72,7 +74,13 @@ export async function copyAcpConversation(
       )
       options.track(connection)
       const sessionId = await waitForPromiseWithSignal(
-        forkAdvertised(connection, input.providerSessionId, launch.cwd, deps.spec.agent),
+        forkAdvertised(
+          connection,
+          input.providerSessionId,
+          launch.cwd,
+          deps.spec.agent,
+          launch.connectors
+        ),
         signal
       )
       await assertCopyAccountSelected(deps, input.accountHome, launch.env, signal)
@@ -162,7 +170,8 @@ async function forkAdvertised(
   connection: AcpStructuredConnection,
   sessionId: string,
   cwd: string,
-  agent: string
+  agent: string,
+  connectors: SessionConnectorPlan | undefined
 ): Promise<string> {
   const initialized = await connection.initialize()
   observeAcpForkSupport(agent, initialized)
@@ -170,7 +179,7 @@ async function forkAdvertised(
   if (agentCapabilities?.sessionCapabilities?.fork == null) {
     throw new AcpRpcError(-32601, 'session/fork is not advertised')
   }
-  return connection.forkSession(sessionId, cwd)
+  return connection.forkSession(sessionId, cwd, acpLaunchMcpServers(connectors, initialized))
 }
 
 /** Recheck the selected account at fork boundaries. */

@@ -1,7 +1,7 @@
 import { isPlainObject } from '../agent-config/agent-config-values'
-import { emptyAgentPluginComponents } from './agent-plugin-plan'
 import {
   AGENT_PLUGIN_COMPONENT_KINDS,
+  emptyAgentPluginComponents,
   type AgentPluginCatalogEntry,
   type AgentPluginComponents,
   type AgentPluginHarness,
@@ -93,7 +93,10 @@ function codexListings(output: unknown): Parsed[] {
           installed: plugin.installed === true,
           enabled: plugin.installed === true && plugin.enabled !== false,
           ...(text(plugin.installPolicy) ? { installPolicy: text(plugin.installPolicy) } : {}),
-          ...(text(plugin.authPolicy) ? { authPolicy: text(plugin.authPolicy) } : {})
+          ...(text(plugin.authPolicy) ? { authPolicy: text(plugin.authPolicy) } : {}),
+          ...(isPlainObject(plugin.source) && plugin.source.source === 'remote'
+            ? { chatgptApp: true }
+            : {})
         }
       }
     ]

@@ -72,33 +72,6 @@
           "default": "Default",
           "makeDefault": "Make default",
           "defaultHint": "The default app is the editor a machine opens in."
-        },
-        "IntegrationsPane": {
-          "agentConnectors": "Agent connectors",
-          "agentConnectorsDescription": "The MCP connectors (Jira, Slack and others) agents use. Each account an agent runs as signs in on its own.",
-          "agentConnectorsMachine": "Where the agents run. Seal checks every account it launches agents with there."
-        },
-        "integrations": {
-          "search": {
-            "agentConnectors": "Agent connectors",
-            "agentConnectorsDescription": "MCP connectors agents use per account, their sign-in status, and duplicates.",
-            "mcp": "mcp",
-            "connector": "connector",
-            "slack": "slack",
-            "claudeAi": "claude.ai",
-            "needsAuth": "needs authentication",
-            "signIn": "sign in"
-          }
-        },
-        "task": {
-          "tracker": {
-            "integration": {
-              "cards": {
-                "jiraAgentNote": "Connects Seal’s task browsing only; agents get Jira access through Settings › Integrations › Agent connectors.",
-                "linearAgentNote": "Connects Seal’s task browsing only; agents get Linear access through Settings › Integrations › Agent connectors."
-              }
-            }
-          }
         }
       },
       "machines": {
@@ -1049,8 +1022,6 @@
         "offline": "Connect to {{machine}} to manage agent configuration on it.",
         "tabs": {
           "documents": "Instructions & skills",
-          "mcp": "MCP servers",
-          "plugins": "Plugins",
           "settings": "Settings",
           "effective": "Merged view",
           "files": "Files & backups"
@@ -1151,61 +1122,6 @@
           "browseDescription": "Everything under {{path}}, including files Seal has no form for.",
           "addSshDetails": "Add SSH details for {{machine}} on the Machines page to open its files in your editor."
         },
-        "mcp": {
-          "auth": {
-            "none": "no sign-in needed",
-            "header": "token in a header",
-            "env": "token from the environment",
-            "oauth": "signed in with OAuth",
-            "needed": "needs sign-in"
-          },
-          "stored": {
-            "header": "Token stored in a header",
-            "envVar": "Token read from an environment variable",
-            "secret": "Secret stored in the file",
-            "none": "No stored credentials",
-            "remoteNone": "No stored credentials; the agent signs in itself if the server asks"
-          },
-          "test": {
-            "connected": "Connected",
-            "needsAuth": "Needs sign-in",
-            "failed": "Failed"
-          },
-          "off": "off",
-          "shadowed": "Not used here: the {{scope}} server with the same name replaces it.",
-          "activation": "Use in this project",
-          "approved": "Approved",
-          "pending": "Ask me first",
-          "disabled": "Disabled",
-          "testAction": "Test",
-          "remove": "Remove…",
-          "groupTitle": "{{scope}} servers",
-          "add": "Add server",
-          "empty": "No servers here.",
-          "removeTitle": "Remove {{name}}?",
-          "removeDescription": "The server is taken out of {{path}} on {{machine}}. The file as it is now is kept in backups.",
-          "removeConfirm": "Remove",
-          "saved": "Saved {{name}}",
-          "editTitle": "Edit {{name}}",
-          "addTitle": "Add an MCP server",
-          "scope": "Available in",
-          "transport": "Connection",
-          "stdio": "stdio: a command on the machine",
-          "http": "HTTP: a URL",
-          "sse": "SSE: a URL (older servers)",
-          "command": "Command",
-          "args": "Arguments",
-          "argsHint": "One per line.",
-          "env": "Environment variables",
-          "url": "URL",
-          "headers": "Headers",
-          "enabled": "Enabled",
-          "hidden": "Stored secrets are hidden. Leaving ••••••••  as it is keeps the stored value.",
-          "reveal": "Show",
-          "extraKeys": "Also set in the file and kept as written: {{keys}}",
-          "save": "Save server",
-          "fromPlugin": "from plugin {{name}}"
-        },
         "value": "value",
         "scope": {
           "user": "Account",
@@ -1216,36 +1132,7 @@
           "localHint": "Your own overrides for this project, not checked in."
         },
         "plugins": {
-          "noMarketplaces": "No marketplaces added.",
-          "refresh": "Update",
-          "removeMarketplaceTitle": "Remove {{name}}?",
-          "removeMarketplaceDescription": "Runs “claude plugin marketplace remove {{name}}” on {{machine}}.",
-          "remove": "Remove",
-          "install": "Install ({{scope}})",
-          "uninstallTitle": "Uninstall {{name}}?",
-          "uninstallDescription": "Runs “claude plugin uninstall {{id}} --scope {{scope}}” on {{machine}}.",
-          "uninstallConfirm": "Uninstall",
-          "writeScope": "Changes here apply to",
-          "installed": "Installed plugins",
-          "installedDescription": "Switching a plugin on or off edits enabledPlugins in the settings file; nothing is downloaded or removed.",
-          "none": "No plugins installed.",
-          "decidedBy": "{{state}} by {{scope}} settings",
-          "on": "on",
-          "offState": "off",
-          "enable": "Enable {{name}}",
-          "update": "Update ({{scope}})",
-          "inherit": "Stop overriding in {{scope}}",
-          "uninstall": "Uninstall ({{scope}})…",
-          "marketplaces": "Marketplaces",
-          "marketplacesDescription": "Where plugins come from. Installing runs “claude plugin install” on the machine.",
-          "addMarketplace": "Add a marketplace",
-          "addMarketplaceDescription": "A GitHub repository (owner/repo), a git URL, or a folder on the machine.",
-          "add": "Add",
-          "source": "Source",
-          "sourceRequired": "Enter a source.",
-          "addMarketplaceAction": "Add marketplace",
-          "noOutput": "Finished with no output.",
-          "failed": "The command failed."
+          "enable": "Enable {{name}}"
         },
         "settings": {
           "general": "General",
@@ -1316,70 +1203,15 @@
           "noMachine": "The machine this project is on is not connected in Seal."
         },
         "search": {
-          "title": "Agent configuration",
-          "description": "Instructions, skills, MCP servers, plugins and settings for Claude Code, Codex and other agents."
+          "title": "Agent configuration"
         },
         "example": {
           "folder": "/home/me/project",
           "subfolder": "packages/api",
-          "command": "npx",
-          "args": "-y\n@scope/server",
-          "url": "https://example.com/mcp",
-          "marketplace": "owner/repo",
           "rule": "Bash(npm run test:*)",
           "extraFolder": "~/notes",
           "variable": "NAME"
         }
-      },
-      "agentConnectors": {
-        "status": {
-          "connected": "Connected",
-          "needsAuth": "Needs sign-in",
-          "failed": "Failed",
-          "disabled": "Off",
-          "configured": "Not checked"
-        },
-        "kind": {
-          "claudeAi": "claude.ai connector",
-          "plugin": "Plugin",
-          "user": "User",
-          "project": "Project"
-        },
-        "signIn": "Sign in",
-        "reconnect": "Reconnect",
-        "signInTitle": "Sign in to {{name}}",
-        "signInDescription": "For agents running as {{account}} on {{machine}}.",
-        "starting": "Asking the agent for a sign-in page…",
-        "waitingLocal": "Open the page and approve access. The browser returns to this computer and Seal finishes on its own.",
-        "waitingRemote": "Open the page and approve access. The browser then lands on a localhost address that will not load, because the agent runs on {{machine}}. Paste that address below.",
-        "copyLink": "Copy link",
-        "openInBrowser": "Open in browser",
-        "pasteLocal": "If the browser shows an error page instead, paste its address here:",
-        "pasteRemote": "Address the browser ended on:",
-        "signedIn": "Signed in. New agent sessions for this account can use {{name}}.",
-        "signInFailed": "The sign-in did not finish.",
-        "retry": "Try again",
-        "done": "Done",
-        "close": "Close",
-        "cancel": "Cancel",
-        "keep": {
-          "connected": "it is the one that is connected",
-          "claudeAi": "claude.ai connectors sign in once for the account on every machine",
-          "original": "it is the original, not a copy"
-        },
-        "duplicates": "Possible duplicates",
-        "duplicatesDescription": "These reach the same service. Seal removes nothing: claude.ai connectors are removed on claude.ai, others in Agent configuration.",
-        "keepSuggestion": "Keep {{name}}: {{reason}}.",
-        "defaultConfig": "{{agent}} default config",
-        "sealAccount": "{{agent}} account in Seal",
-        "claudeAiDisabled": "claude.ai connectors are not listed: disableClaudeAiConnectors is set in this account’s Claude settings.",
-        "none": "No connectors for this account.",
-        "desktopOnly": "Agent connectors need the desktop app.",
-        "checking": "Checking every account on this machine. Each agent contacts all of its servers, so this can take a minute.",
-        "checkedAt": "Checked at {{time}}.",
-        "refresh": "Check again",
-        "noAgents": "Neither Claude Code nor Codex is installed on this machine.",
-        "agentMachine": "the agent’s machine"
       }
     },
     "web": {
@@ -2812,55 +2644,6 @@
       "show": "Show files"
     },
     "agentPlugins": {
-      "kind": {
-        "mcpServers": "MCP servers",
-        "skills": "skills",
-        "commands": "commands",
-        "agents": "subagents",
-        "hooks": "hooks",
-        "lspServers": "LSP servers",
-        "apps": "apps"
-      },
-      "mode": {
-        "native": "Its own installer, everything included",
-        "absent": "Not on this machine",
-        "excluded": "Left out by where this plugin applies",
-        "mcp": "{{count}} MCP servers",
-        "skillsVia": "{{count}} skills through {{agent}}’s folder",
-        "skills": "{{count}} skills",
-        "nothing": "Nothing it can use"
-      },
-      "notApplicable": "No {{kinds}} here",
-      "apply": {
-        "retargetTitle": "Where {{name}} applies",
-        "installTitle": "Install {{name}}",
-        "description": "Agents whose marketplace has it install it themselves; the others get its MCP servers and skills.",
-        "done": "done",
-        "failed": "needs attention",
-        "perAgent": "What each agent gets",
-        "unknownContents": "Its MCP servers and skills are read from the plugin once it is installed.",
-        "applyTo": "Apply to",
-        "hidePicker": "Done",
-        "showPicker": "Change…",
-        "close": "Close",
-        "cancel": "Cancel",
-        "save": "Apply",
-        "install": "Install",
-        "waiting": "will apply when it’s online"
-      },
-      "targets": {
-        "systemLogin": "{{agent}}: this machine’s own login",
-        "everywhere": "Every machine, account and agent",
-        "allOf": "All {{noun}}",
-        "someOf": "{{count}} of {{total}} {{noun}}",
-        "machines": "machines",
-        "accounts": "accounts",
-        "agents": "agents",
-        "all": "All, including ones added later",
-        "machinesTitle": "Machines",
-        "accountsTitle": "Accounts",
-        "agentsTitle": "Agents"
-      },
       "browse": {
         "mcp": "{{count}} MCP servers",
         "skills": "{{count}} skills",
@@ -2875,46 +2658,210 @@
         "count": "{{shown}} of {{total}} plugins",
         "none": "No plugins match.",
         "installed": "Installed",
-        "install": "Install…"
-      },
+        "install": "Install",
+        "installing": "Installing…"
+      }
+    },
+    "plugins": {
+      "skillCount": "{{count}} skills",
+      "appliesTo": "Choose where {{name}} applies",
+      "remove": "Remove {{name}}",
+      "enabled": "Use {{name}}",
+      "removeTitle": "Remove {{name}}?",
+      "removeDescription": "Its connectors and skills go with it, on every machine.",
+      "removeConfirm": "Remove plugin",
       "installed": {
-        "allAccounts": "all accounts",
-        "someAccounts": "{{count}} of {{total}} accounts",
-        "someAgents": "{{count}} of {{total}} agents",
-        "machines": "{{count}} of {{total}} machines",
-        "title": "Installed for every agent",
-        "description": "What each agent got is shown for the chosen machine. Switching a plugin off takes it out of every agent and keeps the install.",
-        "none": "Nothing installed through Seal yet.",
-        "enable": "Use {{name}}",
-        "actions": "Actions for {{name}}",
-        "retarget": "Change where it applies…",
-        "remove": "Remove from every machine…"
+        "description": "Installed once for every machine and account Seal runs agents on.",
+        "none": "No plugins installed. Browse the marketplaces to add one.",
+        "toast": "{{name}} installed for every machine and account."
       },
-      "unshared": {
-        "title": "Installed for one agent only",
-        "description": "Installed with the agent’s own plugin command on this machine. Sharing gives the other agents its MCP servers and skills.",
-        "off": "off",
-        "share": "Share with every agent…"
-      },
-      "someFailed": "Not finished on {{machines}}",
-      "reconciled": "Installed on machines that came online",
       "tabs": {
         "installed": "Installed",
-        "browse": "Browse",
-        "connectors": "Connectors"
+        "browse": "Browse"
       },
-      "machine": "Machine",
-      "machineDescription": "Whose marketplaces to browse and what each agent got there. Installing reaches every machine unless you choose otherwise.",
-      "offline": "Connect to {{machine}} to see its plugins.",
-      "switchedOn": "{{name}} is on",
-      "switchedOff": "{{name}} is off",
-      "removeTitle": "Remove {{name}}?",
-      "removeDescription": "Seal takes its MCP servers and skill links out of every agent, then each agent’s own plugin command uninstalls it, on {{count}} machines.",
-      "removeKeepsPreexisting": "Installed before Seal on some machines; Seal will stop managing it there but won’t uninstall it.",
-      "removeConfirm": "Remove",
-      "removed": "Removed {{name}}",
-      "title": "Agent plugins",
-      "description": "Install a plugin from Claude Code’s or Codex’s marketplaces once for every agent, account and machine."
+      "title": "Plugins",
+      "description": "Install a plugin from Claude Code’s or Codex’s marketplaces once for every agent, account and machine.",
+      "installFailed": "Could not install {{name}}"
+    },
+    "connectors": {
+      "error": "Could not update connectors",
+      "title": "Connectors",
+      "description": "MCP servers every agent session gets, with one sign-in per service shared across machines and accounts.",
+      "add": {
+        "kind": "Connector type",
+        "http": "Web address",
+        "stdio": "Command",
+        "title": "Name",
+        "url": "MCP server URL",
+        "auth": "Authentication",
+        "authOauth": "OAuth",
+        "authNone": "None",
+        "authStatic": "Static headers",
+        "authOauthHelp": "You approve access in the browser after adding it.",
+        "authStaticHelp": "You enter the header values after adding it. They stay encrypted.",
+        "authNoneHelp": "The server needs no sign-in.",
+        "command": "Command",
+        "args": "Arguments",
+        "env": "Environment variables, one per line",
+        "envHelp": "Saved in the connector list as plain text. Keep secrets out of it.",
+        "create": "Add connector",
+        "heading": "Add connector",
+        "description": "Pick one from Claude Code’s and Codex’s marketplaces, or add your own server.",
+        "catalog": "Catalog",
+        "custom": "Custom",
+        "installed": "{{name}} added. Connect it from the list."
+      },
+      "sheet": {
+        "signInLabel": "Sign-in name",
+        "signInEnabled": "Use this sign-in",
+        "removeSignIn": "Remove sign-in",
+        "tools": "Tools turned off",
+        "toolsDescription": "Agents cannot call these tools. Type a tool’s name as the connector lists it.",
+        "enableTool": "Turn {{tool}} back on",
+        "allToolsOn": "Every tool is on.",
+        "toolPlaceholder": "tool_name",
+        "toolLabel": "Tool to turn off",
+        "turnOff": "Turn off",
+        "removeTitle": "Remove {{title}}?",
+        "removeDescription": "Agents stop getting it on every machine and its sign-ins are deleted.",
+        "remove": "Remove connector",
+        "removeSignInTitle": "Remove {{label}}?",
+        "removeSignInDescription": "Its tokens are deleted from every machine. Connect again to get them back.",
+        "importedFrom": "Imported from {{agent}} on {{machine}}.",
+        "comesWith": "Comes with the {{plugin}} plugin.",
+        "enabled": "Use this connector",
+        "authOauth": "Signs in with OAuth",
+        "authStatic": "Uses a key",
+        "authNone": "No sign-in",
+        "signIns": "Sign-ins",
+        "signInsDescription": "Add one per account or workspace, then choose where each applies.",
+        "addAnother": "Add another sign-in",
+        "noSignIns": "No one is signed in yet.",
+        "appliesTo": "Applies to",
+        "appliesToDescription": "Which machines, accounts and agents get this connector.",
+        "dangerZone": "Remove"
+      },
+      "signIn": {
+        "connect": "Connect",
+        "reconnect": "Reconnect",
+        "replaceKey": "Replace key",
+        "addKey": "Add key",
+        "title": "Connect {{title}}",
+        "failed": "The sign-in did not finish.",
+        "waiting": "Approve access in the browser window that just opened. Seal finishes on its own and copies the sign-in to every machine.",
+        "waitingStatus": "Waiting for approval…",
+        "pasteHelp": "If the browser ends on a page that cannot load, paste the address it ended on:",
+        "done": "{{title}} is connected.",
+        "failedTitle": "Could not connect {{title}}",
+        "noAttempt": "This sign-in is no longer running."
+      },
+      "source": {
+        "catalog": "Catalog",
+        "plugin": "Plugin {{name}}",
+        "custom": "Custom",
+        "imported": "Imported",
+        "library": "Library"
+      },
+      "status": {
+        "connected": "Connected",
+        "needsSignIn": "Needs sign-in",
+        "waitingForRefresh": "Waiting for refresh",
+        "expired": "Expired",
+        "needsReconnect": "Needs reconnect",
+        "notHere": "Not on this machine",
+        "missing": "Missing",
+        "stale": "Stale",
+        "noSignIn": "No sign-in needed"
+      },
+      "here": {
+        "title": "Connectors here",
+        "refresher": "Refresher",
+        "offline": "Seal cannot read this machine right now.",
+        "none": "No connectors reach this machine.",
+        "off": "Off",
+        "accountsTitle": "Connectors",
+        "noneForAccount": "None"
+      },
+      "row": {
+        "enabled": "Use {{title}}"
+      },
+      "list": {
+        "title": "Connectors",
+        "description": "MCP servers every agent session gets, whichever machine or account it runs on.",
+        "add": "Add connector…",
+        "empty": "No connectors yet. Add one from the catalog, or install a plugin that brings its own."
+      },
+      "refresher": {
+        "refreshed": "Refreshed {{count}} sign-ins.",
+        "nothing": "Nothing was refreshed.",
+        "failed": "Could not refresh sign-ins",
+        "title": "Refresher",
+        "description": "One machine renews sign-ins before they expire and passes the new ones to every other machine. If it goes quiet, another takes over.",
+        "noOwner": "No machine is refreshing yet",
+        "online": "Online",
+        "offline": "Offline",
+        "heartbeat": "Last heartbeat {{age}}.",
+        "pending": "Seal picks one as soon as a machine reports in.",
+        "change": "Change refresher",
+        "automatic": "Automatic",
+        "refreshNow": "Refresh now"
+      },
+      "static": {
+        "failed": "Could not save the key",
+        "title": "Key for {{title}}",
+        "description": "Stored encrypted on each machine and sent only to this connector. It is never written to a config file.",
+        "label": "Name (optional)",
+        "headers": "Headers, one per line",
+        "env": "Environment variables, one per line",
+        "save": "Save key"
+      },
+      "appliesTo": {
+        "machineCount": "{{count}} machines",
+        "accountCount": "{{count}} accounts",
+        "harnessCount": "{{count}} agents",
+        "overrideCount": "{{count}} project rules",
+        "allAgents": "All agents",
+        "allOf": "All {{noun}}",
+        "none": "None",
+        "someOf": "{{count}} of {{total}}",
+        "choose": "Choose",
+        "allLater": "All, including ones added later",
+        "noneListed": "Nothing to choose from yet.",
+        "machines": "Machines",
+        "machinesNoun": "machines",
+        "accounts": "Accounts",
+        "accountsNoun": "accounts",
+        "harnesses": "Agents",
+        "harnessesNoun": "agents"
+      },
+      "override": {
+        "on": "On",
+        "off": "Off",
+        "title": "Project overrides",
+        "description": "Turn it on or off for matching projects, whatever the lists above say.",
+        "everyMachine": "Every machine",
+        "remove": "Remove override",
+        "match": "github.com/acme/*, a path or a folder",
+        "matchLabel": "Project to match",
+        "pick": "Pick a project",
+        "machine": "Machine",
+        "state": "State",
+        "add": "Add override"
+      }
+    },
+    "agentConfig": {
+      "search": {
+        "description": "Instructions, skills and settings for Claude Code, Codex and other agents, machine by machine."
+      }
+    },
+    "skills": {
+      "title": "Skills",
+      "navDescription": "Skills from plugins and the Seal library, and which agents get each.",
+      "comesWith": "Comes with {{plugin}}",
+      "appliesTo": "Choose where {{name}} applies",
+      "enabled": "Use {{name}}",
+      "description": "Skills every agent session gets, from plugins and from the Seal library.",
+      "none": "No skills yet. Install a plugin that brings some."
     }
   },
   "components": {

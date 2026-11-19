@@ -44,6 +44,8 @@ import {
   serverInstallStatusText
 } from '../server-install/seal-server-install-copy'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import { sealFleetMachineId } from '@/components/settings/seal-accounts/SealAccountsPage'
+import { MachineConnectorsSection } from '@/components/settings/seal-connectors/ConnectorsHere'
 import { MachineAccountsDialog } from './MachineAccountsDialog'
 import { MachineEditDialog } from './MachineEditDialog'
 import { MachineSessionList } from './MachineSessionList'
@@ -268,6 +270,12 @@ export function MachineDetail({
         <section className={cn('shrink-0 border-b border-border py-3', PAGE_GUTTER_X)}>
           <MachineSessionList sessions={sessions} />
         </section>
+      ) : null}
+      {online ? (
+        <MachineConnectorsSection
+          machineKeys={[sealFleetMachineId(machine) ?? machine.id, machine.id]}
+          className={cn('shrink-0 border-b border-border py-3', PAGE_GUTTER_X)}
+        />
       ) : null}
       {resource ? (
         <MachineResourcePanel

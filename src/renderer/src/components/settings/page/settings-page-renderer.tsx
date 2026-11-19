@@ -15,6 +15,8 @@ import {
   renderSessionSummariesSettingsSection,
   renderAgentConfigSettingsSection,
   renderAgentPluginsSettingsSection,
+  renderConnectorsSettingsSection,
+  renderSealSkillsSettingsSection,
   renderAgentsSettingsSection,
   renderDesktopCapabilitySettingsSections,
   renderLinearSettingsSection,
@@ -171,7 +173,9 @@ export function renderSettingsPage(
                 <ActiveSettingsSectionProvider value={model.activeSectionId}>
                   {renderAgentsSettingsSection(context, t)}
                   {renderAgentConfigSettingsSection(context, t)}
+                  {renderConnectorsSettingsSection(context, t)}
                   {renderAgentPluginsSettingsSection(context, t)}
+                  {renderSealSkillsSettingsSection(context, t)}
                   {renderAccountsSettingsSection(context, t)}
                   {renderSessionSummariesSettingsSection(context, t)}
                   {renderOrchestrationSettingsSection(context, t)}

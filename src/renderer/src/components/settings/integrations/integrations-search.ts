@@ -14,8 +14,7 @@ export const INTEGRATION_SETTING_TARGET_IDS = {
   azuredevops: 'integrations-azure-devops',
   gitea: 'integrations-gitea',
   jira: JIRA_INTEGRATION_SECTION_ID,
-  linear: LINEAR_INTEGRATION_SECTION_ID,
-  agentConnectors: 'integrations-agent-connectors'
+  linear: LINEAR_INTEGRATION_SECTION_ID
 } as const
 
 export const getIntegrationsPaneSearchEntries = createLocalizedCatalog(() => [
@@ -243,39 +242,6 @@ export const getIntegrationsPaneSearchEntries = createLocalizedCatalog(() => [
         'auto.components.settings.integrations.search.a626990bd2',
         'disconnect'
       )
-    ]
-  },
-  {
-    targetSectionId: INTEGRATION_SETTING_TARGET_IDS.agentConnectors,
-    title: translate(
-      'auto.components.settings.integrations.search.agentConnectors',
-      'Agent connectors'
-    ),
-    description: translate(
-      'auto.components.settings.integrations.search.agentConnectorsDescription',
-      'MCP connectors agents use per account, their sign-in status, and duplicates.'
-    ),
-    keywords: [
-      ...translateSearchKeyword('auto.components.settings.integrations.search.mcp', 'mcp'),
-      ...translateSearchKeyword(
-        'auto.components.settings.integrations.search.connector',
-        'connector'
-      ),
-      ...translateSearchKeyword('auto.components.settings.integrations.search.e1263dd748', 'jira'),
-      ...translateSearchKeyword('auto.components.settings.integrations.search.slack', 'slack'),
-      ...translateSearchKeyword(
-        'auto.components.settings.integrations.search.7345b7c3e6',
-        'atlassian'
-      ),
-      ...translateSearchKeyword(
-        'auto.components.settings.integrations.search.claudeAi',
-        'claude.ai'
-      ),
-      ...translateSearchKeyword(
-        'auto.components.settings.integrations.search.needsAuth',
-        'needs authentication'
-      ),
-      ...translateSearchKeyword('auto.components.settings.integrations.search.signIn', 'sign in')
     ]
   }
 ])

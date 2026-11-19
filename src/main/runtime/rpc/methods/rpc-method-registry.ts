@@ -44,6 +44,9 @@ import { MACHINE_HOST_METHODS } from './machines/machine-host-methods'
 import { SEAL_MACHINE_METHODS } from './machines/seal-machine-methods'
 import { HOME_CHAT_METHODS } from './home-chat/home-chat-methods'
 import { SEAL_MCP_METHODS } from './mcp/seal-mcp-methods'
+import { SEAL_CONNECTOR_METHODS } from './seal-connectors/seal-connectors'
+import { SEAL_CONNECTOR_SIGN_IN_METHODS } from './seal-connectors/seal-connector-sign-in-methods'
+import { SEAL_CONNECTOR_PLUGIN_METHODS } from './seal-connectors/seal-connector-plugin-methods'
 import { GIT_METHODS } from './source-control/git/git'
 import { GITHUB_METHODS } from './source-control/github/github'
 import { GITLAB_METHODS } from './source-control/gitlab/gitlab'
@@ -190,7 +193,10 @@ const SEAL_RPC_METHODS = [
   ...MACHINE_HOST_METHODS,
   ...SEAL_MACHINE_METHODS,
   ...HOME_CHAT_METHODS,
-  ...SEAL_MCP_METHODS
+  ...SEAL_MCP_METHODS,
+  ...SEAL_CONNECTOR_METHODS,
+  ...SEAL_CONNECTOR_SIGN_IN_METHODS,
+  ...SEAL_CONNECTOR_PLUGIN_METHODS
 ]
 
 // Two literals: TypeScript refuses to reduce the union of every method type in a single one.

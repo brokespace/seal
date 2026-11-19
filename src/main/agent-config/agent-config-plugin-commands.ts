@@ -6,7 +6,10 @@ import type {
   AgentConfigWriteResult
 } from '../../shared/agent-config/agent-config-types'
 import { quotePosixShell } from '../../shared/shell/launch/shell-argument-quoting'
-import type { MachineConnection } from '../machines/connection/machine-connection'
+import {
+  execWithAgentPath,
+  type MachineConnection
+} from '../machines/connection/machine-connection'
 import { patchSettings } from './agent-config-settings-ops'
 
 /** Installing clones a repository; a slow link needs room. */
@@ -97,14 +100,19 @@ export async function runAgentCli(
   connection: MachineConnection,
   cli: AgentPluginCli,
   argv: readonly string[],
-  options: { cwd?: string; timeoutMs?: number } = {}
+  options: { cwd?: string; timeoutMs?: number; env?: Record<string, string> } = {}
 ): Promise<AgentCliRun> {
   const timeoutMs = options.timeoutMs ?? COMMAND_TIMEOUT_MS
   const powershell = (await connection.dialect()) === 'powershell'
+  const env = Object.entries(options.env ?? {})
+  const args = argv.map(powershell ? powerShellLiteral : quotePosixShell).join(' ')
   const script = powershell
-    ? `& ${cli} ${argv.map(powerShellLiteral).join(' ')}; exit $LASTEXITCODE`
-    : `command -v ${cli} >/dev/null 2>&1 || { echo '${CLI_LABELS[cli]} is not installed on this machine (${cli} is not on the PATH).' >&2; exit 127; }\n${cli} ${argv.map(quotePosixShell).join(' ')} </dev/null`
-  const result = await connection.exec(script, {
+    ? `${env.map(([key, value]) => `$env:${key}=${powerShellLiteral(value)}; `).join('')}& ${cli} ${args}; exit $LASTEXITCODE`
+    : [
+        `command -v ${cli} >/dev/null 2>&1 || { echo '${CLI_LABELS[cli]} is not installed on this machine (${cli} is not on the PATH).' >&2; exit 127; }`,
+        `${env.length > 0 ? `env ${env.map(([key, value]) => `${key}=${quotePosixShell(value)}`).join(' ')} ` : ''}${cli} ${args} </dev/null`
+      ].join('\n')
+  const result = await execWithAgentPath(connection, script, {
     timeoutMs,
     ...(options.cwd ? { cwd: options.cwd } : {})
   })
@@ -117,11 +125,6 @@ export async function runAgentCli(
       ? `${output}\nTimed out after ${Math.round(timeoutMs / 1000)} seconds`.trim()
       : output.slice(-MAX_OUTPUT_CHARS)
   }
-}
-
-/** Codex's spelling of an install or removal; it keeps plugins for the account only. */
-export function codexPluginArgs(kind: 'install' | 'uninstall', plugin: string): string[] {
-  return ['plugin', kind === 'install' ? 'add' : 'remove', requirePlugin(plugin)]
 }
 
 /**

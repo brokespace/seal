@@ -11,7 +11,10 @@ import {
 } from '../../shared/agent-config/agent-config-validation'
 import { machinePathBasename, machinePathDirname } from '../../shared/machines/machine-paths'
 import { quotePosixShell } from '../../shared/shell/launch/shell-argument-quoting'
-import type { MachineConnection } from '../machines/connection/machine-connection'
+import {
+  execWithAgentPath,
+  type MachineConnection
+} from '../machines/connection/machine-connection'
 import { scanMachineFiles, type MachineFileScanRunner } from '../machines/scan/machine-file-scan'
 import { backupFile, backupStamp } from './agent-config-backups'
 
@@ -33,7 +36,8 @@ export function contentHash(content: string): string {
 export async function scanRunner(connection: MachineConnection): Promise<MachineFileScanRunner> {
   return {
     dialect: await connection.dialect(),
-    exec: (script, options) => connection.exec(script, options)
+    exec: (script, options) => connection.exec(script, options),
+    execLogin: (script, options) => execWithAgentPath(connection, script, options)
   }
 }
 

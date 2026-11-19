@@ -1,174 +1,231 @@
-import React from 'react'
-import { EllipsisVertical } from 'lucide-react'
+import { useState } from 'react'
+import { Loader2, Settings2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
 import { useTranslate } from '@/i18n/use-translate'
-import type { AgentPluginUnshared } from '../../../../shared/agent-plugins/agent-plugin-types'
-import type { MachineId } from '../../../../shared/machines/machine-types'
+import type {
+  Connector,
+  PluginEntry
+} from '../../../../shared/seal-connectors/seal-connectors-types'
+import {
+  AgentConfigConfirmDialog,
+  type AgentConfigConfirmRequest
+} from '../agent-config/AgentConfigConfirmDialog'
+import { SettingsBadge } from '../settings/form-controls/SettingsFormControls'
 import { SettingsGroup } from '../settings/section-layout/SettingsGroup'
-import { AgentPluginAgentList, linesFromStates } from './AgentPluginAgentList'
-import type { AgentPluginTargetOptions } from './AgentPluginTargetPicker'
-import type { AgentPluginFleetEntry } from './use-agent-plugins-fleet'
+import { AppliesToChip } from '../settings/seal-connectors/applies-to/AppliesToChip'
+import { AppliesToEditor } from '../settings/seal-connectors/applies-to/AppliesToEditor'
+import {
+  useAppliesToOptions,
+  type AppliesToOptions
+} from '../settings/seal-connectors/applies-to/use-applies-to-options'
+import { ConnectorSignInButton } from '../settings/seal-connectors/ConnectorSignInButton'
+import { ConnectorStatusPill } from '../settings/seal-connectors/ConnectorStatusPill'
+import {
+  connectorSignInState,
+  signInStateOfOwnHost,
+  worstSignInState
+} from '../settings/seal-connectors/seal-connector-status'
+import {
+  connectorsCall,
+  type SealConnectors
+} from '../settings/seal-connectors/use-seal-connectors'
 
 const HARNESS_LABELS = { claude: 'Claude Code', codex: 'Codex' } as const
 
-/** Plugins the hub manages, across machines, with what each agent got on the chosen machine. */
-export function AgentPluginsInstalled({
-  entries,
-  unshared,
-  machineId,
-  options,
-  onToggle,
-  onRetarget,
-  onRemove,
-  onShare
+function PluginConnectorRow({
+  connector,
+  connectors,
+  now
 }: {
-  entries: readonly AgentPluginFleetEntry[]
-  /** Native installs on the chosen machine that only their own agent has. */
-  unshared: readonly AgentPluginUnshared[]
-  machineId: MachineId | null
-  options: AgentPluginTargetOptions
-  onToggle: (entry: AgentPluginFleetEntry, enabled: boolean) => void
-  onRetarget: (entry: AgentPluginFleetEntry) => void
-  onRemove: (entry: AgentPluginFleetEntry) => void
-  onShare: (plugin: AgentPluginUnshared) => void
+  connector: Connector
+  connectors: SealConnectors
+  now: number
 }): React.JSX.Element {
-  const t = useTranslate()
-  const where = (entry: AgentPluginFleetEntry): string => {
-    const accounts =
-      entry.targets.accounts === 'all'
-        ? t('seal.agentPlugins.installed.allAccounts', 'all accounts')
-        : t('seal.agentPlugins.installed.someAccounts', '{{count}} of {{total}} accounts', {
-            count: entry.targets.accounts.length,
-            total: options.accounts.length
-          })
-    const agents =
-      entry.targets.agents === 'all'
-        ? ''
-        : ` · ${t('seal.agentPlugins.installed.someAgents', '{{count}} of {{total}} agents', {
-            count: entry.targets.agents.length,
-            total: options.agents.length
-          })}`
-    return `${t('seal.agentPlugins.installed.machines', '{{count}} of {{total}} machines', {
-      count: entry.byMachine.size,
-      total: options.machines.length
-    })} · ${accounts}${agents}`
-  }
-
+  const state = connectorSignInState(connector, connectors.status?.signIns ?? null, now)
+  const signIns = connectors.status?.signIns ?? []
+  const needsRenewal = connector.signIns.find((signIn) => {
+    const own = signInStateOfOwnHost(signIn, signIns, now)
+    return worstSignInState([own]) !== 'connected'
+  })
   return (
-    <div className="space-y-6" data-agent-plugins-installed="">
-      <SettingsGroup
-        title={t('seal.agentPlugins.installed.title', 'Installed for every agent')}
-        description={t(
-          'seal.agentPlugins.installed.description',
-          'What each agent got is shown for the chosen machine. Switching a plugin off takes it out of every agent and keeps the install.'
-        )}
-      >
-        {entries.length === 0 ? (
-          <p data-settings-row="" className="py-3 text-xs text-muted-foreground">
-            {t('seal.agentPlugins.installed.none', 'Nothing installed through Seal yet.')}
-          </p>
-        ) : (
-          entries.map((entry) => {
-            const here =
-              (machineId ? entry.byMachine.get(machineId) : undefined) ??
-              [...entry.byMachine.values()][0]
-            return (
-              <div
-                key={entry.name}
-                data-settings-row=""
-                className="flex items-start gap-3 py-2.5"
-                data-agent-plugin-installed={entry.name}
-              >
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <p className="truncate text-sm font-medium">
-                    {entry.name}
-                    {here?.version ? (
-                      <span className="ml-1 font-mono text-xs font-normal text-muted-foreground">
-                        {here.version}
-                      </span>
-                    ) : null}
-                  </p>
-                  {entry.description ? (
-                    <p className="line-clamp-2 text-xs text-muted-foreground">
-                      {entry.description}
-                    </p>
-                  ) : null}
-                  <p className="text-xs text-muted-foreground">{where(entry)}</p>
-                  {here ? <AgentPluginAgentList lines={linesFromStates(here.agents)} /> : null}
-                </div>
-                <Switch
-                  className="mt-0.5"
-                  checked={entry.enabled}
-                  aria-label={t('seal.agentPlugins.installed.enable', 'Use {{name}}', {
-                    name: entry.name
-                  })}
-                  onCheckedChange={(enabled) => onToggle(entry, enabled)}
-                />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label={t('seal.agentPlugins.installed.actions', 'Actions for {{name}}', {
-                        name: entry.name
-                      })}
-                    >
-                      <EllipsisVertical />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={() => onRetarget(entry)}>
-                      {t('seal.agentPlugins.installed.retarget', 'Change where it applies…')}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem variant="destructive" onSelect={() => onRemove(entry)}>
-                      {t('seal.agentPlugins.installed.remove', 'Remove from every machine…')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )
-          })
-        )}
-      </SettingsGroup>
-
-      {unshared.length > 0 ? (
-        <SettingsGroup
-          title={t('seal.agentPlugins.unshared.title', 'Installed for one agent only')}
-          description={t(
-            'seal.agentPlugins.unshared.description',
-            'Installed with the agent’s own plugin command on this machine. Sharing gives the other agents its MCP servers and skills.'
-          )}
-        >
-          {unshared.map((plugin) => (
-            <div
-              key={`${plugin.harness}:${plugin.id}`}
-              data-settings-row=""
-              className="flex items-center gap-3 py-2"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm">{plugin.name}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {HARNESS_LABELS[plugin.harness]} · {plugin.id}
-                  {plugin.enabled ? '' : ` · ${t('seal.agentPlugins.unshared.off', 'off')}`}
-                </p>
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={() => onShare(plugin)}>
-                {t('seal.agentPlugins.unshared.share', 'Share with every agent…')}
-              </Button>
-            </div>
-          ))}
-        </SettingsGroup>
+    <div className="flex items-center gap-2 py-1" data-plugin-connector={connector.id}>
+      <span className="min-w-0 flex-1 truncate text-xs">{connector.title}</span>
+      <ConnectorStatusPill state={state} />
+      {connector.signIns.length === 0 || needsRenewal ? (
+        <ConnectorSignInButton
+          connector={connector}
+          signInId={needsRenewal?.id ?? null}
+          onDone={() => void connectors.refresh()}
+        />
       ) : null}
     </div>
+  )
+}
+
+function PluginRow({
+  plugin,
+  connectors,
+  options,
+  now,
+  onRemove
+}: {
+  plugin: PluginEntry
+  connectors: SealConnectors
+  options: AppliesToOptions
+  now: number
+  onRemove: () => void
+}): React.JSX.Element {
+  const t = useTranslate()
+  const [editing, setEditing] = useState(false)
+  const brought = (connectors.config?.connectors ?? []).filter(
+    (connector) =>
+      (connector.source.kind === 'plugin' && connector.source.pluginId === plugin.id) ||
+      plugin.connectorIds.includes(connector.id)
+  )
+  const update = (patch: Partial<PluginEntry>): void =>
+    void connectors.editConfig((config) => ({
+      ...config,
+      plugins: config.plugins.map((entry) =>
+        entry.id === plugin.id ? { ...entry, ...patch } : entry
+      )
+    }))
+  return (
+    <div data-settings-row="" data-agent-plugin-installed={plugin.id} className="space-y-2 py-3">
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="truncate text-sm font-medium">{plugin.name}</p>
+          {plugin.description ? (
+            <p className="line-clamp-2 text-xs text-muted-foreground">{plugin.description}</p>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <SettingsBadge tone="muted">{HARNESS_LABELS[plugin.harness]}</SettingsBadge>
+            <SettingsBadge tone="muted">{plugin.marketplace}</SettingsBadge>
+            {plugin.skillNames.length > 0 ? (
+              <span className="text-xs text-muted-foreground">
+                {t('seal.plugins.skillCount', '{{count}} skills', {
+                  count: plugin.skillNames.length
+                })}
+              </span>
+            ) : null}
+            <AppliesToChip value={plugin} options={options} />
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={t('seal.plugins.appliesTo', 'Choose where {{name}} applies', {
+              name: plugin.name
+            })}
+            aria-expanded={editing}
+            onClick={() => setEditing((open) => !open)}
+          >
+            <Settings2 />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={t('seal.plugins.remove', 'Remove {{name}}', { name: plugin.name })}
+            onClick={onRemove}
+          >
+            <Trash2 />
+          </Button>
+          <Switch
+            checked={plugin.enabled}
+            aria-label={t('seal.plugins.enabled', 'Use {{name}}', { name: plugin.name })}
+            onCheckedChange={(enabled) => update({ enabled })}
+          />
+        </div>
+      </div>
+      {brought.length > 0 ? (
+        <div className="divide-y divide-border rounded-md border border-border px-3">
+          {brought.map((connector) => (
+            <PluginConnectorRow
+              key={connector.id}
+              connector={connector}
+              connectors={connectors}
+              now={now}
+            />
+          ))}
+        </div>
+      ) : null}
+      {editing ? (
+        <div className="rounded-md border border-border p-3">
+          <AppliesToEditor value={plugin} options={options} onChange={(next) => update(next)} />
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+/** The plugins installed once for the whole fleet, with the connectors and skills each one brings. */
+export function AgentPluginsInstalled({
+  connectors,
+  now: nowOverride
+}: {
+  connectors: SealConnectors
+  now?: number
+}): React.JSX.Element {
+  const now = nowOverride ?? connectors.readAt
+  const t = useTranslate()
+  const options = useAppliesToOptions(connectors.fleet)
+  const [confirm, setConfirm] = useState<AgentConfigConfirmRequest | null>(null)
+  const plugins = connectors.config?.plugins ?? []
+
+  const remove = (plugin: PluginEntry): void =>
+    setConfirm({
+      title: t('seal.plugins.removeTitle', 'Remove {{name}}?', { name: plugin.name }),
+      description: t(
+        'seal.plugins.removeDescription',
+        'Its connectors and skills go with it, on every machine.'
+      ),
+      confirmLabel: t('seal.plugins.removeConfirm', 'Remove plugin'),
+      destructive: true,
+      run: async () => {
+        await connectorsCall(
+          'seal.connectors.removePlugin',
+          { pluginId: plugin.id },
+          { timeoutMs: 120_000 }
+        )
+        await connectors.refresh()
+      }
+    })
+
+  return (
+    <>
+      <p className="px-1 text-xs text-muted-foreground">
+        {t(
+          'seal.plugins.installed.description',
+          'Installed once for every machine and account Seal runs agents on.'
+        )}
+      </p>
+      <SettingsGroup>
+        {!connectors.config ? (
+          <div data-settings-row="" className="flex h-16 items-center justify-center">
+            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : plugins.length === 0 ? (
+          <p data-settings-row="" className="py-3 text-xs text-muted-foreground">
+            {t(
+              'seal.plugins.installed.none',
+              'No plugins installed. Browse the marketplaces to add one.'
+            )}
+          </p>
+        ) : (
+          plugins.map((plugin) => (
+            <PluginRow
+              key={plugin.id}
+              plugin={plugin}
+              connectors={connectors}
+              options={options}
+              now={now}
+              onRemove={() => remove(plugin)}
+            />
+          ))
+        )}
+      </SettingsGroup>
+      <AgentConfigConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
+    </>
   )
 }

@@ -40,7 +40,6 @@ import type { SkillProviderRootOverrides } from '../providers/skill-provider-des
 import { skillDirectoryMaxDepth } from '../../../shared/skill-discovery-depth'
 import { withoutBundledSkillCompatibilityCopies } from './bundled-skill-discovery-name'
 import { readSkillSummary } from './skill-discovery-summary'
-import { withAgentPluginSkillOrigins } from './agent-plugin-skill-origins'
 import { bundledSkillNames, requestedBundledSkillName } from '../../../shared/bundled-skill-names'
 
 // Share fixed home-root scans across workspace panes to bound repeated filesystem walks.
@@ -303,12 +302,7 @@ export async function discoverSkills(args: {
     }
   }
   const skills = sortDiscoveredSkills(
-    (
-      await withAgentPluginSkillOrigins(
-        await withoutBundledSkillCompatibilityCopies(Array.from(seen.values())),
-        homeDir
-      )
-    ).map((skill) => ({
+    (await withoutBundledSkillCompatibilityCopies(Array.from(seen.values()))).map((skill) => ({
       ...skill,
       name: requestedBundledSkillName(skill.name, args.names)
     }))

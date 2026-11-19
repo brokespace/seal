@@ -9,6 +9,8 @@ import { getProviderAccountsOwnerKey } from '@/runtime/provider-accounts/observa
 import { SessionSummariesSettingsPane } from '../session-summaries/SessionSummariesSettingsPane'
 import { AgentConfigSettingsPane } from '../agent-config/AgentConfigSettingsPane'
 import { AgentPluginsPane } from '../../agent-plugins/AgentPluginsPane'
+import { ConnectorsPage } from '../seal-connectors/ConnectorsPage'
+import { SealSkillsPane } from '../seal-connectors/skills/SealSkillsPane'
 import { AgentsPane } from '../agents/AgentsPane'
 import { AgentDefaultSurfaceSection } from '../agents/surfaces/AgentDefaultSurfaceSection'
 import { ComputerUsePane } from '../computer-use/ComputerUsePane'
@@ -74,8 +76,8 @@ export function renderAgentConfigSettingsSection(
       id="agent-config"
       title={t('auto.components.agentConfig.search.title', 'Agent configuration')}
       description={t(
-        'auto.components.agentConfig.search.description',
-        'Instructions, skills, MCP servers, plugins and settings for Claude Code, Codex and other agents.'
+        'seal.agentConfig.search.description',
+        'Instructions, skills and settings for Claude Code, Codex and other agents, machine by machine.'
       )}
       searchEntries={navigation.getSectionSearchEntries('agent-config')}
     >
@@ -92,14 +94,54 @@ export function renderAgentPluginsSettingsSection(
   return model.showDesktopOnlySettings ? (
     <SettingsSection
       id="agent-plugins"
-      title={t('seal.agentPlugins.title', 'Agent plugins')}
+      title={t('seal.plugins.title', 'Plugins')}
       description={t(
-        'seal.agentPlugins.description',
+        'seal.plugins.description',
         'Install a plugin from Claude Code’s or Codex’s marketplaces once for every agent, account and machine.'
       )}
       searchEntries={navigation.getSectionSearchEntries('agent-plugins')}
     >
       {view.isSectionMounted('agent-plugins') ? <AgentPluginsPane /> : null}
+    </SettingsSection>
+  ) : null
+}
+
+export function renderConnectorsSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element | null {
+  const { model, navigation, view } = context
+  return model.showDesktopOnlySettings ? (
+    <SettingsSection
+      id="connectors"
+      title={t('seal.connectors.title', 'Connectors')}
+      description={t(
+        'seal.connectors.description',
+        'MCP servers every agent session gets, with one sign-in per service shared across machines and accounts.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('connectors')}
+    >
+      {view.isSectionMounted('connectors') ? <ConnectorsPage /> : null}
+    </SettingsSection>
+  ) : null
+}
+
+export function renderSealSkillsSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element | null {
+  const { model, navigation, view } = context
+  return model.showDesktopOnlySettings ? (
+    <SettingsSection
+      id="skills"
+      title={t('seal.skills.title', 'Skills')}
+      description={t(
+        'seal.skills.navDescription',
+        'Skills from plugins and the Seal library, and which agents get each.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('skills')}
+    >
+      {view.isSectionMounted('skills') ? <SealSkillsPane /> : null}
     </SettingsSection>
   ) : null
 }

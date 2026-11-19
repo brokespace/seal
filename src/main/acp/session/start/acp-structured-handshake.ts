@@ -1,3 +1,4 @@
+import { acpLaunchMcpServers } from '../../launch/acp-launch-mcp-servers'
 import { observeAcpForkSupport } from '../../capabilities/acp-fork-support'
 import { acpSessionStartMeta } from '../../launch/acp-session-meta'
 import { withAcpStartupDiagnostic } from './acp-startup-diagnostic'
@@ -89,6 +90,7 @@ export async function initializeAcpStructuredSession(
     resumePreference: spec.resumePreference
   }
   const resume = launch.resume
+  const mcpServers = acpLaunchMcpServers(launch.connectors, initialized)
   let started: Awaited<ReturnType<AcpStructuredConnection['start']>> | null = null
   let liveLane: AcpStructuredLane | null = null
   let takeover: ReturnType<typeof acpReopenTakeover> | null = null
@@ -108,7 +110,7 @@ export async function initializeAcpStructuredSession(
       started = await connection.start(
         {
           cwd: launch.cwd,
-          mcpServers: [],
+          mcpServers,
           sessionId: resume.sessionId,
           ...setup
         },
@@ -130,7 +132,7 @@ export async function initializeAcpStructuredSession(
   if (!started || !liveLane) {
     liveLane?.dispose()
     input.lanes.clear()
-    started = await connection.start({ cwd: launch.cwd, mcpServers: [], ...setup }, acceptSession)
+    started = await connection.start({ cwd: launch.cwd, mcpServers, ...setup }, acceptSession)
     assertStarting()
   }
   if (!liveLane) {

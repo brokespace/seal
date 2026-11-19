@@ -25,6 +25,9 @@ import { startSealConfigReplication } from '../../seal-accounts/seal-config-repl
 import { onRuntimeEnvironmentStatusPublished } from '../../ipc/runtime-environments/status/runtime-environment-status-owner'
 import { trackRuntimeEnvironmentVerifiedTransitions } from '../../ipc/runtime-environments/status/runtime-environment-verified-transitions'
 import { getSealAccountManager } from '../../seal-accounts/seal-account-manager'
+import { installSealConnectorsFleet } from '../../seal-connectors/seal-connectors-fleet'
+import { getSealConnectorsService } from '../../seal-connectors/seal-connectors-install'
+import { getMachineRegistry } from '../../machines/registry/machine-registry-service'
 
 // Settings that change which account or binary a new chat's agent runs under.
 const MODEL_CATALOG_ACCOUNT_SETTINGS = [
@@ -67,6 +70,22 @@ export function initializeMainProcessAccountServices(): void {
       call: sealDesktopFleetTransport,
       onHostOnline: (listener) =>
         onRuntimeEnvironmentStatusPublished(trackRuntimeEnvironmentVerifiedTransitions(listener))
+    })
+  }
+  const sealConnectors = getSealConnectorsService()
+  if (sealConnectors) {
+    installSealConnectorsFleet({
+      service: sealConnectors,
+      targets: sealDesktopReplicaTargets,
+      call: sealDesktopFleetTransport,
+      onHostOnline: (listener) =>
+        onRuntimeEnvironmentStatusPublished(trackRuntimeEnvironmentVerifiedTransitions(listener)),
+      label: (target) =>
+        target === 'local'
+          ? 'This computer'
+          : (getMachineRegistry()
+              .records()
+              .find((record) => record.environmentId === target)?.name ?? target)
     })
   }
   state.rateLimits = services.rateLimits

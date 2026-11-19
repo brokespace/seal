@@ -13,6 +13,7 @@ import {
   writeClaudeHomeCredentials,
   writeClaudeOAuthAccount
 } from './seal-claude-home-credentials'
+import { withLoginOnly, withoutMcpOAuth } from '../seal-connectors/claude-mcp-oauth-entries'
 import { reconcileClaudeLogin, reconcileCodexLogin } from './seal-login-copies'
 import { getSystemCodexHomePath } from '../codex/configuration/homes/codex-home-paths'
 import type { ProviderAccountServices } from '../providers/accounts/provider-account-services'
@@ -60,7 +61,7 @@ export async function exportClaudeCredential(
       typeof account.organizationUuid === 'string' ? account.organizationUuid : null,
     organizationName:
       typeof account.organizationName === 'string' ? account.organizationName : null,
-    credentialsJson: await requireClaudeCredentials(configDir, isSystem),
+    credentialsJson: withoutMcpOAuth(await requireClaudeCredentials(configDir, isSystem)),
     oauthAccountJson: JSON.stringify(account)
   }
 }
@@ -122,20 +123,17 @@ export async function importClaudeCredential(
     JSON.parse(credential.credentialsJson)
     const oauthAccount: unknown = JSON.parse(credential.oauthAccountJson)
     await withClaudeConfigLocks([existingHome], async () => {
-      if (
-        !options.force &&
-        !isNewer(
-          'claude',
-          credential.credentialsJson,
-          await readClaudeHomeCredentials(existingHome)
-        )
-      ) {
+      const local = await readClaudeHomeCredentials(existingHome)
+      if (!options.force && !isNewer('claude', credential.credentialsJson, local)) {
         return
       }
       if (isRecord(oauthAccount)) {
         await writeClaudeOAuthAccount(existingHome, oauthAccount)
       }
-      await writeClaudeHomeCredentials(existingHome, credential.credentialsJson)
+      await writeClaudeHomeCredentials(
+        existingHome,
+        withLoginOnly(local, credential.credentialsJson)
+      )
     })
     return existing.id
   }

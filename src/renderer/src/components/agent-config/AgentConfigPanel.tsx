@@ -15,13 +15,10 @@ import {
   agentConfigLayout,
   isAgentConfigAgentId
 } from '../../../../shared/agent-config/agent-config-catalog'
-import { agentConfigMcpScopes } from '../../../../shared/agent-config/agent-config-mcp-scopes'
 import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
 import { AgentConfigDocumentsSection } from './documents/AgentConfigDocumentsSection'
 import { AgentConfigEffectiveSection } from './settings/AgentConfigEffectiveSection'
 import { AgentConfigFilesSection } from './files/AgentConfigFilesSection'
-import { AgentConfigMcpSection } from './mcp/AgentConfigMcpSection'
-import { AgentConfigPluginsSection } from './plugins/AgentConfigPluginsSection'
 import { AgentConfigSettingsSection } from './settings/AgentConfigSettingsSection'
 import { agentConfigErrorText } from './model/agent-config-client'
 import {
@@ -31,7 +28,7 @@ import {
 } from './model/agent-config-context'
 import { useAgentConfigSnapshot } from './model/use-agent-config-snapshot'
 
-type TabId = 'documents' | 'mcp' | 'plugins' | 'settings' | 'effective' | 'files'
+type TabId = 'documents' | 'settings' | 'effective' | 'files'
 
 /** Everything Seal manages for one agent on one machine, or for one project on it. */
 export function AgentConfigPanel({
@@ -115,24 +112,6 @@ export function AgentConfigPanel({
       label: t('auto.components.agentConfig.tabs.documents', 'Instructions & skills'),
       count: snapshot?.docs.length
     },
-    ...(agentConfigMcpScopes(layout, Boolean(projectPath)).length > 0
-      ? [
-          {
-            id: 'mcp' as const,
-            label: t('auto.components.agentConfig.tabs.mcp', 'MCP servers'),
-            count: snapshot?.mcp.length
-          }
-        ]
-      : []),
-    ...(layout.features.plugins
-      ? [
-          {
-            id: 'plugins' as const,
-            label: t('auto.components.agentConfig.tabs.plugins', 'Plugins'),
-            count: snapshot?.plugins?.plugins.length
-          }
-        ]
-      : []),
     { id: 'settings', label: t('auto.components.agentConfig.tabs.settings', 'Settings') },
     { id: 'effective', label: t('auto.components.agentConfig.tabs.effective', 'Merged view') },
     { id: 'files', label: t('auto.components.agentConfig.tabs.files', 'Files & backups') }
@@ -234,12 +213,6 @@ export function AgentConfigPanel({
             </TabsList>
             <TabsContent value="documents" className="mt-2">
               <AgentConfigDocumentsSection />
-            </TabsContent>
-            <TabsContent value="mcp" className="mt-2">
-              <AgentConfigMcpSection />
-            </TabsContent>
-            <TabsContent value="plugins" className="mt-2">
-              <AgentConfigPluginsSection />
             </TabsContent>
             <TabsContent value="settings" className="mt-2">
               <AgentConfigSettingsSection />

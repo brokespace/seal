@@ -68,6 +68,8 @@ export type SealAccountsPageViewProps = {
   actions: SealAccountsPageActions
   /** Claude-wide option rows, shown under the Claude accounts. */
   claudeOptions?: React.ReactNode
+  /** Read-only connectors per account, shown above the sessions. */
+  connectorsSection?: (accounts: { key: string; label: string }[]) => React.ReactNode
   /** For fixtures: the dialog to show on first render. */
   initialDialog?: PageDialog | null
   /** Only this machine's accounts, rules and sessions; fleet-wide settings stay on the full page. */
@@ -102,6 +104,7 @@ export function SealAccountsPageView({
   signIn,
   actions,
   claudeOptions,
+  connectorsSection,
   initialDialog = null,
   machineId
 }: SealAccountsPageViewProps): React.JSX.Element {
@@ -126,6 +129,10 @@ export function SealAccountsPageView({
   }
 
   const allAccounts = SEAL_ACCOUNT_GROUPS.flatMap((group) => overview.groups[group])
+  const connectorAccounts = allAccounts.map((account) => ({
+    key: account.key,
+    label: account.candidate.label
+  }))
   const pushTargets = overview.machines.filter((machine) => !machine.home && machine.reachable)
   const machineCount = overview.machines.length
   const scopedMachine = machineId
@@ -232,6 +239,7 @@ export function SealAccountsPageView({
               )}
             </p>
           )}
+          {connectorsSection?.(connectorAccounts)}
           <SealSessionsSection
             overview={shown}
             status={status}
@@ -275,6 +283,7 @@ export function SealAccountsPageView({
             onRemove={actions.removeRule}
             onSync={actions.syncRules}
           />
+          {connectorsSection?.(connectorAccounts)}
           <SealSessionsSection
             overview={overview}
             status={status}

@@ -1,5 +1,6 @@
 import type { SealProvider } from '../../shared/seal-accounts/seal-accounts-config'
 import { CLAUDE_PROFILE_POINTER_ENV } from '../../shared/claude-profile-routing'
+import { quotePowerShellNativeArgument } from '../../shared/powershell-native-argument'
 
 export type SealTerminalAction = { text?: string; enter?: boolean; interrupt?: boolean }
 
@@ -70,8 +71,8 @@ export function resumeCommandLine(args: {
   platform: NodeJS.Platform
   claudePointer?: string
   codexHome?: string
-  /** The new account's `-c` plugin overrides. */
-  codexArgs?: readonly string[]
+  /** Seal's connector config for the resumed agent, unquoted. */
+  connectorArgs?: readonly string[]
 }): string {
   if (!SAFE_SESSION_ID.test(args.providerSessionId)) {
     throw new Error('This session has an id Seal cannot resume safely.')
@@ -83,13 +84,13 @@ export function resumeCommandLine(args: {
   if (args.provider === 'codex' && args.codexHome) {
     env.push(['CODEX_HOME', args.codexHome])
   }
+  const quoteArg = (arg: string): string =>
+    args.platform === 'win32' ? quotePowerShellNativeArgument(arg) : quote(arg, args.platform)
+  const extra = (args.connectorArgs ?? []).map((arg) => ` ${quoteArg(arg)}`).join('')
   const command =
     args.provider === 'claude'
-      ? `claude --resume ${args.providerSessionId}`
-      : [
-          `codex resume ${args.providerSessionId}`,
-          ...(args.codexArgs ?? []).map((arg) => quote(arg, args.platform))
-        ].join(' ')
+      ? `claude --resume ${args.providerSessionId}${extra}`
+      : `codex resume ${args.providerSessionId}${extra}`
   if (args.platform === 'win32') {
     const assignments = env.map(([name, value]) => `$env:${name}=${quote(value, 'win32')}; `)
     return `${assignments.join('')}${command}`

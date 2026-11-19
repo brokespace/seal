@@ -5,10 +5,6 @@ import {
   markShadowedServers
 } from '../../shared/agent-config/agent-config-mcp-servers'
 import { maskConfigValue } from '../../shared/agent-config/agent-config-secrets'
-import {
-  AGENT_PLUGIN_LEDGER_PATH,
-  parseAgentPluginLedger
-} from '../../shared/agent-plugins/agent-plugin-ledger'
 import { isSkillSwitchedOff } from '../../shared/agent-config/agent-config-skill-switches'
 import type {
   AgentConfigDocRef,
@@ -35,7 +31,6 @@ import {
   instructionsFromRecord
 } from './agent-config-doc-refs'
 import { scanRunner } from './agent-config-file-io'
-import { withAgentPluginOrigin, withAgentPluginServers } from './agent-config-plugin-origins'
 import {
   isInside,
   joinRelative,
@@ -227,24 +222,16 @@ export async function buildAgentConfigSnapshot(
   const projectChoices = projectRoot
     ? valueAtPath(claudeJson, ['projects', projectRoot])
     : undefined
-  const ledger = parseAgentPluginLedger(
-    (await parsedAt(joinRelative(scan.home, AGENT_PLUGIN_LEDGER_PATH))).value
-  )
-  const mcp = withAgentPluginServers(
-    markShadowedServers(servers).map((server) =>
-      layout.id === 'claude' && server.scope === 'project'
-        ? {
-            ...server,
-            activation: activationOf(server.name, [
-              ...rawSettings.map((layer) => layer.value),
-              isPlainObject(projectChoices) ? projectChoices : null
-            ])
-          }
-        : server
-    ),
-    ledger,
-    layout.id,
-    Boolean(projectRoot)
+  const mcp = markShadowedServers(servers).map((server) =>
+    layout.id === 'claude' && server.scope === 'project'
+      ? {
+          ...server,
+          activation: activationOf(server.name, [
+            ...rawSettings.map((layer) => layer.value),
+            isPlainObject(projectChoices) ? projectChoices : null
+          ])
+        }
+      : server
   )
 
   const claudePlugins = layout.features.plugins
@@ -281,10 +268,7 @@ export async function buildAgentConfigSnapshot(
     )
   }
   const settingsLayers = rawSettings.map((layer) => layer.value)
-  const docs = [
-    ...ownDocs.map((doc) => withAgentPluginOrigin(doc, ledger)),
-    ...pluginSkills.skills
-  ].map((doc): AgentConfigDocRef =>
+  const docs = [...ownDocs, ...pluginSkills.skills].map((doc): AgentConfigDocRef =>
     doc.kind === 'skill' &&
     // Claude Code's overrides name the account's and project's skills, not a plugin's.
     !(layout.skills.switch === 'claude-overrides' && doc.bundle) &&

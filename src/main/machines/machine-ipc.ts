@@ -32,7 +32,6 @@ import { registerMachineRegistryHandlers } from './registry/machine-registry-ipc
 import { registerMachineShellHandlers } from './shell/machine-shell-ipc'
 import { registerMachineWorkHandlers } from './work/machine-work-ipc'
 import { registerAgentConfigHandlers } from '../agent-config/agent-config-ipc'
-import { registerAgentConnectorsHandlers } from '../agent-connectors/agent-connectors-ipc'
 import { registerMachineResourceHandlers } from './resources/machine-resource-ipc'
 import { ensureMachineDiskIndex } from './resources/machine-disk-index'
 import { collectMachineMetricsWithSensors } from './resources/machine-sensor-readings'
@@ -89,7 +88,6 @@ export function registerMachineHandlers(getMainWindow: () => BrowserWindow | nul
   registerMachineShellHandlers(handle, (channel, payload) => sendToRenderer(channel, payload))
   registerMachineWorkHandlers(handle)
   registerAgentConfigHandlers(handle, invalidateParent)
-  registerAgentConnectorsHandlers(handle)
   registerMachineResourceHandlers(handle, (channel, payload) => sendToRenderer(channel, payload))
   registerMachineFolderHandlers(handle, {
     directories: () => getServices().directories,

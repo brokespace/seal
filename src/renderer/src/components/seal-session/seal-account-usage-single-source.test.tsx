@@ -61,9 +61,12 @@ async function setUp(): Promise<{
     await import('../settings/seal-accounts/seal-accounts-page.test-fixture')
   // The host answers with older figures of its own: Work 82/41 and Personal 18/22.
   const hostStatus = populatedScenario().status
-  rpc.call.mockImplementation(async (_target, method) =>
-    method === 'seal.accounts.status' ? hostStatus : null
-  )
+  rpc.call.mockImplementation(async (_target, method) => {
+    if (method.startsWith('seal.connectors.')) {
+      throw new Error('Connectors are not part of this test.')
+    }
+    return method === 'seal.accounts.status' ? hostStatus : null
+  })
   useAppStore.setState({ rateLimits: popoverUsage() })
   return {
     hostStatus,
