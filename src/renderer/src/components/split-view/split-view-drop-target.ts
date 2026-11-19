@@ -322,10 +322,12 @@ export function commitSplitViewTabDrop(
   }
   if (worktreeId && drop.place) {
     const workspace = workspaceSplitViewItem({ id: worktreeId })
+    // The dropped tab is the workspace's surface: no default shell opens beside it.
+    const surface = { providesInitialSurface: true }
     if (drop.place === 'open') {
-      navigateToSplitViewItem(workspace)
+      navigateToSplitViewItem(workspace, surface)
     } else {
-      placeItemsInSplitView([workspace], drop.place)
+      placeItemsInSplitView([workspace], drop.place, undefined, surface)
     }
   }
   return drop.tab

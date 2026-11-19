@@ -133,7 +133,8 @@ export function shouldBootstrapInitialWebRuntimeTerminal(args: {
   activeWorktreeId: string
   requestedInitialTerminal: boolean
   snapshotIsFresh: boolean
-  localTerminalCount: number
+  /** Local terminals plus any other tab showing in the workspace, such as an opened session. */
+  localTabCount: number
   hasPersistedTerminalState: boolean
   /** No earlier frame in this subscription affirmed the worktree's contents. */
   firstHostAnswer: boolean
@@ -146,7 +147,7 @@ export function shouldBootstrapInitialWebRuntimeTerminal(args: {
     hostSnapshotAffirmsWorktreeContents(args.event) &&
     args.event.tabs.length === 0 &&
     // Use local seeder semantics remotely too: missing means never initialized, explicit empty means user-closed-last-terminal (STA-6173).
-    shouldAutoCreateInitialTerminal(args.localTerminalCount, args.hasPersistedTerminalState) &&
+    shouldAutoCreateInitialTerminal(args.localTabCount, args.hasPersistedTerminalState) &&
     !args.requestedInitialTerminal &&
     args.activeWorktreeId === args.event.worktree
   )

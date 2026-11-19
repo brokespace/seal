@@ -22,6 +22,9 @@ import {
 
 export type { AgentSessionOpenMode } from './agent-session-open-mode'
 
+// Opening a session shows that session alone: an empty workspace gets no default shell beside it.
+export const SESSION_OPEN_ACTIVATION = { providesInitialSurface: true } as const
+
 function findTab(matches: (tab: Tab) => boolean): Tab | null {
   for (const tabs of Object.values(useAppStore.getState().unifiedTabsByWorktree)) {
     const tab = tabs.find(matches)
@@ -70,7 +73,7 @@ function showOwnWorkspace(session: LiveSession | null): boolean {
   if (!worktreeId) {
     return false
   }
-  activateAndRevealWorkspace(worktreeId)
+  activateAndRevealWorkspace(worktreeId, SESSION_OPEN_ACTIVATION)
   return true
 }
 
@@ -91,7 +94,7 @@ function showExternalTab(
   if (!worktreeId || (!open && !session)) {
     return false
   }
-  if (!activateAndRevealWorkspace(worktreeId)) {
+  if (!activateAndRevealWorkspace(worktreeId, SESSION_OPEN_ACTIVATION)) {
     return true
   }
   if (!session) {
