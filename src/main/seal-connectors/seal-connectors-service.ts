@@ -281,7 +281,8 @@ export class SealConnectorsService implements SealConnectorsHost {
       now: this.now(),
       versions,
       lease,
-      heartbeatAt: this.lease.owns() ? lease.heartbeatAt : 0
+      heartbeatAt: this.lease.owns() ? lease.heartbeatAt : 0,
+      canHoldSignIns: this.store.canHoldSignIns()
     }
   }
 

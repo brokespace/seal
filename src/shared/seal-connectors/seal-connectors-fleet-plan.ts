@@ -13,6 +13,8 @@ export type FleetPlanHub = {
   lease: RefresherLease
   /** The hub's own heartbeat stamp; only meaningful when it owns the lease. */
   heartbeatAt: number
+  /** False when it has no secret store (e.g. no OS keyring): it can never refresh. */
+  canHoldSignIns?: boolean
 }
 
 export type FleetPlanHost = {
@@ -24,6 +26,7 @@ export type FleetPlanHost = {
   heartbeatAt: number
   /** False when the host did not reply this pass; it is then neither read from nor written to. */
   answered: boolean
+  canHoldSignIns?: boolean
 }
 
 export type FleetPlan = {
@@ -88,6 +91,12 @@ function planLease(args: {
   for (const host of online) {
     live.set(host.hostKey, host.heartbeatAt)
   }
+  // Only a host that can hold the sign-ins can renew them.
+  const candidates = new Set(
+    [hub, ...online].flatMap((holder) =>
+      holder.hostKey && holder.canHoldSignIns !== false ? [holder.hostKey] : []
+    )
+  )
   const owner = current.ownerHostKey
   // The owner's last sign of life: its own stamp when it answered, else what other copies carry
   // (another desktop may be the one reaching it).
@@ -98,9 +107,10 @@ function planLease(args: {
     owner && live.has(owner) ? (live.get(owner) ?? 0) : 0
   )
   const answered = owner !== null && live.has(owner)
-  const designatedOnline = designatedHostKey !== null && live.has(designatedHostKey)
+  const designatedOnline = designatedHostKey !== null && candidates.has(designatedHostKey)
   // Only an owner that answered can be told it lost the lease, so only then may it be displaced.
-  const displaced = answered && designatedOnline && designatedHostKey !== owner
+  const displaced =
+    answered && ((designatedOnline && designatedHostKey !== owner) || !candidates.has(owner ?? ''))
   const silentFor = now - seenAt
   const stale = silentFor >= (args.urgent ? LEASE_URGENT_STALE_MS : LEASE_STALE_MS)
   if (owner !== null && !displaced && (answered || !stale)) {
@@ -108,9 +118,9 @@ function planLease(args: {
   }
   const elected = designatedOnline
     ? designatedHostKey
-    : hub.hostKey && live.has(hub.hostKey)
+    : hub.hostKey && candidates.has(hub.hostKey)
       ? hub.hostKey
-      : ([...live.keys()].sort()[0] ?? null)
+      : ([...candidates].sort()[0] ?? null)
   if (elected === null) {
     return current
   }

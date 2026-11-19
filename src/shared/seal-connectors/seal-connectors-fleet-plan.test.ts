@@ -120,4 +120,18 @@ describe('planConnectorFleetSync', () => {
       grantedBy: 'host:hub'
     })
   })
+
+  it('never elects a host that cannot hold sign-ins, and moves the lease off one', () => {
+    const plan = planConnectorFleetSync({
+      now: NOW,
+      designatedHostKey: null,
+      hub: hub({ lease: lease('host:hub', 2), canHoldSignIns: false }),
+      hosts: [
+        host('host:b', { lease: lease('host:hub', 2) }),
+        host('host:a', { lease: lease('host:hub', 2) })
+      ]
+    })
+    expect(plan.lease.ownerHostKey).toBe('host:a')
+    expect(plan.lease.epoch).toBe(3)
+  })
 })

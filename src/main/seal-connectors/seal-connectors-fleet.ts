@@ -25,7 +25,9 @@ const VersionsReplySchema = z.object({
   now: z.number(),
   versions: z.record(z.string(), z.number()),
   lease: RefresherLeaseSchema,
-  heartbeatAt: z.number()
+  heartbeatAt: z.number(),
+  // Hosts from before this field could always hold sign-ins.
+  canHoldSignIns: z.boolean().default(true)
 })
 
 const HostStatusSchema = z.object({
@@ -149,7 +151,8 @@ async function syncSignInsAndLease(
             lease: reply.lease,
             // Aged on the host's own clock, so a skewed clock cannot fake a dead owner.
             heartbeatAt: reply.heartbeatAt === 0 ? 0 : now - (reply.now - reply.heartbeatAt),
-            answered: true
+            answered: true,
+            canHoldSignIns: reply.canHoldSignIns
           }
         } catch (error) {
           errors.set(client.target, errorMessage(error))
@@ -172,7 +175,8 @@ async function syncSignInsAndLease(
       hostKey: hubReply.hostKey,
       versions: ofWanted(hubReply.versions),
       lease: hubReply.lease,
-      heartbeatAt: hubReply.heartbeatAt
+      heartbeatAt: hubReply.heartbeatAt,
+      canHoldSignIns: hubReply.canHoldSignIns
     },
     hosts,
     urgent: signInsLapsing(service, now)

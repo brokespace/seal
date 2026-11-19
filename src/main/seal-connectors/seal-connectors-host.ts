@@ -68,4 +68,6 @@ export type SealSignInVersions = {
   lease: RefresherLease
   /** When this host last said, as lease owner, that it is alive; 0 when it is not the owner. */
   heartbeatAt: number
+  /** False without a working secret store; such a host is never made the refresher. */
+  canHoldSignIns: boolean
 }

@@ -118,6 +118,10 @@ export class SealConnectorsStore {
     }
   }
 
+  canHoldSignIns(): boolean {
+    return encryptionAvailable()
+  }
+
   signIn(id: string): SignInSecret | null {
     this.decodePending()
     return this.secrets.get(id) ?? null
