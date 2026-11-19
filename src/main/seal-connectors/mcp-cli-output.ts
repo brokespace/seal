@@ -1,11 +1,7 @@
 import { stripAnsiEscapeSequences } from '../../shared/ansi-escape-sequences'
-import type {
-  AgentConnector,
-  AgentConnectorKind,
-  AgentConnectorStatus
-} from '../../shared/agent-connectors/agent-connector-types'
 import { isSecretValue } from '../../shared/agent-config/agent-config-secrets'
 import { isPlainObject } from '../../shared/agent-config/agent-config-values'
+import type { McpCliServer, McpCliServerKind, McpCliServerStatus } from './mcp-cli-types'
 
 const SECRET_FLAG = /(token|secret|password|passwd|api[-_]?key|auth|credential|bearer)/i
 // Long opaque strings in a command line are usually keys.
@@ -67,10 +63,7 @@ export function sanitizeConnectorCommand(words: readonly string[]): string {
     .join(' ')
 }
 
-export function connectorKindOf(
-  name: string,
-  userServers: ReadonlySet<string>
-): AgentConnectorKind {
+export function connectorKindOf(name: string, userServers: ReadonlySet<string>): McpCliServerKind {
   if (name.startsWith('claude.ai ')) {
     return 'claude-ai'
   }
@@ -80,7 +73,7 @@ export function connectorKindOf(
   return userServers.has(name) ? 'user' : 'project'
 }
 
-function claudeStatus(text: string): { status: AgentConnectorStatus; detail: string | null } {
+function claudeStatus(text: string): { status: McpCliServerStatus; detail: string | null } {
   const words = text.replace(/^[✔✓!✘✗⚠-]\s*/u, '').trim()
   if (/^[✔✓]/u.test(text)) {
     return { status: 'connected', detail: null }
@@ -94,7 +87,7 @@ function claudeStatus(text: string): { status: AgentConnectorStatus; detail: str
   return { status: 'failed', detail: words || null }
 }
 
-function claudeTarget(summary: string): Pick<AgentConnector, 'transport' | 'target'> {
+function claudeTarget(summary: string): Pick<McpCliServer, 'transport' | 'target'> {
   const remote = /^(\S+) \((HTTP|SSE)\)$/i.exec(summary.trim())
   if (remote) {
     return {
@@ -113,8 +106,8 @@ function claudeTarget(summary: string): Pick<AgentConnector, 'transport' | 'targ
 export function parseClaudeMcpList(
   output: string,
   userServers: ReadonlySet<string>
-): AgentConnector[] {
-  const connectors: AgentConnector[] = []
+): McpCliServer[] {
+  const connectors: McpCliServer[] = []
   for (const line of cleanCliOutput(output).split('\n')) {
     const match = LIST_LINE.exec(line.trim())
     if (!match || match[1].startsWith('[')) {
@@ -131,7 +124,7 @@ export function parseClaudeMcpList(
   return connectors
 }
 
-function codexEntry(entry: unknown): AgentConnector | null {
+function codexEntry(entry: unknown): McpCliServer | null {
   if (!isPlainObject(entry) || typeof entry.name !== 'string') {
     return null
   }
@@ -142,7 +135,7 @@ function codexEntry(entry: unknown): AgentConnector | null {
     ? transport.args.filter((arg): arg is string => typeof arg === 'string')
     : []
   const auth = typeof entry.auth_status === 'string' ? entry.auth_status : ''
-  const status: AgentConnectorStatus =
+  const status: McpCliServerStatus =
     entry.enabled === false
       ? 'disabled'
       : auth === 'not_logged_in'
@@ -168,7 +161,7 @@ function codexEntry(entry: unknown): AgentConnector | null {
 }
 
 /** Parses `codex mcp list --json`. Codex does not health-check, so only sign-in state is known. */
-export function parseCodexMcpList(output: string): AgentConnector[] {
+export function parseCodexMcpList(output: string): McpCliServer[] {
   const text = cleanCliOutput(output)
   const start = text.indexOf('[')
   if (start === -1) {
@@ -177,7 +170,7 @@ export function parseCodexMcpList(output: string): AgentConnector[] {
   try {
     const parsed: unknown = JSON.parse(text.slice(start))
     return Array.isArray(parsed)
-      ? parsed.map(codexEntry).filter((entry): entry is AgentConnector => entry !== null)
+      ? parsed.map(codexEntry).filter((entry): entry is McpCliServer => entry !== null)
       : []
   } catch {
     return []

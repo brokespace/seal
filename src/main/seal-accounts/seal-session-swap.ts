@@ -8,7 +8,6 @@ import type {
   SealSessionSwapEntry
 } from '../../shared/seal-accounts/seal-accounts-status'
 import { sessionSwapDelivery } from '../../shared/seal-accounts/seal-session-swap-decision'
-import { codexAccountPluginArgs } from '../agent-plugins/codex-account-plugin-overrides'
 import type { SealAccountManager } from './seal-account-manager'
 import { sealPinnedPointerPath, pinClaudeLaunchToHome } from './seal-claude-launch-pin'
 import { codexLoginJson, copyClaudeLoginInto, sealSessionPointerName } from './seal-session-launch'
@@ -145,10 +144,7 @@ async function deliver(
       providerSessionId: request.providerSessionId,
       platform: process.platform,
       claudePointer: prepared.claudePointer,
-      codexHome: prepared.codexHome,
-      ...(session.provider === 'codex'
-        ? { codexArgs: await codexAccountPluginArgs(request.to.key, prepared.codexHome ?? null) }
-        : {})
+      codexHome: prepared.codexHome
     }),
     enter: true
   })

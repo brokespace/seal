@@ -1,13 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import type {
-  AgentConnectorSignInResult,
-  AgentConnectorSignInStart
-} from '../../shared/agent-connectors/agent-connector-types'
 import type { MachineId } from '../../shared/machines/machine-types'
 import type { MachineConnection, MachineShell } from '../machines/connection/machine-connection'
-import { cleanCliOutput, findAuthorizeUrl, lastCliMessage } from './agent-connector-cli-output'
-import type { ConnectorHome } from './agent-connector-homes'
-import { agentCommandForHome } from './agent-connector-listing'
+import { cleanCliOutput, findAuthorizeUrl, lastCliMessage } from './mcp-cli-output'
+import type { ConnectorSignInResult, ConnectorSignInStart } from './mcp-cli-types'
 
 const URL_WAIT_MS = 45_000
 // The CLI waits on its localhost callback; give the user time to finish in the browser.
@@ -23,7 +18,7 @@ type Session = {
   machineId: MachineId
   name: string
   shell: MachineShell
-  result: Promise<AgentConnectorSignInResult>
+  result: Promise<ConnectorSignInResult>
   /** What the CLI printed since the last paste. */
   sincePaste: string
   exited: boolean
@@ -38,14 +33,14 @@ function endSession(sessionId: string): void {
 }
 
 /**
- * Runs `<agent> mcp login <name> --no-browser` in a PTY on the machine (the CLI insists on a
- * terminal) and hands back the page it asks the user to open.
+ * Runs `command` (an already built `<agent> mcp login <name> --no-browser`) in a PTY on the
+ * machine (the CLI insists on a terminal) and hands back the page it asks the user to open.
  */
 export async function startConnectorSignIn(
   connection: MachineConnection,
-  home: ConnectorHome,
+  command: string,
   name: string
-): Promise<AgentConnectorSignInStart> {
+): Promise<ConnectorSignInStart> {
   // A login still waiting holds the server's fixed callback port; a second one would fail.
   for (const [id, session] of sessions) {
     if (session.machineId === connection.machineId && session.name === name) {
@@ -53,18 +48,13 @@ export async function startConnectorSignIn(
     }
   }
   const sessionId = randomUUID()
-  const command = agentCommandForHome(
-    home,
-    ['mcp', 'login', name, '--no-browser'],
-    await connection.dialect()
-  )
   let output = ''
   let announce: (url: string | null) => void = () => {}
   const announced = new Promise<string | null>((resolve) => {
     announce = resolve
   })
-  let finish: (result: AgentConnectorSignInResult) => void = () => {}
-  const result = new Promise<AgentConnectorSignInResult>((resolve) => {
+  let finish: (result: ConnectorSignInResult) => void = () => {}
+  const result = new Promise<ConnectorSignInResult>((resolve) => {
     finish = resolve
   })
   const limit = setTimeout(() => endSession(sessionId), SESSION_LIMIT_MS)
@@ -158,9 +148,7 @@ export async function submitConnectorRedirect(
   return null
 }
 
-export async function waitForConnectorSignIn(
-  sessionId: string
-): Promise<AgentConnectorSignInResult> {
+export async function waitForConnectorSignIn(sessionId: string): Promise<ConnectorSignInResult> {
   const session = sessions.get(sessionId)
   if (!session) {
     return { ok: false, message: 'This sign-in has ended; start it again' }

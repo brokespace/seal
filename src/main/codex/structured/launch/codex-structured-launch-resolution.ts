@@ -31,7 +31,6 @@ import { codexStructuredPermissionPolicy } from '../../../../shared/codex-permis
 import { codexStructuredLaunchArgs } from './codex-structured-launch-args'
 import { codexOrcaHooksOffArgs } from './codex-structured-orca-hooks-off'
 import { getSystemCodexHomePath } from '../../configuration/homes/codex-home-paths'
-import { codexHomePluginArgs } from '../../../agent-plugins/codex-account-plugin-overrides'
 import {
   LEGACY_NATIVE_CHAT_VISUALS_DIR_ENV,
   NATIVE_CHAT_SCRATCH_DIR_ENV,
@@ -164,11 +163,10 @@ export function codexStructuredLaunchPart(
       launch: {
         command,
         prefixArgs,
-        // Before the user's args: a later -c replaces these, so their hooks.state and plugins win.
+        // Before the user's args: a later -c table replaces this one, so their hooks.state wins.
         args: [
           ...prefixArgs,
           ...codexOrcaHooksOffArgs(launchHome ?? getSystemCodexHomePath()),
-          ...(await codexHomePluginArgs(launchHome)),
           ...args,
           'app-server'
         ],

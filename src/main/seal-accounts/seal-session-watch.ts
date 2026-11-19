@@ -7,7 +7,6 @@ import type { SealAccountManager } from './seal-account-manager'
 import { reconcileFleetCredentials } from './seal-fleet-credentials'
 import { sealFleetTransport } from './seal-fleet-sync'
 import { loginIsCopied, reconcileClaudeLogin, reconcileCodexLogin } from './seal-login-copies'
-import { upkeepClaudeMcpSignIns } from './seal-mcp-sign-in-upkeep'
 import { removeSessionHome } from './seal-session-homes'
 import { swapSealSession } from './seal-session-swap'
 import { sealSessionTerminal, type SealAgentStatusRow } from './seal-session-terminal'
@@ -195,7 +194,6 @@ export class SealSessionWatch {
         )
       }
     }
-    await upkeepClaudeMcpSignIns(this.manager)
     const transport = sealFleetTransport()
     if (transport) {
       const report = await reconcileFleetCredentials(this.manager, transport)

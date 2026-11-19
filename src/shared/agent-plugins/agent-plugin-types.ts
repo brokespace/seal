@@ -58,12 +58,6 @@ export type AgentPluginCatalog = {
   harnesses: { harness: AgentPluginHarness; available: boolean; error?: string }[]
 }
 
-/**
- * How one agent takes a plugin: its own installer, Seal's translation, not on the machine, or
- * left out by the plugin's targets.
- */
-export type AgentPluginMode = 'native' | 'translated' | 'absent' | 'excluded'
-
 /** `all` keeps reaching machines, accounts and agents that appear later. */
 export type AgentPluginTargetList<T extends string> = 'all' | T[]
 
@@ -87,29 +81,6 @@ export function agentPluginSystemAccount(provider: AgentPluginHarness): string {
   return `${provider}:system`
 }
 
-export type AgentPluginWrittenServer = { name: string; path: string }
-
-export type AgentPluginLinkedSkill = {
-  name: string
-  /** The link in the agent's skills folder. */
-  path: string
-  /** Another agent whose skills folder this one reads, so no link of its own was made. */
-  via?: AgentConfigAgentId
-}
-
-/** What one agent on one machine got from a plugin. */
-export type AgentPluginAgentState = {
-  agent: AgentConfigAgentId
-  mode: AgentPluginMode
-  mcpServers: AgentPluginWrittenServer[]
-  skills: AgentPluginLinkedSkill[]
-  /** Kinds the plugin brings that this agent has no place for. */
-  notApplicable: AgentPluginComponentKind[]
-  /** Items that were skipped, each with why. */
-  skipped: string[]
-  error?: string
-}
-
 /** What a plugin's folder provides; MCP entries are kept as the plugin wrote them. */
 export type AgentPluginProvides = {
   mcpServers: Record<string, Record<string, unknown>>
@@ -121,78 +92,14 @@ export type AgentPluginProvides = {
   apps: string[]
 }
 
-/** A native install Seal manages. */
-export type AgentPluginInstalledListing = Pick<AgentPluginListing, 'harness' | 'id'> & {
-  /** Installed before Seal took it over: Seal never uninstalls it, only switches it back. */
-  preexisting?: true
-  /** How a preexisting install was switched when Seal took it over. */
-  enabledBefore?: boolean
+export function emptyAgentPluginComponents(): AgentPluginComponents {
+  return {
+    mcpServers: [],
+    skills: [],
+    commands: [],
+    agents: [],
+    hooks: [],
+    lspServers: [],
+    apps: []
+  }
 }
-
-/** One plugin in Seal's ledger on a machine: the single record every page reads. */
-export type AgentPluginRecord = {
-  name: string
-  description: string
-  version: string | null
-  /** The listings installed natively; the first one's folder is what others are translated from. */
-  listings: AgentPluginInstalledListing[]
-  root: string
-  enabled: boolean
-  installedAt: string
-  targets: AgentPluginTargets
-  provides: AgentPluginProvides
-  agents: AgentPluginAgentState[]
-}
-
-export type AgentPluginLedger = {
-  version: 1
-  plugins: AgentPluginRecord[]
-  /** Claude MCP entries Seal wrote for plugins since removed, so account profiles can drop them. */
-  retiredMcpServers: Record<string, Record<string, unknown>>
-}
-
-/** A ledger record as the page sees it: MCP entries reduced to names so no secret leaves main. */
-export type AgentPluginView = Omit<AgentPluginRecord, 'provides'> & {
-  components: AgentPluginComponents
-}
-
-/** A native install Seal has not shared with the other agents yet. */
-export type AgentPluginUnshared = {
-  harness: AgentPluginHarness
-  id: string
-  name: string
-  enabled: boolean
-}
-
-export type AgentPluginInventory = {
-  machineId: MachineId
-  plugins: AgentPluginView[]
-  unshared: AgentPluginUnshared[]
-  /** Agents on the machine: their CLI is on PATH or their config folder exists. */
-  presentAgents: AgentConfigAgentId[]
-}
-
-/** What to install: the plugin's name and each harness listing to install natively. */
-export type AgentPluginInstallRequest = {
-  name: string
-  listings: Pick<AgentPluginListing, 'harness' | 'id'>[]
-  targets: AgentPluginTargets
-}
-
-export type AgentPluginStep = {
-  label: string
-  ok: boolean
-  /** The command that ran, for repeating it by hand. */
-  command?: string
-  output?: string
-}
-
-export type AgentPluginMachineResult = {
-  machineId: MachineId
-  ok: boolean
-  steps: AgentPluginStep[]
-  record: AgentPluginView | null
-  error?: string
-}
-
-export type AgentPluginAction = 'install' | 'enable' | 'disable' | 'remove'

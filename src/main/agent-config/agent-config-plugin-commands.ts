@@ -119,11 +119,6 @@ export async function runAgentCli(
   }
 }
 
-/** Codex's spelling of an install or removal; it keeps plugins for the account only. */
-export function codexPluginArgs(kind: 'install' | 'uninstall', plugin: string): string[] {
-  return ['plugin', kind === 'install' ? 'add' : 'remove', requirePlugin(plugin)]
-}
-
 /**
  * Installs, updates and removes go through Claude Code's own CLI on the machine: it clones the
  * repositories, resolves versions and writes its registry, which Seal should not imitate.

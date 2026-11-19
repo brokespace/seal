@@ -17,7 +17,7 @@ import { AgentConfigMcpRow, type AgentConfigMcpTestState } from './AgentConfigMc
 import { AgentConfigMcpSheet, type AgentConfigMcpEdit } from './AgentConfigMcpSheet'
 
 function serverKey(server: AgentConfigMcpServer): string {
-  return `${server.scope}:${server.name}${server.plugin?.native ? `@${server.plugin.name}` : ''}`
+  return `${server.scope}:${server.name}`
 }
 
 export function AgentConfigMcpSection(): React.JSX.Element {

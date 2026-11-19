@@ -103,10 +103,6 @@ export function LinearIntegrationCard(): React.JSX.Element {
                 'Add Linear access to browse and link issues.'
               )
       }
-      note={t(
-        'auto.components.settings.task.tracker.integration.cards.linearAgentNote',
-        'Connects Seal’s task browsing only; agents get Linear access through Settings › Integrations › Agent connectors.'
-      )}
       checking={checking}
       statusTone={connected ? 'connected' : 'attention'}
       statusLabel={

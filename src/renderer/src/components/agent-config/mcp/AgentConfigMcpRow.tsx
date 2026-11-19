@@ -123,13 +123,6 @@ export function AgentConfigMcpRow({
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate font-mono text-xs font-medium">{server.name}</span>
           <SettingsBadge tone="muted">{server.transport}</SettingsBadge>
-          {server.plugin ? (
-            <SettingsBadge>
-              {t('auto.components.agentConfig.mcp.fromPlugin', 'from plugin {{name}}', {
-                name: server.plugin.name
-              })}
-            </SettingsBadge>
-          ) : null}
           {server.enabled ? null : (
             <SettingsBadge tone="muted">
               {t('auto.components.agentConfig.mcp.off', 'off')}
@@ -189,39 +182,6 @@ export function AgentConfigMcpRow({
           </SelectContent>
         </Select>
       ) : null}
-      {server.plugin?.native ? null : (
-        <AgentConfigMcpRowActions
-          server={server}
-          test={test}
-          onTest={onTest}
-          onEdit={onEdit}
-          onCopy={onCopy}
-          onRemove={onRemove}
-        />
-      )}
-    </div>
-  )
-}
-
-/** A server inside a plugin's own folder is the plugin's to change; these act on the agent's file. */
-function AgentConfigMcpRowActions({
-  server,
-  test,
-  onTest,
-  onEdit,
-  onCopy,
-  onRemove
-}: {
-  server: AgentConfigMcpServer
-  test: AgentConfigMcpTestState | undefined
-  onTest: () => void
-  onEdit: () => void
-  onCopy: () => void
-  onRemove: () => void
-}): React.JSX.Element {
-  const t = useTranslate()
-  return (
-    <>
       <Button
         type="button"
         variant="outline"
@@ -260,6 +220,6 @@ function AgentConfigMcpRowActions({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </>
+    </div>
   )
 }

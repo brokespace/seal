@@ -7,8 +7,6 @@ import { isTuiAgent } from '../../../shared/agent-launch/catalog/tui-agent-confi
 import { withCodexTerminalServerIsolationEnv } from '../../../shared/codex-terminal-server-isolation'
 import { getLegacyOpenCodeEnvKeysToDelete } from '../../opencode/status-hooks/legacy-shared-config-dir'
 import { prepareOpenCodePtyLaunch } from '../../opencode/opencode-pty-launch'
-import { codexHomePluginArgs } from '../../agent-plugins/codex-account-plugin-overrides'
-import { withCodexCommandArgs } from '../../../shared/agent-launch/startup/tui-agent-launch-command'
 import { LEGACY_TERMINAL_SHIM_REMOTE_ENV_KEYS } from '../../pty/shell-startup/legacy-terminal-shim-dir'
 import { PI_PROCESS_OWNER_ENV_KEYS } from '../../pty/shell-startup/pi-process-owner-env'
 import { planCodexNoDaemonLaunch } from '../../pty/shell-startup/codex-no-daemon-launch-command'
@@ -153,22 +151,10 @@ export async function assemblePtySpawnLaunchOptions(input: PtySpawnLaunchOptions
   })
   const env = openCodeLaunch.env
   const pluginDir = !connectionId ? env?.ORCA_CLAUDE_AGENT_VIEW_PLUGIN_DIR : undefined
-  const agentLaunchCommand =
+  const launchCommand =
     pluginDir && openCodeLaunch.command
       ? withClaudeAgentViewPlugin(openCodeLaunch.command, pluginDir, shell)
       : openCodeLaunch.command
-  const launchCommand =
-    agentLaunchCommand &&
-    launchAgent === 'codex' &&
-    !connectionId &&
-    input.codexRuntime !== 'wsl' &&
-    !input.preAdoptedStablePane
-      ? withCodexCommandArgs(
-          agentLaunchCommand,
-          await codexHomePluginArgs(input.selectedCodexHomePath),
-          shell
-        )
-      : agentLaunchCommand
   promoteAgentTeamsShimPath(env, input.requestedAgentTeamsPath)
   const spawnOptions: PtySpawnOptions = {
     cols: args.cols,

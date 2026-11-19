@@ -19,7 +19,6 @@ import {
   duplicateDocument,
   renameDocument
 } from './agent-config-documents'
-import { registerAgentPluginHandlers } from '../agent-plugins/agent-plugin-ipc'
 import {
   DOC_KINDS,
   draftOf,
@@ -39,6 +38,7 @@ import {
   restoreMachineBackup,
   saveManagedDocument
 } from './agent-config-managed-files'
+import { readAgentPluginCatalog } from '../agent-plugins/agent-plugin-catalog-read'
 import { runPluginCommand, setPluginEnabled } from './agent-config-plugin-commands'
 import {
   copyMcpServer,
@@ -261,7 +261,9 @@ export function registerAgentConfigHandlers(
     const { connection, target } = await forTarget(args.target)
     return runPluginCommand(connection, { target, command: pluginCommandOf(args.command) })
   })
-  registerAgentPluginHandlers(handle, connected)
+  handle(AGENT_CONFIG_IPC.agentPluginCatalog, async (args) =>
+    readAgentPluginCatalog(await connected(args.machineId))
+  )
   handle(AGENT_CONFIG_IPC.listBackups, async (args) =>
     listMachineBackups(await connected(args.machineId))
   )

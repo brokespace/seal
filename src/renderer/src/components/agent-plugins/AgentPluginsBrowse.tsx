@@ -58,9 +58,10 @@ export function AgentPluginsBrowse({
   onInstall
 }: {
   machineId: MachineId
-  /** Plugin names already in the hub on some machine. */
-  installed: ReadonlySet<string>
-  onInstall: (entry: AgentPluginCatalogEntry) => void
+  /** Plugin names that are already installed. */
+  installed?: ReadonlySet<string>
+  /** Without it the list is browse-only. */
+  onInstall?: (entry: AgentPluginCatalogEntry) => void
 }): React.JSX.Element {
   const t = useTranslate()
   const [catalog, setCatalog] = useState<AgentPluginCatalog | null>(null)
@@ -177,15 +178,15 @@ export function AgentPluginsBrowse({
                   </span>
                 </div>
               </div>
-              {installed.has(entry.name) ? (
+              {installed?.has(entry.name) ? (
                 <SettingsBadge>
                   {t('seal.agentPlugins.browse.installed', 'Installed')}
                 </SettingsBadge>
-              ) : (
+              ) : onInstall ? (
                 <Button type="button" variant="outline" size="sm" onClick={() => onInstall(entry)}>
                   {t('seal.agentPlugins.browse.install', 'Install…')}
                 </Button>
-              )}
+              ) : null}
             </div>
           ))
         )}

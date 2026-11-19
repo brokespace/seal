@@ -1,7 +1,7 @@
 import { isPlainObject } from '../agent-config/agent-config-values'
-import { emptyAgentPluginComponents } from './agent-plugin-plan'
 import {
   AGENT_PLUGIN_COMPONENT_KINDS,
+  emptyAgentPluginComponents,
   type AgentPluginCatalogEntry,
   type AgentPluginComponents,
   type AgentPluginHarness,

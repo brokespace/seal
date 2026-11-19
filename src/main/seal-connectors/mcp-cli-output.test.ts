@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  findAuthorizeUrl,
-  parseClaudeMcpList,
-  sanitizeConnectorCommand
-} from './agent-connector-cli-output'
-import { findConnectorDuplicates } from './agent-connector-duplicates'
+import { findAuthorizeUrl, parseClaudeMcpList, sanitizeConnectorCommand } from './mcp-cli-output'
 
 const LIST = [
   'Checking MCP server health…',
@@ -32,25 +27,6 @@ describe('parseClaudeMcpList', () => {
       ['plugin:slack:slack', 'plugin', 'needs-auth', 'https://mcp.slack.com/mcp'],
       ['codegraph', 'user', 'connected', 'codegraph serve --mcp'],
       ['broken', 'project', 'failed', '/nonexistent/bin --token ••••']
-    ])
-  })
-})
-
-describe('findConnectorDuplicates', () => {
-  it('groups the Atlassian copies and suggests keeping the connected one', () => {
-    const groups = findConnectorDuplicates(parseClaudeMcpList(LIST, new Set()))
-    expect(groups).toEqual([
-      {
-        service: 'atlassian.com',
-        names: [
-          'claude.ai Atlassian',
-          'claude.ai Atlassian (2)',
-          'claude.ai Atlassian MCP',
-          'plugin:atlassian:atlassian'
-        ],
-        keep: 'plugin:atlassian:atlassian',
-        reason: 'connected'
-      }
     ])
   })
 })
