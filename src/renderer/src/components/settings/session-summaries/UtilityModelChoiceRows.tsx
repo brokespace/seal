@@ -1,4 +1,5 @@
 import { useTranslate } from '@/i18n/use-translate'
+import { cn } from '@/lib/class-names'
 import {
   UTILITY_MODEL_PROVIDERS,
   utilityModelProvider
@@ -51,6 +52,7 @@ export function UtilityModelChoiceRows({
   model,
   editable,
   canTest,
+  compact = false,
   onChange,
   onOpenAccounts
 }: {
@@ -59,6 +61,8 @@ export function UtilityModelChoiceRows({
   model: SessionSummarySettingsModel
   editable: boolean
   canTest: boolean
+  /** Only the provider, stacked: for a narrow panel that fixes a missing account. */
+  compact?: boolean
   onChange: (choice: UtilityModelChoice) => void
   onOpenAccounts: (provider: UtilityModelProviderId) => void
 }): React.JSX.Element {
@@ -99,21 +103,24 @@ export function UtilityModelChoiceRows({
       >
         <SettingsRow
           label={providerTitle}
+          className={compact ? 'flex-col items-stretch gap-1' : undefined}
           description={
-            cli
-              ? t(
-                  'seal.summaryModels.provider.cliHelp',
-                  'Runs the {{provider}} CLI once per request, on the account it is signed into. Each run starts an agent process: slower than an API, and it counts against that plan’s limits.',
-                  { provider }
-                )
-              : t(
-                  'seal.summaryModels.provider.apiHelp',
-                  'Calls {{provider}} with the account saved in Accounts.',
-                  { provider }
-                )
+            compact
+              ? undefined
+              : cli
+                ? t(
+                    'seal.summaryModels.provider.cliHelp',
+                    'Runs the {{provider}} CLI once per request, on the account it is signed into. Each run starts an agent process: slower than an API, and it counts against that plan’s limits.',
+                    { provider }
+                  )
+                : t(
+                    'seal.summaryModels.provider.apiHelp',
+                    'Calls {{provider}} with the account saved in Accounts.',
+                    { provider }
+                  )
           }
           control={
-            <div className="flex items-center gap-1">
+            <div className={cn('flex items-center gap-1', compact && 'w-full')}>
               <Button variant="link" size="xs" onClick={() => onOpenAccounts(choice.provider)}>
                 {t('seal.summaryModels.provider.openAccounts', 'Open Accounts')}
               </Button>
@@ -126,7 +133,11 @@ export function UtilityModelChoiceRows({
                   onChange({ provider: next, model: null, fallbackModel: null })
                 }
               >
-                <SelectTrigger size="sm" className="min-w-[220px]" aria-label={providerTitle}>
+                <SelectTrigger
+                  size="sm"
+                  className={compact ? 'min-w-0 flex-1' : 'min-w-[220px]'}
+                  aria-label={providerTitle}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent align="end">
@@ -164,121 +175,129 @@ export function UtilityModelChoiceRows({
         />
       </SearchableSetting>
 
-      <SettingsRow
-        label={modelTitle}
-        description={
-          cli
-            ? t(
-                'seal.summaryModels.model.cliHelp',
-                'A model name the {{provider}} CLI accepts. A small, fast one keeps each run cheap.',
-                { provider }
-              )
-            : t(
-                'seal.summaryModels.model.apiHelp',
-                'Pick from {{provider}}’s list, or type any model id it offers.',
-                { provider }
-              )
-        }
-        control={
-          <UtilityModelPicker
-            ariaLabel={modelTitle}
-            value={choice.model}
-            automaticLabel={t('seal.summaryModels.model.default', 'Default · {{model}}', {
-              model: defaultModel
-            })}
-            entries={entries}
-            unavailable={unavailable}
-            loading={catalog?.loading === true}
-            disabled={disabled}
-            onOpen={() => model.loadModels(choice.provider)}
-            onChange={(next) => onChange({ ...choice, model: next })}
-          />
-        }
-      />
-      <SettingsRow
-        label={fallbackTitle}
-        description={t(
-          'seal.summaryModels.fallback.help',
-          'Tried when the model is rate limited, unavailable on the account’s plan, or gone.'
-        )}
-        control={
-          <UtilityModelPicker
-            ariaLabel={fallbackTitle}
-            value={choice.fallbackModel}
-            automaticLabel={
-              defaultFallback
-                ? t('seal.summaryModels.model.default', 'Default · {{model}}', {
-                    model: defaultFallback
-                  })
-                : t('seal.summaryModels.fallback.none', 'None')
-            }
-            entries={entries}
-            unavailable={unavailable}
-            loading={catalog?.loading === true}
-            disabled={disabled}
-            onOpen={() => model.loadModels(choice.provider)}
-            onChange={(next) => onChange({ ...choice, fallbackModel: next })}
-          />
-        }
-      />
-      {catalog?.failure ? (
-        <p className="pb-2 text-xs text-muted-foreground">
-          {t('seal.cloudflareAi.model.catalogFailed', 'Could not load the model list: {{reason}}', {
-            reason: utilityModelFailureText(catalog.failure, t, choice.provider)
-          })}
-        </p>
-      ) : null}
-      {(status?.unavailableModels ?? []).map((failure) => (
-        <p key={failure.model ?? failure.kind} className="pb-2 text-xs text-status-warning">
-          {utilityModelFailureText(failure, t, choice.provider)}
-        </p>
-      ))}
-
-      <UtilityModelAccountStatus
-        provider={choice.provider}
-        configured={configured}
-        title={
-          status === null
-            ? null
-            : configured
-              ? t('seal.summaryModels.status.ready', '{{provider}} is set up on this host', {
-                  provider
-                })
-              : cli
+      {compact ? null : (
+        <>
+          <SettingsRow
+            label={modelTitle}
+            description={
+              cli
                 ? t(
-                    'seal.utilityModel.failure.cliMissing',
-                    'The {{provider}} CLI was not found on this host.',
-                    {
-                      provider
-                    }
+                    'seal.summaryModels.model.cliHelp',
+                    'A model name the {{provider}} CLI accepts. A small, fast one keeps each run cheap.',
+                    { provider }
                   )
-                : t('seal.summaryModels.status.notSetUp', '{{provider}} is not set up yet', {
-                    provider
-                  })
-        }
-        detail={
-          status === null || configured
-            ? t(
-                'seal.summaryModels.status.testHelp',
-                'Test sends one short request through the model chosen here.'
-              )
-            : cli
-              ? t(
-                  'seal.summaryModels.status.cliSetup',
-                  'Install {{provider}} and sign in on this host, then come back.',
-                  { provider }
-                )
-              : t(
-                  'seal.summaryModels.status.apiSetup',
-                  'Save its account in Accounts; nothing is written until then.'
-                )
-        }
-        pausedUntil={status?.pausedUntil ?? null}
-        testResult={model.testResults[task] ?? null}
-        testing={model.testing === task}
-        canTest={canTest && configured && model.testing === null}
-        onTest={() => void model.test(task)}
-      />
+                : t(
+                    'seal.summaryModels.model.apiHelp',
+                    'Pick from {{provider}}’s list, or type any model id it offers.',
+                    { provider }
+                  )
+            }
+            control={
+              <UtilityModelPicker
+                ariaLabel={modelTitle}
+                value={choice.model}
+                automaticLabel={t('seal.summaryModels.model.default', 'Default · {{model}}', {
+                  model: defaultModel
+                })}
+                entries={entries}
+                unavailable={unavailable}
+                loading={catalog?.loading === true}
+                disabled={disabled}
+                onOpen={() => model.loadModels(choice.provider)}
+                onChange={(next) => onChange({ ...choice, model: next })}
+              />
+            }
+          />
+          <SettingsRow
+            label={fallbackTitle}
+            description={t(
+              'seal.summaryModels.fallback.help',
+              'Tried when the model is rate limited, unavailable on the account’s plan, or gone.'
+            )}
+            control={
+              <UtilityModelPicker
+                ariaLabel={fallbackTitle}
+                value={choice.fallbackModel}
+                automaticLabel={
+                  defaultFallback
+                    ? t('seal.summaryModels.model.default', 'Default · {{model}}', {
+                        model: defaultFallback
+                      })
+                    : t('seal.summaryModels.fallback.none', 'None')
+                }
+                entries={entries}
+                unavailable={unavailable}
+                loading={catalog?.loading === true}
+                disabled={disabled}
+                onOpen={() => model.loadModels(choice.provider)}
+                onChange={(next) => onChange({ ...choice, fallbackModel: next })}
+              />
+            }
+          />
+          {catalog?.failure ? (
+            <p className="pb-2 text-xs text-muted-foreground">
+              {t(
+                'seal.cloudflareAi.model.catalogFailed',
+                'Could not load the model list: {{reason}}',
+                {
+                  reason: utilityModelFailureText(catalog.failure, t, choice.provider)
+                }
+              )}
+            </p>
+          ) : null}
+          {(status?.unavailableModels ?? []).map((failure) => (
+            <p key={failure.model ?? failure.kind} className="pb-2 text-xs text-status-warning">
+              {utilityModelFailureText(failure, t, choice.provider)}
+            </p>
+          ))}
+
+          <UtilityModelAccountStatus
+            provider={choice.provider}
+            configured={configured}
+            title={
+              status === null
+                ? null
+                : configured
+                  ? t('seal.summaryModels.status.ready', '{{provider}} is set up on this host', {
+                      provider
+                    })
+                  : cli
+                    ? t(
+                        'seal.utilityModel.failure.cliMissing',
+                        'The {{provider}} CLI was not found on this host.',
+                        {
+                          provider
+                        }
+                      )
+                    : t('seal.summaryModels.status.notSetUp', '{{provider}} is not set up yet', {
+                        provider
+                      })
+            }
+            detail={
+              status === null || configured
+                ? t(
+                    'seal.summaryModels.status.testHelp',
+                    'Test sends one short request through the model chosen here.'
+                  )
+                : cli
+                  ? t(
+                      'seal.summaryModels.status.cliSetup',
+                      'Install {{provider}} and sign in on this host, then come back.',
+                      { provider }
+                    )
+                  : t(
+                      'seal.summaryModels.status.apiSetup',
+                      'Save its account in Accounts; nothing is written until then.'
+                    )
+            }
+            pausedUntil={status?.pausedUntil ?? null}
+            testResult={model.testResults[task] ?? null}
+            testing={model.testing === task}
+            canTest={canTest && configured && model.testing === null}
+            onTest={() => void model.test(task)}
+          />
+        </>
+      )}
     </>
   )
 }

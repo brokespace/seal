@@ -12,6 +12,7 @@ import { SettingsSwitchRow } from '../form-controls/SettingsFormControls'
 import { SearchableSetting } from '../section-layout/SearchableSetting'
 import { SettingsGroup } from '../section-layout/SettingsGroup'
 import { SESSION_SUMMARIES_SEARCH_KEYWORDS } from './session-summaries-settings-search'
+import { SessionRecapSwitchRow } from './SessionRecapSwitchRow'
 import { UtilityModelChoiceRows } from './UtilityModelChoiceRows'
 import { useSessionSummarySettings } from './use-session-summary-settings'
 import { settingsAccountsSectionForUtilityProvider } from './utility-provider-accounts-section'
@@ -28,7 +29,8 @@ export function SessionSummariesSettingsPane({
     openSettingsTarget({
       pane: 'accounts',
       repoId: null,
-      sectionId: settingsAccountsSectionForUtilityProvider(provider)
+      sectionId: settingsAccountsSectionForUtilityProvider(provider),
+      hostScope: host.owner
     })
   const model = useSessionSummarySettings(host.owner)
   const { status, models, access } = model
@@ -126,20 +128,7 @@ export function SessionSummariesSettingsPane({
           )}
           keywords={SESSION_SUMMARIES_SEARCH_KEYWORDS}
         >
-          <SettingsSwitchRow
-            label={recapTitle}
-            description={
-              !loaded || status.recapConfigured !== false
-                ? t(
-                    'seal.sessionRecap.setting.description',
-                    'Keep a recap of each session: what it is for, where it stands, what you asked, and the questions and action items still on you. It also names sessions you have not named. Your messages, the agent’s replies, the paths of files it read or edited, the command lines it ran (credentials redacted), and what it asked of a subagent and the subagent’s final report are sent. What tools print and the contents of files are never sent.'
-                  )
-                : needsSetup
-            }
-            checked={status?.recapEnabled ?? true}
-            disabled={!loaded || model.saving}
-            onChange={() => void model.setRecapEnabled(!(status?.recapEnabled ?? true))}
-          />
+          <SessionRecapSwitchRow model={model} />
         </SearchableSetting>
         <SearchableSetting
           title={separateTitle}

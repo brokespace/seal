@@ -1,71 +1,15 @@
 import { useState } from 'react'
 import { Loader2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import { useTranslate } from '@/i18n/use-translate'
-import type { Connector } from '../../../../../shared/seal-connectors/seal-connectors-types'
-import { SETTINGS_GROUP_ROW_BLEED_CLASS, SettingsGroup } from '../section-layout/SettingsGroup'
+import { SettingsGroup } from '../section-layout/SettingsGroup'
 import { AddConnectorDialog } from './AddConnectorDialog'
-import { AppliesToChip } from './applies-to/AppliesToChip'
 import { useAppliesToOptions } from './applies-to/use-applies-to-options'
 import { ConnectorSheet } from './ConnectorSheet'
-import { ConnectorSourceBadge } from './ConnectorSourceBadge'
-import { ConnectorStatusPill } from './ConnectorStatusPill'
+import { ConnectorRow } from './ConnectorRow'
 import { RefresherCard } from './RefresherCard'
-import { connectorSignInState, visibleConnectors } from './seal-connector-status'
+import { visibleConnectors } from './seal-connector-status'
 import { useSealConnectors, type SealConnectors } from './use-seal-connectors'
-
-function ConnectorRow({
-  connector,
-  connectors,
-  options,
-  now,
-  onOpen
-}: {
-  connector: Connector
-  connectors: SealConnectors
-  options: ReturnType<typeof useAppliesToOptions>
-  now: number
-  onOpen: () => void
-}): React.JSX.Element {
-  const t = useTranslate()
-  return (
-    <div
-      data-settings-row=""
-      data-connector-row={connector.id}
-      className={`flex items-center gap-3 py-2.5 hover:bg-accent/40 ${SETTINGS_GROUP_ROW_BLEED_CLASS}`}
-    >
-      <button
-        type="button"
-        className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-        onClick={onOpen}
-      >
-        <div className="min-w-0 flex-1 space-y-1">
-          <p className="truncate text-sm font-medium">{connector.title}</p>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <ConnectorSourceBadge source={connector.source} />
-            <AppliesToChip value={connector} options={options} />
-          </div>
-        </div>
-        <ConnectorStatusPill
-          state={connectorSignInState(connector, connectors.status?.signIns ?? null, now)}
-        />
-      </button>
-      <Switch
-        checked={connector.enabled}
-        aria-label={t('seal.connectors.row.enabled', 'Use {{title}}', { title: connector.title })}
-        onCheckedChange={(enabled) =>
-          void connectors.editConfig((config) => ({
-            ...config,
-            connectors: config.connectors.map((entry) =>
-              entry.id === connector.id ? { ...entry, enabled } : entry
-            )
-          }))
-        }
-      />
-    </div>
-  )
-}
 
 /** The one connector list every agent session gets, with who is signed in and where each applies. */
 export function ConnectorsPageView({

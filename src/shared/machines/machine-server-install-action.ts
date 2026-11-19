@@ -32,11 +32,12 @@ export function machineServerInstallAction(
   if (facts.connection === 'ssh') {
     return sshMachineAction(facts)
   }
-  if (facts.managedServer === 'other-target') {
+  // Without SSH details Seal cannot see how a server it did not deploy is kept running.
+  if (
+    facts.managedServer === 'other-target' ||
+    (facts.managedServer === null && !facts.hasSshDetails)
+  ) {
     return 'none'
-  }
-  if (facts.managedServer === null && !facts.hasSshDetails) {
-    return 'own-server'
   }
   if (facts.installing) {
     return 'installing'

@@ -45,6 +45,29 @@ describe('ServerSessionRecaps', () => {
     expect((await h.recaps.view(recapServerSession(), true)).state).toBe('unavailable')
   })
 
+  it("passes on the server's reason, and none from a server that gives none", async () => {
+    const reason = { kind: 'provider-not-set-up', provider: 'minimax' } as const
+    const given = harness(
+      recapServerView({ state: 'unavailable', recap: null, unavailableReason: reason })
+    )
+    const older = harness(recapServerView({ state: 'unavailable', recap: null }))
+
+    expect((await given.recaps.view(recapServerSession(), true)).unavailableReason).toEqual(reason)
+    expect((await older.recaps.view(recapServerSession(), true)).unavailableReason).toBeUndefined()
+  })
+
+  it('still reads the view of a server that names a reason this host does not know', async () => {
+    const h = harness({
+      ...recapServerView({ state: 'unavailable', recap: null }),
+      unavailableReason: { kind: 'quota-exhausted' }
+    })
+
+    const view = await h.recaps.view(recapServerSession(), true)
+
+    expect(view.state).toBe('unavailable')
+    expect(view.unavailableReason).toBeUndefined()
+  })
+
   it('calls nothing not addressed on the word of a server from before the judge', async () => {
     const h = harness(recapServerView({ turnEnded: undefined }))
 
@@ -59,6 +82,24 @@ describe('ServerSessionRecaps', () => {
 
     const view = await h.recaps.refresh(recapServerSession())
 
-    expect(view).toMatchObject({ sessionId: 'machine-1:claude:abc', recap: null, state: 'failed' })
+    expect(view).toMatchObject({
+      sessionId: 'machine-1:claude:abc',
+      recap: null,
+      state: 'failed',
+      unavailableReason: { kind: 'server-unreachable', message: null }
+    })
+  })
+
+  it('keeps the message of the call that failed', async () => {
+    const recaps = new ServerSessionRecaps({
+      call: async () => {
+        throw new Error('Request timed out')
+      }
+    })
+
+    expect((await recaps.view(recapServerSession(), true)).unavailableReason).toEqual({
+      kind: 'server-unreachable',
+      message: 'Request timed out'
+    })
   })
 })

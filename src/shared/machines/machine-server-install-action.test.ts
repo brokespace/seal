@@ -133,7 +133,7 @@ describe('machineServerInstallAction', () => {
     [
       'a server the user runs on a machine without SSH details',
       { ...serverMachine, managedServer: null, hasSshDetails: false },
-      'own-server'
+      'none'
     ],
     [
       'a server the user runs before the machine said how it is kept running',

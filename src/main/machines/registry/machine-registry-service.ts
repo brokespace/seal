@@ -79,18 +79,20 @@ function createRegistry(userDataPath: string): MachineRegistry {
     writeStore: (store) => writeMachineStore(userDataPath, store),
     // Owned targets back managed servers and VMs; VM tools' own hosts are plumbing, not machines.
     sshTargets: () =>
-      listRegisteredSshTargets()
-        .filter((target) => !target.owner && !isVmToolSshConfigTarget(target))
-        .map((target) => ({
-          id: target.id,
-          label: target.label,
-          host: target.host,
-          configHost: target.configHost,
-          username: target.username,
-          port: target.port,
-          identityFile: target.identityFile,
-          jumpHost: target.jumpHost
-        })),
+      !getSshTargetRegistryStore()
+        ? null
+        : listRegisteredSshTargets()
+            .filter((target) => !target.owner && !isVmToolSshConfigTarget(target))
+            .map((target) => ({
+              id: target.id,
+              label: target.label,
+              host: target.host,
+              configHost: target.configHost,
+              username: target.username,
+              port: target.port,
+              identityFile: target.identityFile,
+              jumpHost: target.jumpHost
+            })),
     environments: () => environmentFacts(userDataPath),
     local: () => (local ??= createLocalMachineConnection()),
     sshConnection: (machineId, targetId) =>

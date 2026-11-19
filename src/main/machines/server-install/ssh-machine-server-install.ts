@@ -108,11 +108,7 @@ async function installOverSsh(
   request: MachineServerInstallRequest
 ): Promise<MachineView> {
   if (machine.connection !== 'ssh') {
-    throw new Error(
-      machine.serverInstallAction === 'own-server'
-        ? 'Seal did not install the server on this machine. Run "seal serve service install" on the machine to keep it running.'
-        : 'Seal server already runs on this machine'
-    )
+    throw new Error('Seal server already runs on this machine')
   }
   if (!machine.ssh) {
     throw new Error('This machine has no SSH details')

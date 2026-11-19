@@ -4,12 +4,6 @@ import { Trans } from 'react-i18next'
 import { i18n } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
-import { quotePosixShellUnlessPlain } from '../../../../../shared/shell/launch/shell-argument-quoting'
-import { MachineCopyableCommand } from './MachineCopyableCommand'
-
-// Why untranslated: a literal shell command. The account is the one the machine names itself.
-const lingerCommand = (hostUser: string | undefined): string =>
-  `sudo loginctl enable-linger ${hostUser ? quotePosixShellUnlessPlain(hostUser) : '"$USER"'}`
 
 export function MachineServerWarning({
   children,
@@ -34,28 +28,13 @@ export function MachineServerKeeperNotes({
   view,
   keeper
 }: {
-  view: Pick<
-    MachineView,
-    'serverInstall' | 'serverStartsAtBoot' | 'serverHostUser' | 'serverLaunchdNeedsLogin'
-  >
+  view: Pick<MachineView, 'serverStartsAtBoot' | 'serverLaunchdNeedsLogin'>
   /** How the server on the machine is kept running now, when it is known. */
   keeper: MachineView['serverKeeper']
 }): React.JSX.Element {
   const t = useTranslate()
   return (
     <>
-      {/* Only a refusal: an unanswered question about lingering is not one. */}
-      {keeper === 'systemd-user' && view.serverInstall?.linger === false ? (
-        <>
-          <MachineServerWarning kind="linger-off">
-            {t(
-              'seal.machineServer.server.lingerOff',
-              'Lingering is off for your account on this machine, so the machine stops Seal server when your last session there ends. That can be 10 seconds after this computer disconnects. To keep it running, run this on the machine:'
-            )}
-          </MachineServerWarning>
-          <MachineCopyableCommand command={lingerCommand(view.serverHostUser)} />
-        </>
-      ) : null}
       {keeper === 'pm2' && view.serverStartsAtBoot === false ? (
         <MachineServerWarning kind="pm2-no-boot">
           <Trans

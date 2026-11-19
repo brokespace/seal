@@ -4,9 +4,32 @@ import { useClipboardTextCopyFeedback } from '@/hooks/clipboard/use-clipboard-te
 import { Button } from '../../ui/button'
 
 /** Copies `text` and says so in its own label; `label` names what is copied. */
-export function McpCopyButton({ text, label }: { text: string; label: string }): React.JSX.Element {
+export function McpCopyButton({
+  text,
+  label,
+  iconOnly = false
+}: {
+  text: string
+  label: string
+  iconOnly?: boolean
+}): React.JSX.Element {
   const t = useTranslate()
   const { copyText, status } = useClipboardTextCopyFeedback(text)
+  const icon = status === 'copied' ? <Check aria-hidden /> : <Copy aria-hidden />
+  if (iconOnly) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        className="shrink-0"
+        aria-label={label}
+        title={label}
+        onClick={() => void copyText()}
+      >
+        {icon}
+      </Button>
+    )
+  }
   return (
     <Button
       variant="outline"
@@ -15,7 +38,7 @@ export function McpCopyButton({ text, label }: { text: string; label: string }):
       aria-label={status === 'idle' ? label : undefined}
       onClick={() => void copyText()}
     >
-      {status === 'copied' ? <Check aria-hidden /> : <Copy aria-hidden />}
+      {icon}
       {status === 'copied'
         ? t('seal.mcp.copy.copied', 'Copied')
         : status === 'failed'

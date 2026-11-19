@@ -7,7 +7,8 @@ import {
   type Candidate,
   type MachineEnvironmentFacts,
   type MachineMergeReason,
-  type MachineSshTargetFacts
+  type MachineSshTargetFacts,
+  wasCreatedFromTarget
 } from './machine-host-matching'
 import { union, uniqueId } from './machine-record-edits'
 
@@ -36,6 +37,62 @@ export type MachineReconcileResult = {
   store: MachineStore
   merges: MachineMerge[]
   changed: boolean
+}
+
+/** Fold a server proven to be a full machine's host into that machine, so it is not listed twice. */
+function absorbServers(
+  machines: readonly MachineRecord[],
+  environments: ReadonlyMap<string, MachineEnvironmentFacts>,
+  separations: MachineStore['separations'],
+  now: number
+): { machines: MachineRecord[]; merges: MachineMerge[] } {
+  const full = machines.filter((machine) => machine.sshTargetId && machine.environmentId)
+  const replaced = new Map<string, MachineRecord>()
+  const removed = new Set<string>()
+  const merges: MachineMerge[] = []
+  for (const server of machines) {
+    if (server.sshTargetId || !server.environmentId) {
+      continue
+    }
+    const environment = environments.get(server.environmentId)!
+    const matches = full.flatMap((host) => {
+      if (isSeparated(separations, host.sshTargetId!, environment.id)) {
+        return []
+      }
+      return environment.linkedSshTargetId === host.sshTargetId ? [host] : []
+    })
+    if (matches.length !== 1) {
+      continue
+    }
+    const host = matches[0]
+    const current = replaced.get(host.id) ?? host
+    replaced.set(host.id, {
+      ...current,
+      hostnames: union(current.hostnames, server.hostnames),
+      machineIds: union(current.machineIds, server.machineIds),
+      absorbedEnvironmentIds: union(current.absorbedEnvironmentIds, [
+        server.environmentId,
+        ...server.absorbedEnvironmentIds
+      ]),
+      serverInstall: current.serverInstall ?? server.serverInstall,
+      createdAt: Math.min(current.createdAt, server.createdAt),
+      updatedAt: now
+    })
+    removed.add(server.id)
+    merges.push({
+      machineId: host.id,
+      removedMachineId: server.id,
+      sshTargetId: host.sshTargetId!,
+      environmentId: server.environmentId,
+      reason: 'linked'
+    })
+  }
+  return {
+    machines: machines
+      .filter((machine) => !removed.has(machine.id))
+      .map((machine) => replaced.get(machine.id) ?? machine),
+    merges
+  }
 }
 
 /**
@@ -83,6 +140,23 @@ export function reconcileMachines(
         : { ...record, sshTargetId, environmentId, updatedAt: now }
     )
   }
+  for (const [index, machine] of machines.entries()) {
+    // An absorbed server stays hidden only while the machine's link still proves it is the same host.
+    const absorbed = machine.absorbedEnvironmentIds.filter(
+      (id) =>
+        machine.sshTargetId &&
+        machine.environmentId &&
+        environments.get(id)?.linkedSshTargetId === machine.sshTargetId &&
+        !seenEnvironments.has(id) &&
+        !isSeparated(previous.separations, machine.sshTargetId, id)
+    )
+    for (const id of absorbed) {
+      seenEnvironments.add(id)
+    }
+    if (absorbed.length !== machine.absorbedEnvironmentIds.length) {
+      machines[index] = { ...machine, absorbedEnvironmentIds: absorbed, updatedAt: now }
+    }
+  }
   const taken = new Set(machines.map((machine) => machine.id))
   const fresh = (id: string, name: string, link: Partial<MachineRecord>): MachineRecord => {
     const record: MachineRecord = {
@@ -93,6 +167,7 @@ export function reconcileMachines(
       connection: link.environmentId ? 'server' : 'ssh',
       hostnames: [],
       machineIds: [],
+      absorbedEnvironmentIds: [],
       createdAt: now,
       updatedAt: now,
       ...link
@@ -127,7 +202,9 @@ export function reconcileMachines(
       const reason = matchReason(ssh, server, target, environment, identifying)
       if (
         reason &&
-        (reason === 'linked' || !isSeparated(previous.separations, target.id, environment.id))
+        // Only a server deployed over this target outranks the user's split.
+        (environment.linkedSshTargetId === target.id ||
+          !isSeparated(previous.separations, target.id, environment.id))
       ) {
         candidates.push({ ssh, server, reason })
       }
@@ -137,30 +214,39 @@ export function reconcileMachines(
   const removed = new Set<string>()
   const replaced = new Map<string, MachineRecord>()
   for (const { ssh, server, reason } of chooseMerges(candidates)) {
-    replaced.set(ssh.id, {
-      ...ssh,
+    // A server record cut from this target (a store damaged before SSH targets loaded) is the original.
+    const survivor = wasCreatedFromTarget(server, ssh.sshTargetId!) ? server : ssh
+    const removedRecord = survivor === ssh ? server : ssh
+    replaced.set(survivor.id, {
+      ...survivor,
       // A merged host keeps its SSH details for one-click switching but runs on its server.
-      connection: 'server',
+      connection: survivor === server ? survivor.connection : 'server',
+      sshTargetId: ssh.sshTargetId,
       environmentId: server.environmentId,
       hostnames: union(ssh.hostnames, server.hostnames),
       machineIds: union(ssh.machineIds, server.machineIds),
+      absorbedEnvironmentIds: union(ssh.absorbedEnvironmentIds, server.absorbedEnvironmentIds),
+      serverInstall: ssh.serverInstall ?? server.serverInstall,
       createdAt: Math.min(ssh.createdAt, server.createdAt),
       updatedAt: now
     })
-    removed.add(server.id)
+    removed.add(removedRecord.id)
     merges.push({
-      machineId: ssh.id,
-      removedMachineId: server.id,
+      machineId: survivor.id,
+      removedMachineId: removedRecord.id,
       sshTargetId: ssh.sshTargetId!,
       environmentId: server.environmentId!,
       reason
     })
   }
+  const merged = machines
+    .filter((machine) => !removed.has(machine.id))
+    .map((machine) => replaced.get(machine.id) ?? machine)
+  const absorbed = absorbServers(merged, environments, previous.separations, now)
+  merges.push(...absorbed.merges)
   const store: MachineStore = {
     version: 1,
-    machines: machines
-      .filter((machine) => !removed.has(machine.id))
-      .map((machine) => replaced.get(machine.id) ?? machine),
+    machines: absorbed.machines,
     separations: previous.separations.filter(
       (pair) => targets.has(pair.sshTargetId) && environments.has(pair.environmentId)
     )

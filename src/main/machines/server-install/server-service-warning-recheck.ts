@@ -2,6 +2,7 @@
 import type { MachineView } from '../../../shared/machines/machine-view'
 import { reportSealServiceOutcome } from '../../managed-server/service/seal-service-policy'
 import { readSealServiceState } from '../../managed-server/service/seal-service-removal'
+import { readOwnServerService } from './own-server-service'
 import { latestSealServiceOutcome } from './machine-server-install-activity'
 import { connectedSshSession } from './machine-ssh-session'
 
@@ -11,13 +12,14 @@ const RECHECK_INTERVAL_MS = 15_000
 const lastAsked = new Map<string, number>()
 
 function warnsAboutService(view: MachineView): boolean {
-  const install = view.serverInstall
-  if (view.connection !== 'server' || install?.state !== 'installed') {
+  if (view.connection !== 'server') {
     return false
   }
   return (
-    (install.manager === 'systemd-user' && install.linger === false) ||
-    (install.manager === 'pm2' && view.serverStartsAtBoot === false)
+    view.serverLingerOff === true ||
+    (view.serverInstall?.state === 'installed' &&
+      view.serverInstall.manager === 'pm2' &&
+      view.serverStartsAtBoot === false)
   )
 }
 
@@ -37,7 +39,12 @@ export function recheckServerServiceWarnings(views: readonly MachineView[]): voi
       continue
     }
     lastAsked.set(sshTargetId, now)
-    void readSealServiceState(session)
+    // A server the user runs has no Seal install to probe; its own CLI answers.
+    const reread =
+      view.serverInstall?.state === 'installed'
+        ? readSealServiceState(session)
+        : readOwnServerService(session)
+    void reread
       .then((state) => {
         const known = latestSealServiceOutcome(sshTargetId)
         if (

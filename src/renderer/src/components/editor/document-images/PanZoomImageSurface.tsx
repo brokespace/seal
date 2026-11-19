@@ -10,7 +10,7 @@ const CURSOR_CLASS = {
   grabbing: 'cursor-grabbing'
 } as const
 
-/** The click-to-zoom, Alt-drag-to-pan canvas and its positioned image; callers own the controls around it. */
+/** The click-to-zoom, drag-to-pan canvas and its positioned image; callers own the controls around it. */
 export function PanZoomImageSurface({
   panZoom,
   src,

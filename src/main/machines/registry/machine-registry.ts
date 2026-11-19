@@ -40,7 +40,8 @@ export type MachineRegistryEnvironment = MachineEnvironmentFacts & {
 export type MachineRegistryDeps = {
   readStore(): MachineStore
   writeStore(store: MachineStore): void
-  sshTargets(): readonly MachineRegistrySshTarget[]
+  /** Null until the SSH target store has loaded; reconciling then would drop every SSH link. */
+  sshTargets(): readonly MachineRegistrySshTarget[] | null
   environments(): readonly MachineRegistryEnvironment[]
   local(): MachineConnection
   sshConnection(machineId: MachineId, targetId: string): MachineConnection
@@ -66,9 +67,13 @@ export class MachineRegistry {
   /** Rebuild from the SSH and server stores; persists and notifies only when something moved. */
   reconcile(): MachineStore {
     const previous = this.store ?? this.deps.readStore()
+    const sshTargets = this.deps.sshTargets()
+    if (!sshTargets) {
+      return previous
+    }
     const result = reconcileMachines(
       previous,
-      { sshTargets: this.deps.sshTargets(), environments: this.deps.environments() },
+      { sshTargets, environments: this.deps.environments() },
       this.deps.now()
     )
     this.store = result.store
@@ -126,7 +131,7 @@ export class MachineRegistry {
   list(): MachineView[] {
     return buildMachineViews(
       this.reconcile(),
-      this.deps.sshTargets(),
+      this.deps.sshTargets() ?? [],
       this.deps.environments(),
       this.deps.serverInstallActivity
     )

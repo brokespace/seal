@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslate } from '@/i18n/use-translate'
+import { cn } from '@/lib/class-names'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 import type {
   MachineDockerStorage,
@@ -11,8 +12,16 @@ import { MachineResourceStat, MachineResourceStats } from './MachineResourceStat
 import { useMachineDockerStorageCopy } from './machine-docker-storage-copy'
 import { machineResourceApi, resourceErrorText } from './machine-resource-requests'
 
-/** `docker system df` is slow on a busy daemon, and the figures move slowly. */
-const STORAGE_REFRESH_MS = 30_000
+/** The figures move slowly and the machine shares a recent read for minutes, so most polls cost nothing. */
+const STORAGE_REFRESH_MS = 60_000
+
+/** The last answer per machine, so reopening the panel shows it before the next read lands. */
+const lastStorage = new Map<MachineId, MachineDockerStorage>()
+
+/** Starts the next panel from no answer, as a first visit does. */
+export function clearMachineDockerStorageCache(): void {
+  lastStorage.clear()
+}
 
 export type MachineDockerStorageState = {
   /** The last answer; it stays while a later read fails. Null until the first one. */
@@ -47,6 +56,7 @@ export function useMachineDockerStorage(machineId: MachineId): MachineDockerStor
         const storage = await machineResourceApi().dockerStorage(
           force ? { machineId, force } : { machineId }
         )
+        lastStorage.set(machineId, storage)
         if (request === latest.current) {
           setAnswer({ machineId, storage, error: null })
         }
@@ -71,11 +81,45 @@ export function useMachineDockerStorage(machineId: MachineId): MachineDockerStor
   )
   const current = answer.machineId === machineId ? answer : null
   return {
-    storage: current?.storage ?? null,
+    storage: current?.storage ?? lastStorage.get(machineId) ?? null,
     loading: inFlight > 0,
     error: current?.error ?? null,
     reload
   }
+}
+
+const SKELETON_BAR = 'animate-pulse rounded bg-muted motion-reduce:animate-none'
+
+/** Stands where the figures land, at their size, until the first read answers. */
+export function MachineDockerStorageStatsSkeleton({
+  inset
+}: {
+  /** Matches `MachineDockerStorageStats` with `onPick`. */
+  inset?: boolean
+}): React.JSX.Element {
+  return (
+    <div
+      className={inset ? 'px-1.5 py-1' : 'px-3 py-2.5'}
+      aria-busy="true"
+      data-machine-docker-storage-loading
+    >
+      <MachineResourceStats>
+        {[0, 1, 2, 3].map((slot) => (
+          <div key={slot} className={cn('min-w-0', inset && 'px-1.5 py-1.5')}>
+            <div className="flex h-3.5 items-center">
+              <div className={cn(SKELETON_BAR, 'h-2 w-16')} />
+            </div>
+            <div className="flex h-5 items-center">
+              <div className={cn(SKELETON_BAR, 'h-3 w-20')} />
+            </div>
+            <div className="flex h-4 items-center">
+              <div className={cn(SKELETON_BAR, 'h-2 w-24')} />
+            </div>
+          </div>
+        ))}
+      </MachineResourceStats>
+    </div>
+  )
 }
 
 /** Disk space per kind of Docker object, with what pruning that kind would free. */

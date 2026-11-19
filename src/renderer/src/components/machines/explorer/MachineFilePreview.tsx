@@ -1,9 +1,10 @@
 import React, { Suspense, useCallback, useEffect, useState } from 'react'
-import { Download, Loader2, Save, X } from 'lucide-react'
+import { Download, Loader2, Maximize2, Minimize2, Save, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { ImageViewer, MarkdownPreview, MonacoEditor } from '@/components/editor/editor-lazy-views'
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { detectLanguage } from '../../../../../shared/editor-language/editor-language-detect'
 import type { MachineFileEntry, MachineId } from '../../../../../shared/machines/machine-types'
 import { MACHINE_PREVIEW_MAX_BYTES } from '../../../../../shared/machines/machine-types'
@@ -66,6 +67,7 @@ export function MachineFilePreview({
   const [error, setError] = useState<string | null>(null)
   const [draft, setDraft] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [fullScreen, setFullScreen] = useState(false)
   const preview = previewKindFor(entry.name)
   const maxBytes = source?.maxBytes ?? MACHINE_PREVIEW_MAX_BYTES
   const tooLarge = entry.size > maxBytes && preview.kind !== 'text'
@@ -200,7 +202,11 @@ export function MachineFilePreview({
     )
   }
 
-  return (
+  const fullScreenLabel = fullScreen
+    ? t('auto.components.machines.preview.exitFullScreen', 'Exit full screen')
+    : t('auto.components.machines.preview.fullScreen', 'Full screen')
+
+  const panel = (
     <section
       className="flex min-h-0 min-w-0 flex-1 flex-col bg-editor-surface"
       data-machine-preview
@@ -253,6 +259,17 @@ export function MachineFilePreview({
           type="button"
           variant="ghost"
           size="icon-xs"
+          aria-label={fullScreenLabel}
+          aria-pressed={fullScreen}
+          title={fullScreenLabel}
+          onClick={() => setFullScreen((current) => !current)}
+        >
+          {fullScreen ? <Minimize2 /> : <Maximize2 />}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
           aria-label={t('auto.components.machines.preview.close', 'Close preview')}
           onClick={onClose}
         >
@@ -261,5 +278,22 @@ export function MachineFilePreview({
       </header>
       <Suspense fallback={loadingState()}>{body}</Suspense>
     </section>
+  )
+
+  if (!fullScreen) {
+    return panel
+  }
+  return (
+    <Dialog open onOpenChange={setFullScreen}>
+      <DialogContent
+        showCloseButton={false}
+        aria-describedby={undefined}
+        size="fullscreen"
+        className="flex flex-col"
+      >
+        <DialogTitle className="sr-only">{entry.name}</DialogTitle>
+        {panel}
+      </DialogContent>
+    </Dialog>
   )
 }

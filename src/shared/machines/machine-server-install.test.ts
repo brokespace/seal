@@ -11,6 +11,7 @@ function machine(id: string, serverInstall: MachineServerInstall): MachineRecord
     environmentId: null,
     hostnames: [],
     machineIds: [],
+    absorbedEnvironmentIds: [],
     serverInstall,
     createdAt: 1,
     updatedAt: 1

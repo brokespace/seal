@@ -56,6 +56,26 @@ describe('orca serve service', () => {
     expect(existsSync(serveSupervisorBrakePath(join(home, 'profile')))).toBe(false)
   })
 
+  it('enables lingering without sudo and reports what logind says afterwards', async () => {
+    const lingerReads = ['no', 'yes']
+    const d: ServeServiceDeps = {
+      ...deps('linux'),
+      run: async (program, args) => {
+        calls.push([program, ...args].join(' '))
+        return program === 'loginctl' && args[0] === 'show-user'
+          ? { code: 0, out: `${lingerReads.shift()}\n` }
+          : { code: 0, out: '' }
+      }
+    }
+    const result = await installServeService({ command: null, dryRun: false }, d)
+    expect(result.linger).toBe('yes')
+    expect(calls.filter((call) => call.startsWith('loginctl'))).toEqual([
+      'loginctl show-user 501 --property=Linger --value',
+      'loginctl enable-linger',
+      'loginctl show-user 501 --property=Linger --value'
+    ])
+  })
+
   it('uninstalls by stopping the service and removing the unit', async () => {
     const d = deps('linux')
     const result = await installServeService({ command: null, dryRun: false }, d)

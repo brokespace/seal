@@ -23,7 +23,7 @@ const kesselMl: MachineView = {
     endpoint: 'ws://kessel-ml:6768'
   },
   serverInstall: null,
-  serverInstallAction: 'own-server'
+  serverInstallAction: 'none'
 }
 
 const droppedServer: RuntimeHostStatusSnapshot = {

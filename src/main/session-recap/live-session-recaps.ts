@@ -6,17 +6,25 @@ import { recapTurnHasEnded } from '../../shared/session-recap/session-recap-requ
 import type {
   RecapItemMark,
   SessionRecap,
+  SessionRecapUnavailableReason,
   SessionRecapView
 } from '../../shared/session-recap/session-recap-types'
 import type { ServerSessionRecaps } from './server-session-recaps'
 import type { SessionRecapEngine } from './session-recap-engine'
 import { RecapPassSchedule, type RecapPassScheduleDeps } from './session-recap-pass-schedule'
-import { recapBrief, recapViewState, shownRecap } from './session-recap-shown'
+import {
+  recapBrief,
+  recapUnavailableReason,
+  recapViewState,
+  shownRecap
+} from './session-recap-shown'
 import type { SessionRecapStore } from './session-recap-store'
 
 export type LiveSessionRecapsDeps = Omit<RecapPassScheduleDeps, 'engine'> & {
   engine: Pick<SessionRecapEngine, 'update' | 'isUpdating' | 'failure' | 'forget'>
   store: SessionRecapStore
+  /** Why recaps cannot run on this host; null when they can. */
+  unavailableReason?: () => SessionRecapUnavailableReason | null
   /** The session's conversation can be read here: a transcript file, or a chat's journal. */
   readable: (session: LiveSession) => boolean
   /** Paired servers' own recaps. Absent on a host that reaches no server, and on a server itself. */
@@ -110,25 +118,33 @@ export class LiveSessionRecaps {
     }
     // Read after the pass started: its outcome is what the state reports.
     const outcome = this.schedule.outcome(id)
+    const state = recapViewState({
+      enabled: this.deps.enabled(),
+      updating: this.deps.engine.isUpdating(id),
+      hasRecap: recap !== null,
+      stale,
+      paused: this.deps.pausedUntil() !== null,
+      failed: outcome === 'failed' && Boolean(this.deps.engine.failure(id)),
+      overBudget: outcome === 'over-budget'
+    })
+    const unavailableReason = recapUnavailableReason({
+      state,
+      hostReason: this.deps.unavailableReason?.() ?? null,
+      session,
+      readable: session !== null && this.deps.readable(session)
+    })
     return {
       sessionId: id,
       recap: recap && shownRecap(recap, { turnEnded, stale }),
       marks: stored?.marks ?? {},
       since,
-      state: recapViewState({
-        enabled: this.deps.enabled(),
-        updating: this.deps.engine.isUpdating(id),
-        hasRecap: recap !== null,
-        stale,
-        paused: this.deps.pausedUntil() !== null,
-        failed: outcome === 'failed' && Boolean(this.deps.engine.failure(id)),
-        overBudget: outcome === 'over-budget'
-      }),
+      state,
       stale,
       pausedUntil: this.deps.pausedUntil(),
       failure: this.deps.engine.failure(id),
       rev: stored?.rev ?? 0,
-      turnEnded
+      turnEnded,
+      ...(unavailableReason ? { unavailableReason } : {})
     }
   }
 

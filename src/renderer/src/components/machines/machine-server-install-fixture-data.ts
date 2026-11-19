@@ -25,7 +25,6 @@ export const SERVER_INSTALL_FIXTURE_IDS = {
   waitsForHost: 'shared-box',
   install: 'plain-ssh',
   keepRunning: 'idle-server',
-  ownServer: 'own-server',
   ownService: 'own-service',
   serviceRemains: 'half-removed',
   waitsForTerminals: 'open-terminals'
@@ -55,11 +54,13 @@ const STATES: Record<FixtureKey, Partial<MachineView> & Pick<MachineView, 'conne
   lingerOff: {
     connection: 'server',
     serverInstall: { ...INSTALLED, manager: 'systemd-user', linger: false },
+    serverLingerOff: true,
     serverHostUser: 'brian'
   },
   lingerOffUnknownUser: {
     connection: 'server',
-    serverInstall: { ...INSTALLED, manager: 'systemd-user', linger: false }
+    serverInstall: { ...INSTALLED, manager: 'systemd-user', linger: false },
+    serverLingerOff: true
   },
   lingerUnknown: {
     connection: 'server',
@@ -123,7 +124,6 @@ const STATES: Record<FixtureKey, Partial<MachineView> & Pick<MachineView, 'conne
     serverInstallAction: 'install'
   },
   keepRunning: { connection: 'server', serverInstallAction: 'keep-running' },
-  ownServer: { connection: 'server', ssh: null, serverInstallAction: 'own-server' },
   ownService: { connection: 'server', serverKeeper: 'systemd-user' },
   serviceRemains: {
     connection: 'ssh',

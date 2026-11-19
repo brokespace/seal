@@ -180,7 +180,7 @@ type ImageLoadHandlers = {
   onError: () => void
 }
 
-/** The editor pane's viewer: fit, click to zoom to actual size, and Alt-drag to pan. */
+/** The editor pane's viewer: fit, click to zoom to actual size, and drag to pan. */
 function FilledImage({
   previewSrc,
   filename,

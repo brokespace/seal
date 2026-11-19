@@ -378,8 +378,10 @@ second try is the same model on the host's other account.
   server's sessions from, and the desktop forwards a read, a Refresh or a tick to the server over
   the same three methods (`server-session-recaps.ts`). That holds for a server that makes no
   recaps too (recaps off, or no utility model on it): its sessions then have none, and the
-  recap's state says `unavailable`. A server from before the judge still answers; nothing it
-  lists is shown as not addressed.
+  recap's state says `unavailable`, and `unavailableReason` says why (`recaps-off`,
+  `provider-not-set-up` with the provider, `provider-unchecked`). A server from before the judge
+  still answers; nothing it lists is shown as not addressed. A server from before the reason
+  sends none: the panel reads that server's `sessionSummaries.status` for it instead.
 - A tick on the phone bumps `rev` on the session; the registry stream delivers it to the desktop,
   which fetches the recap again. No new channel.
 
@@ -437,9 +439,11 @@ a recap says. Neither reads `recap.ignored`; that list is for clients from befor
 States: writing the first recap; up to date; out of date ("the session has moved on"); updating;
 paused (rate limit) with the time it resumes; budget spent for today; failed with the provider's
 reason; degraded (the model's reply was unusable); recaps off or no utility model on this host,
-where the desktop panel links to the setting and the bar and the phone's banner are absent. For a
-session a Seal server runs, the panel names that server and says the setting is there, with no
-link to this computer's settings.
+where the bar and the phone's banner are absent and the panel states the exact reason
+(`unavailableReason`, also set for an unreadable transcript, an unknown session and a server that
+did not answer, with its message). Where the cause is a setting, the panel holds it: the recap
+switch, or the provider and model rows, applied on the host that keeps the recap, which for a
+server's session is that server.
 
 ## Not in this version
 

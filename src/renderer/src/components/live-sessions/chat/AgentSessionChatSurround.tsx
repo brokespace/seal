@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useAppStore } from '@/store'
+import { ipcOrRuntimeTargetForHostId } from '@/runtime/rpc/targets/runtime-client-target'
 import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { openAppHttpLink } from '@/lib/browser/navigation/app-http-link-open'
+import { normalizeExecutionHostId } from '../../../../../shared/execution-host'
 import type { LiveSubagent } from '../../../../../shared/live-sessions/live-session-activity'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { recapViewOnSession } from '../../../../../shared/session-recap/session-recap-view'
+import {
+  LOCAL_USAGE_CREDENTIAL_HOST,
+  type UsageCredentialHost
+} from '../../settings/accounts/usage/usage-credential-host'
 import { SessionRecapBar } from '../../session-recap/SessionRecapBar'
 import { SessionRecapPanel } from '../../session-recap/SessionRecapPanel'
 import type { SessionRecapModel } from '../../session-recap/use-session-recap'
@@ -31,12 +36,6 @@ let handledFocusNonce = 0
 
 function openRecapLink(url: string): void {
   void openAppHttpLink(url)
-}
-
-function openRecapSettings(): void {
-  const store = useAppStore.getState()
-  store.openSettingsPage()
-  store.openSettingsTarget({ pane: 'session-summaries', repoId: null })
 }
 
 type AgentSessionChatSurroundProps = {
@@ -80,6 +79,23 @@ export function AgentSessionChatSurround({
     const view = recapViewOnSession(recap.view, { status, lastActivityAt })
     return canReveal ? view : recapViewWithoutMessageJumps(view)
   }, [recap.view, canReveal, status, lastActivityAt])
+
+  const { machine } = session
+  // The recap is kept, and its settings live, on the Seal server that runs the session.
+  const recapOwner = useMemo(
+    () =>
+      machine.connection === 'server'
+        ? ipcOrRuntimeTargetForHostId(normalizeExecutionHostId(machine.executionHostId))
+        : LOCAL_USAGE_CREDENTIAL_HOST.owner,
+    [machine]
+  )
+  const recapHost = useMemo<UsageCredentialHost>(
+    () =>
+      machine.connection === 'server'
+        ? { owner: recapOwner ?? LOCAL_USAGE_CREDENTIAL_HOST.owner, label: machineName(machine) }
+        : LOCAL_USAGE_CREDENTIAL_HOST,
+    [machine, machineName, recapOwner]
+  )
 
   // A menu elsewhere asked this view to show something.
   const request = useAgentSessionFocusRequest(session.id)
@@ -155,8 +171,8 @@ export function AgentSessionChatSurround({
               onMark={recap.mark}
               onJump={onJump}
               onOpenLink={openRecapLink}
-              onOpenSettings={openRecapSettings}
-              server={session.machine.connection === 'server' ? machineName(session.machine) : null}
+              host={recapHost}
+              canFixSettings={recapOwner !== null}
               onClose={closePanel}
             />
           </div>

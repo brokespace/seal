@@ -10,7 +10,6 @@ import { useMountedRef } from '@/hooks/useMountedRef'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
-import { MachineCopyableCommand } from './MachineCopyableCommand'
 import {
   MachineServerInstallProgress,
   MachineServerOfferNotice,
@@ -26,9 +25,6 @@ import {
   useSealServerInstall,
   type SealServerInstallOptions
 } from './use-seal-server-install'
-
-// Why untranslated: a literal shell command.
-const OWN_SERVER_SERVICE_COMMAND = 'seal serve service install'
 
 type Busy = 'install' | 'decline' | 'reuse' | 'remove'
 
@@ -134,8 +130,7 @@ export function MachineServerStatus({
     !ownService &&
     !view.serverLaunchdNeedsLogin &&
     action !== 'install' &&
-    action !== 'keep-running' &&
-    action !== 'own-server'
+    action !== 'keep-running'
   ) {
     return null
   }
@@ -182,17 +177,6 @@ export function MachineServerStatus({
               'As a user service, Seal server keeps running after this computer disconnects.'
             )}
           </p>
-        ) : null}
-        {action === 'own-server' ? (
-          <>
-            <p className="text-muted-foreground">
-              {t(
-                'seal.machineServer.server.ownServer',
-                'To keep this server running as a service, run this on the machine:'
-              )}
-            </p>
-            <MachineCopyableCommand command={OWN_SERVER_SERVICE_COMMAND} />
-          </>
         ) : null}
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1">

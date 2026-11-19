@@ -13,7 +13,7 @@ export function formatServeServiceInstall(result: Record<string, unknown>): stri
   }
   if (result.linger === 'no') {
     lines.push(
-      'Note: lingering is off for this user, so the service stops when you log out. Run `loginctl enable-linger` to keep it running.'
+      'Note: lingering is off for this user, so the service stops when you log out. Run `sudo loginctl enable-linger "$USER"` to keep it running.'
     )
   }
   lines.push(

@@ -6,6 +6,7 @@ import {
   AgentSessionPanelEmpty,
   AgentSessionSidePanel
 } from '@/components/live-sessions/chat/AgentSessionSidePanel'
+import type { UsageCredentialHost } from '../settings/accounts/usage/usage-credential-host'
 import type {
   RecapItem,
   RecapItemMark,
@@ -45,10 +46,10 @@ export type SessionRecapPanelProps = {
   onMark: (itemId: string, mark: RecapItemMark | null) => void
   onJump: RecapJump
   onOpenLink: (url: string) => void
-  /** Where a Cloudflare account is set up; shown when recaps cannot run on this computer. */
-  onOpenSettings?: () => void
-  /** The Seal server that runs the session and keeps its recap; null when this computer does. */
-  server?: string | null
+  /** The computer or Seal server that runs the session and keeps its recap; default this one. */
+  host?: UsageCredentialHost
+  /** False when `host` is only a name: its settings cannot be reached from here. */
+  canFixSettings?: boolean
   onClose: () => void
 }
 
@@ -336,8 +337,9 @@ export function SessionRecapPanel(props: SessionRecapPanelProps): React.JSX.Elem
       <SessionRecapNotes
         view={view}
         failed={props.failed ?? null}
-        server={props.server ?? null}
-        onOpenSettings={props.onOpenSettings}
+        host={props.host}
+        canFixSettings={props.canFixSettings}
+        onSettingsChanged={props.onRefresh}
       />
       {view !== null && recapHasContent(recap) ? (
         <RecapBody

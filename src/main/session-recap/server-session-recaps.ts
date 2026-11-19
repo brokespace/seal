@@ -21,7 +21,7 @@ const READ_TIMEOUT_MS = 15_000
 /** As long as a client waits for its own Refresh: a rebuild is several model calls. */
 const REFRESH_TIMEOUT_MS = 6 * 60_000
 
-function unanswered(sessionId: string): SessionRecapView {
+function unanswered(sessionId: string, message: string | null = null): SessionRecapView {
   return {
     sessionId,
     recap: null,
@@ -31,7 +31,8 @@ function unanswered(sessionId: string): SessionRecapView {
     stale: false,
     pausedUntil: null,
     failure: 'The server that runs this session did not answer',
-    rev: 0
+    rev: 0,
+    unavailableReason: { kind: 'server-unreachable', message }
   }
 }
 
@@ -85,12 +86,16 @@ export class ServerSessionRecaps {
     if (!server || !sessionId) {
       return unanswered(session.id)
     }
+    let message: string | null = null
     const reply = await this.deps
       .call(server, method, { ...params, sessionId }, timeoutMs)
-      .catch(() => null)
+      .catch((error: unknown) => {
+        message = error instanceof Error ? error.message : null
+        return null
+      })
     const parsed = sessionRecapViewSchema.safeParse(reply)
     return parsed.success
       ? { ...judgedOnly(parsed.data), sessionId: session.id }
-      : unanswered(session.id)
+      : unanswered(session.id, message)
   }
 }

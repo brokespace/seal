@@ -27,6 +27,8 @@ export type SessionRecapInstallOptions = {
   decisions?: ClefDecisions
   userDataPath: string
   enabled: () => boolean
+  /** Why recaps cannot run here; null when they can. */
+  unavailableReason?: LiveSessionRecapsDeps['unavailableReason']
   /** Reaches paired Seal servers, which keep the recaps of the sessions they run. */
   serverRecapCall?: ServerSessionRecapsDeps['call']
   /** A recap or its ticks changed: the registry should publish its sessions again. */
@@ -113,6 +115,7 @@ export function createLiveSessionRecaps(options: SessionRecapInstallOptions): {
     engine,
     store,
     enabled: options.enabled,
+    unavailableReason: options.unavailableReason,
     pausedUntil: () => utility.health().pausedUntil,
     session: (sessionId) => liveSessions.registry.get(sessionId),
     readable: (session) => transcripts.has(session),
