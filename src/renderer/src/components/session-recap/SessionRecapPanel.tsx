@@ -48,6 +48,8 @@ export type SessionRecapPanelProps = {
   onOpenLink: (url: string) => void
   /** The computer or Seal server that runs the session and keeps its recap; default this one. */
   host?: UsageCredentialHost
+  /** False when `host` is only a name: its settings cannot be reached from here. */
+  canFixSettings?: boolean
   onClose: () => void
 }
 
@@ -336,6 +338,7 @@ export function SessionRecapPanel(props: SessionRecapPanelProps): React.JSX.Elem
         view={view}
         failed={props.failed ?? null}
         host={props.host}
+        canFixSettings={props.canFixSettings}
         onSettingsChanged={props.onRefresh}
       />
       {view !== null && recapHasContent(recap) ? (

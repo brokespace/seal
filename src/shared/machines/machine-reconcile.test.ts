@@ -257,7 +257,7 @@ describe('absorbed servers', () => {
     expect(next.machines).toHaveLength(1)
   })
 
-  it('absorbs a server whose OS machine id matches a full machine', () => {
+  it('does not absorb a server that only shares an OS machine id with a full machine', () => {
     const previous: MachineStore = {
       ...EMPTY_MACHINE_STORE,
       machines: [
@@ -273,8 +273,28 @@ describe('absorbed servers', () => {
     }
     const unlinked = { ...managedServerA, linkedSshTargetId: null }
     const { store: next } = reconcile([arSsh], [unlinked, managedServerB], previous)
+    expect(next.machines.map((machine) => machine.id)).toEqual(['ssh-ar', 'env-a'])
+  })
+
+  it('releases an absorbed server when the machine loses its own server, then pairs it normally', () => {
+    const previous = store(fullMachine({ absorbedEnvironmentIds: ['env-a'] }))
+    const { store: next } = reconcile([arSsh], [managedServerA], previous)
+    expect(
+      next.machines.map((machine) => [
+        machine.id,
+        machine.environmentId,
+        machine.absorbedEnvironmentIds
+      ])
+    ).toEqual([['ssh-ar', 'env-a', []]])
+  })
+
+  it('releases an absorbed server that is not linked to the machine target', () => {
+    const previous = store(fullMachine({ absorbedEnvironmentIds: ['env-a'] }))
+    const other = { ...managedServerA, linkedSshTargetId: 'ssh-other' }
+    const { store: next } = reconcile([arSsh], [other, managedServerB], previous)
     expect(next.machines.map((machine) => [machine.id, machine.absorbedEnvironmentIds])).toEqual([
-      ['ssh-ar', ['env-a']]
+      ['ssh-ar', []],
+      ['env-a', []]
     ])
   })
 
@@ -328,6 +348,12 @@ describe('absorbed servers', () => {
     )
     const { store: next } = reconcile([arSsh], [managedServerB], damaged)
     expect(next.machines).toEqual([fullMachine({ updatedAt: 1000 })])
+  })
+
+  it('keeps the connection the user chose when a damaged machine is repaired', () => {
+    const damaged = store(fullMachine({ sshTargetId: null, connection: 'ssh' }))
+    const { store: next } = reconcile([arSsh], [managedServerB], damaged)
+    expect(next.machines).toEqual([fullMachine({ connection: 'ssh', updatedAt: 1000 })])
   })
 })
 

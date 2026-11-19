@@ -16,17 +16,20 @@ export function SessionRecapNotes({
   view,
   failed,
   host = LOCAL_USAGE_CREDENTIAL_HOST,
+  canFixSettings = true,
   onSettingsChanged
 }: {
   view: SessionRecapView | null
   failed: SessionRecapFailure | null
   /** The computer or Seal server that keeps the recap; its settings are not always this one's. */
   host?: UsageCredentialHost
+  /** False when `host` is only a name: its settings cannot be reached from here. */
+  canFixSettings?: boolean
   /** A recap setting was saved on `host`. */
   onSettingsChanged: () => void
 }): React.JSX.Element {
   const t = useTranslate()
-  const unavailable = view?.state === 'unavailable'
+  const unavailable = view?.state === 'unavailable' && canFixSettings
   const note = view && !unavailable ? recapStateNote(view, t, host.label) : null
   return (
     <>

@@ -82,17 +82,19 @@ export function AgentSessionChatSurround({
 
   const { machine } = session
   // The recap is kept, and its settings live, on the Seal server that runs the session.
+  const recapOwner = useMemo(
+    () =>
+      machine.connection === 'server'
+        ? ipcOrRuntimeTargetForHostId(normalizeExecutionHostId(machine.executionHostId))
+        : LOCAL_USAGE_CREDENTIAL_HOST.owner,
+    [machine]
+  )
   const recapHost = useMemo<UsageCredentialHost>(
     () =>
       machine.connection === 'server'
-        ? {
-            owner:
-              ipcOrRuntimeTargetForHostId(normalizeExecutionHostId(machine.executionHostId)) ??
-              LOCAL_USAGE_CREDENTIAL_HOST.owner,
-            label: machineName(machine)
-          }
+        ? { owner: recapOwner ?? LOCAL_USAGE_CREDENTIAL_HOST.owner, label: machineName(machine) }
         : LOCAL_USAGE_CREDENTIAL_HOST,
-    [machine, machineName]
+    [machine, machineName, recapOwner]
   )
 
   // A menu elsewhere asked this view to show something.
@@ -170,6 +172,7 @@ export function AgentSessionChatSurround({
               onJump={onJump}
               onOpenLink={openRecapLink}
               host={recapHost}
+              canFixSettings={recapOwner !== null}
               onClose={closePanel}
             />
           </div>

@@ -282,7 +282,7 @@ export async function scanDockerCleanupTarget(
   connection: MachineConnection,
   target: MachineDockerCleanupTarget
 ): Promise<MachineCleanupPlan> {
-  return dockerCleanupPlan(await readMachineDockerStorage(connection), target)
+  return dockerCleanupPlan(await readMachineDockerStorage(connection, { force: true }), target)
 }
 
 /** Reads the machine again first: a plan from a stale listing would name the wrong users. */

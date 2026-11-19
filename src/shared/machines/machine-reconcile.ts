@@ -2,7 +2,6 @@ import type { MachineRecord, MachineStore } from './machine-record'
 import {
   chooseMerges,
   identifyingServerAddresses,
-  intersects,
   isSeparated,
   matchReason,
   type Candidate,
@@ -60,18 +59,12 @@ function absorbServers(
       if (isSeparated(separations, host.sshTargetId!, environment.id)) {
         return []
       }
-      const reason: MachineMergeReason | null =
-        environment.linkedSshTargetId === host.sshTargetId
-          ? 'linked'
-          : intersects(new Set(host.machineIds), new Set(server.machineIds))
-            ? 'machine-id'
-            : null
-      return reason ? [{ host, reason }] : []
+      return environment.linkedSshTargetId === host.sshTargetId ? [host] : []
     })
     if (matches.length !== 1) {
       continue
     }
-    const { host, reason } = matches[0]
+    const host = matches[0]
     const current = replaced.get(host.id) ?? host
     replaced.set(host.id, {
       ...current,
@@ -91,7 +84,7 @@ function absorbServers(
       removedMachineId: server.id,
       sshTargetId: host.sshTargetId!,
       environmentId: server.environmentId,
-      reason
+      reason: 'linked'
     })
   }
   return {
@@ -148,8 +141,14 @@ export function reconcileMachines(
     )
   }
   for (const [index, machine] of machines.entries()) {
+    // An absorbed server stays hidden only while the machine's link still proves it is the same host.
     const absorbed = machine.absorbedEnvironmentIds.filter(
-      (id) => environments.has(id) && !seenEnvironments.has(id)
+      (id) =>
+        machine.sshTargetId &&
+        machine.environmentId &&
+        environments.get(id)?.linkedSshTargetId === machine.sshTargetId &&
+        !seenEnvironments.has(id) &&
+        !isSeparated(previous.separations, machine.sshTargetId, id)
     )
     for (const id of absorbed) {
       seenEnvironments.add(id)
@@ -221,7 +220,7 @@ export function reconcileMachines(
     replaced.set(survivor.id, {
       ...survivor,
       // A merged host keeps its SSH details for one-click switching but runs on its server.
-      connection: 'server',
+      connection: survivor === server ? survivor.connection : 'server',
       sshTargetId: ssh.sshTargetId,
       environmentId: server.environmentId,
       hostnames: union(ssh.hostnames, server.hostnames),
