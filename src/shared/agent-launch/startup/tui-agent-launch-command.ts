@@ -16,6 +16,7 @@ import type { SessionOptionValue } from '../../native-chat/input/native-chat-ses
 import { agentArgTerminatorIndex } from '../../agent-session/options/agent-session-option-agent-args'
 import { getTuiAgentLaunchCommand, TUI_AGENT_CONFIG } from '../catalog/tui-agent-config'
 import {
+  isSpliceableStartupCommand,
   quoteStartupArg,
   tokenizeStartupCommand,
   type AgentStartupShell
@@ -65,14 +66,14 @@ export function withCodexCommandArgs(
   shell: AgentStartupShell,
   quoteArg: (arg: string, shell: AgentStartupShell) => string = quoteStartupArg
 ): string {
-  const tokens = tokenizeStartupCommand(command, shell)
+  const parsed = tokenizeStartupCommand(command, shell)
   // Why: a wrapper may not forward -c, a compound line would hand it to another command, and
-  // anything after `--` is no longer an option.
+  // anything after `--` is no longer an option. Quoted text (a prompt) may hold any character.
   return args.length &&
-    !/[;&|<>`$()\n]/.test(command) &&
-    tokens.ok &&
-    isCodexExecutable(tokens.tokens[0]) &&
-    !tokens.tokens.includes('--')
+    parsed.ok &&
+    isCodexExecutable(parsed.tokens[0]) &&
+    !parsed.tokens.includes('--') &&
+    isSpliceableStartupCommand(command, parsed)
     ? `${command} ${args.map((arg) => quoteArg(arg, shell)).join(' ')}`
     : command
 }

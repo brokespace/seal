@@ -277,3 +277,29 @@ export function planAgentCliArgsSuffix(
     suffix: tokenized.tokens.map((token) => quoteStartupArg(token, shell)).join(' ')
   }
 }
+
+/**
+ * One plain command: tokens separated only by spaces and read by the shell exactly as parsed, so
+ * args can be spliced between them. `exempt` admits a token the caller knows is harmless.
+ */
+export function isSpliceableStartupCommand(
+  command: string,
+  parsed: { tokens: readonly string[]; spans: readonly CommandTokenSpan[] },
+  exempt: (token: string, index: number) => boolean = () => false
+): boolean {
+  for (let i = 0; i <= parsed.tokens.length; i++) {
+    const start = i === 0 ? 0 : parsed.spans[i - 1].end
+    const end = i === parsed.tokens.length ? command.length : parsed.spans[i].start
+    if (!/^[ \t]*$/.test(command.slice(start, end))) {
+      return false
+    }
+    if (
+      i < parsed.tokens.length &&
+      parsed.spans[i].divergesFromShell &&
+      !exempt(parsed.tokens[i], i)
+    ) {
+      return false
+    }
+  }
+  return true
+}

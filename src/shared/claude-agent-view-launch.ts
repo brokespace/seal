@@ -1,5 +1,6 @@
 import { findClaudeExecutableIndex } from './agent-launch/startup/agent-resume-launch-command'
 import {
+  isSpliceableStartupCommand,
   quoteStartupArg,
   tokenizeStartupCommand,
   type AgentStartupShell
@@ -41,19 +42,14 @@ export function withClaudeCommandArgs(
   ) {
     return command
   }
-  for (let i = 0; i <= parsed.tokens.length; i++) {
-    const start = i === 0 ? 0 : parsed.spans[i - 1].end
-    const end = i === parsed.tokens.length ? command.length : parsed.spans[i].start
-    if (!/^[ \t]*$/.test(command.slice(start, end))) {
-      return command
-    }
-    if (
-      i < parsed.tokens.length &&
-      parsed.spans[i].divergesFromShell &&
-      !(shell === 'powershell' && i === 0 && parsed.tokens[i] === '&')
-    ) {
-      return command
-    }
+  if (
+    !isSpliceableStartupCommand(
+      command,
+      parsed,
+      (token, at) => shell === 'powershell' && at === 0 && token === '&'
+    )
+  ) {
+    return command
   }
   const end = parsed.spans[index].end
   const inserted = args.map((arg) => quoteStartupArg(arg, shell)).join(' ')
