@@ -131,7 +131,6 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
     onCardOpenChange(false)
   }
   const group = liveSessionStatusGroup(session.status)
-  const subagents = session.activity?.subagents.length ?? 0
   const runningCount = runningSubagents(session.activity).length
   // A busy session shows how long it has run; a quiet one, how long it has been quiet.
   const since =
@@ -269,21 +268,18 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                   <span className="min-w-0 flex-1 truncate">{after}</span>
                   {/* The card's status says whether it waits on the user; counts beside it only repeat that. */}
                   {card ? null : <SessionRecapBadge brief={session.recap} />}
-                  {subagents > 0 ? (
+                  {runningCount > 0 ? (
                     <span
-                      data-live-session-subagents={subagents}
-                      className={cn(
-                        'flex shrink-0 items-center gap-0.5 tabular-nums',
-                        runningCount > 0 && 'text-agent-working'
-                      )}
+                      data-live-session-subagents={runningCount}
+                      className="flex shrink-0 items-center gap-0.5 text-agent-working tabular-nums"
                       title={t(
-                        'auto.components.live-sessions.sidebar.subagentCount',
-                        '{{running}} of {{count}} subagents running',
-                        { running: runningCount, count: subagents }
+                        'auto.components.live-sessions.sidebar.subagentsRunning',
+                        '{{count}} subagents running',
+                        { count: runningCount }
                       )}
                     >
                       <Bot className="size-3" />
-                      {subagents}
+                      {runningCount}
                     </span>
                   ) : null}
                   <LiveSessionRowChips

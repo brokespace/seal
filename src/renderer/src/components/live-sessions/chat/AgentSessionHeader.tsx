@@ -91,7 +91,6 @@ export function AgentSessionHeader({
             panel="recap"
             active={panel === 'recap'}
             count={recapAttention(session.recap).total}
-            running={false}
             attention
             label={t('seal.sessionRecap.title', 'Recap')}
             onToggle={onToggle}
@@ -102,8 +101,7 @@ export function AgentSessionHeader({
         <AgentSessionPanelButton
           panel="subagents"
           active={panel === 'subagents'}
-          count={activity?.subagents.length ?? 0}
-          running={runningSubagents(activity).length > 0}
+          count={runningSubagents(activity).length}
           label={t('auto.components.live-sessions.activity.subagents', 'Subagents')}
           onToggle={onToggle}
         >
@@ -112,8 +110,7 @@ export function AgentSessionHeader({
         <AgentSessionPanelButton
           panel="tasks"
           active={panel === 'tasks'}
-          count={(activity?.tasks.length ?? 0) + (activity?.todos.length ?? 0)}
-          running={runningBackgroundTasks(activity).length > 0}
+          count={runningBackgroundTasks(activity).length}
           label={t('auto.components.live-sessions.activity.tasks', 'Tasks')}
           onToggle={onToggle}
         >

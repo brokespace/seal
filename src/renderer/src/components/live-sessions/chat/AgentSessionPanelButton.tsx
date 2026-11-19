@@ -7,7 +7,6 @@ export function AgentSessionPanelButton({
   panel,
   active,
   count,
-  running,
   attention,
   label,
   onToggle,
@@ -15,9 +14,8 @@ export function AgentSessionPanelButton({
 }: {
   panel: AgentSessionPanel
   active: boolean
+  /** What is running in it now, or with `attention` what waits on the user; zero shows none. */
   count: number | null
-  /** Something in it is still going: the count is drawn in the working color. */
-  running: boolean
   /** What it counts waits on the user: the count is drawn in the attention color. */
   attention?: boolean
   label: string
@@ -42,7 +40,7 @@ export function AgentSessionPanelButton({
         <span
           className={cn(
             'tabular-nums',
-            running ? 'text-agent-working' : attention ? 'text-agent-question-text' : 'opacity-70'
+            attention ? 'text-agent-question-text' : 'text-agent-working'
           )}
         >
           {count}

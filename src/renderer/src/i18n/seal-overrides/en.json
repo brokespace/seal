@@ -907,7 +907,6 @@
           "pinned": "Pinned",
           "runningFor": "Running for",
           "quietFor": "Last activity",
-          "subagentCount": "{{running}} of {{count}} subagents running",
           "account": "Account",
           "finished": "Recently finished",
           "stopPicking": "Done selecting",
@@ -918,7 +917,8 @@
           "bulkRemove": "Remove",
           "bulkDelete": "Delete",
           "hideWorkspaces": "Hide workspaces",
-          "hideWorkspacesAria": "List each project’s agent sessions in place of its workspaces"
+          "hideWorkspacesAria": "List each project’s agent sessions in place of its workspaces",
+          "subagentsRunning": "{{count}} subagents running"
         },
         "sessionRows": {
           "machine": "Machine",
@@ -956,7 +956,9 @@
           "noTasks": "No background commands or tasks.",
           "plan": "Plan",
           "todos": "To-dos",
-          "noTodos": "The agent keeps no list."
+          "noTodos": "The agent keeps no list.",
+          "noRunningSubagents": "No subagents running.",
+          "endedSubagents": "Previous"
         },
         "retry": {
           "unconfirmedTitle": "Send it again?",
