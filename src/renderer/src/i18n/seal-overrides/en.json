@@ -2717,6 +2717,11 @@
     "sessionProjects": {
       "rename": "Rename Project"
     },
+    "autoProjects": {
+      "makePermanent": "Make Permanent",
+      "makePermanentFailed": "Couldn't make {{name}} permanent.",
+      "noAgentFolder": "Start an agent in {{name}} on a machine with Seal first."
+    },
     "projectMerge": {
       "action": "Merge into project",
       "confirmTitle": "Merge {{source}} into {{target}}?",

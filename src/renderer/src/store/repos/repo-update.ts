@@ -197,6 +197,7 @@ export function createRepoUpdateActions(
                 sourceControlAi,
                 externalWorktreeDiscoverySuppressedAt,
                 hiddenAt,
+                autoCreated,
                 ghAccount,
                 externalWorktreeVisibility,
                 agentWorktreeVisibility,
@@ -239,6 +240,12 @@ export function createRepoUpdateActions(
                 mergedRepo = repoWithoutHiddenAt
               } else if (hiddenAt !== undefined) {
                 mergedRepo = { ...mergedRepo, hiddenAt }
+              }
+              if (autoCreated === null) {
+                const { autoCreated: _autoCreated, ...repoWithoutAutoCreated } = mergedRepo
+                mergedRepo = repoWithoutAutoCreated
+              } else if (autoCreated !== undefined) {
+                mergedRepo = { ...mergedRepo, autoCreated }
               }
               if (ghAccount === null) {
                 const { ghAccount: _ghAccount, ...repoWithoutGhAccount } = mergedRepo

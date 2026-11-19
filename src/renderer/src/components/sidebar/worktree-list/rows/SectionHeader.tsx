@@ -35,14 +35,11 @@ import {
   getProjectGroupHeaderPaddingLeft,
   WORKTREE_SECTION_HEADER_PADDING_LEFT
 } from './indentation'
-import {
-  FolderPathStatusIndicator,
-  isFolderWorkspaceCreateDisabled
-} from './FolderPathStatusIndicator'
+import { FolderPathStatusIndicator } from './FolderPathStatusIndicator'
 import { RepoScanUnavailableIndicator } from './RepoScanUnavailableIndicator'
 import { LiveSessionsBadge } from '@/components/live-sessions/links/LiveSessionsBadge'
 import {
-  ProjectGroupCreateWorkspaceButton,
+  ProjectGroupHeaderAddButton,
   folderProjectGroupOf,
   ProjectGroupHeaderMenu,
   sessionProjectGroupOf
@@ -157,6 +154,7 @@ export function renderWorktreeSectionHeaderRow(
   })
   const headerGroup = isProjectGroupHeader && !row.repo ? row.projectGroup : undefined
   const folderBackedProjectGroup = folderProjectGroupOf(headerGroup)
+  const sessionProjectGroup = sessionProjectGroupOf(headerGroup)
   const projectGroupPathStatus = folderBackedProjectGroup
     ? ctx.getCachedFolderWorkspacePathStatus({
         scope: 'project-group',
@@ -367,22 +365,20 @@ export function renderWorktreeSectionHeaderRow(
                 hostId={projectGroupHostIdForHeader}
                 label={label}
                 projectGroup={folderBackedProjectGroup}
-                sessionProjectGroup={sessionProjectGroupOf(headerGroup)}
+                sessionProjectGroup={sessionProjectGroup}
                 onRefreshProjectGroup={ctx.onRefreshProjectGroup}
                 onRename={ctx.onRenameProjectGroup}
                 onDelete={ctx.onDeleteProjectGroup}
               />
             ) : null}
 
-            {folderBackedProjectGroup ? (
-              <ProjectGroupCreateWorkspaceButton
-                projectGroup={folderBackedProjectGroup}
-                label={label}
-                pathStatus={projectGroupPathStatus}
-                disabled={isFolderWorkspaceCreateDisabled(projectGroupPathStatus)}
-                onCreate={ctx.onCreateFolderWorkspace}
-              />
-            ) : null}
+            <ProjectGroupHeaderAddButton
+              folderGroup={folderBackedProjectGroup}
+              sessionGroup={sessionProjectGroup}
+              label={label}
+              pathStatus={projectGroupPathStatus}
+              onCreateFolderWorkspace={ctx.onCreateFolderWorkspace}
+            />
 
             {row.repo && ctx.groupBy === 'repo' ? (
               <RepoHeaderProjectActionsMenu

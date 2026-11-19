@@ -16,7 +16,11 @@ import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { FolderWorkspacePathStatus } from '../../../../../../shared/folder-workspaces/folder-workspace-path-status'
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
 import { getFolderProjectGroupRefreshHandler } from './project-group-folder-refresh'
+import { isFolderWorkspaceCreateDisabled } from './FolderPathStatusIndicator'
+import { startAgentInSessionProject } from './session-project-agent-launch'
 import { setProjectGroupHidden } from '../../hidden-projects/set-project-hidden'
+import { isAutoProjectGroup } from '@/components/live-sessions/links/auto-project-listing'
+import { MakePermanentMenuItem, makeProjectGroupPermanent } from './make-project-permanent'
 import { REPO_HEADER_ACTION_BUTTON_CLASS } from './repo-header-action-button-class'
 import {
   handleRepoHeaderActionPointerDown,
@@ -51,7 +55,7 @@ export function ProjectGroupHeaderMenu({
   hostId?: ExecutionHostId
   label: string
   projectGroup: ProjectGroup | null
-  /** A project Seal made for sessions: it reads as a project, and can be hidden like one. */
+  /** A project Seal made for sessions: it reads as a project, and can be hidden or made permanent. */
   sessionProjectGroup: ProjectGroup | null
   onRefreshProjectGroup?: (projectGroup: ProjectGroup) => void
   onRename: (groupId: string, currentName: string, hostId?: ExecutionHostId) => void
@@ -117,6 +121,11 @@ export function ProjectGroupHeaderMenu({
               {t('seal.sessionProjects.rename', 'Rename Project')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            {isAutoProjectGroup(sessionProjectGroup) ? (
+              <MakePermanentMenuItem
+                onSelect={() => void makeProjectGroupPermanent(sessionProjectGroup, label)}
+              />
+            ) : null}
             <DropdownMenuItem
               onSelect={() => void setProjectGroupHidden(sessionProjectGroup, true, label)}
             >
@@ -204,4 +213,40 @@ export function ProjectGroupCreateWorkspaceButton({
       </TooltipContent>
     </Tooltip>
   )
+}
+
+/** A project group header's +: a folder group makes a workspace; a project Seal made for sessions starts an agent. */
+export function ProjectGroupHeaderAddButton({
+  folderGroup,
+  sessionGroup,
+  label,
+  pathStatus,
+  onCreateFolderWorkspace
+}: {
+  folderGroup: ProjectGroup | null
+  sessionGroup: ProjectGroup | null
+  label: string
+  pathStatus: FolderWorkspacePathStatus | null
+  onCreateFolderWorkspace: (projectGroup: ProjectGroup) => void
+}): React.JSX.Element | null {
+  if (folderGroup) {
+    return (
+      <ProjectGroupCreateWorkspaceButton
+        projectGroup={folderGroup}
+        label={label}
+        pathStatus={pathStatus}
+        disabled={isFolderWorkspaceCreateDisabled(pathStatus)}
+        onCreate={onCreateFolderWorkspace}
+      />
+    )
+  }
+  return sessionGroup ? (
+    <ProjectGroupCreateWorkspaceButton
+      projectGroup={sessionGroup}
+      label={label}
+      pathStatus={null}
+      disabled={false}
+      onCreate={(group) => void startAgentInSessionProject(group)}
+    />
+  ) : null
 }

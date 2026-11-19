@@ -30,13 +30,20 @@ export const ProjectGroupUpdateArgs = z.object({
     tabOrder: z.number().finite().optional(),
     rootProjectOrder: z.number().finite().nullable().optional(),
     color: z.string().nullable().optional(),
-    hiddenAt: z.number().finite().nullable().optional()
+    hiddenAt: z.number().finite().nullable().optional(),
+    keptAt: z.number().finite().optional()
   })
 })
 
 export const ProjectGroupEnsureSessionProjectsArgs = z.object({
   projects: z
-    .array(z.object({ key: z.string().min(1), name: z.string().min(1).max(200) }))
+    .array(
+      z.object({
+        key: z.string().min(1),
+        name: z.string().min(1).max(200),
+        startedAt: z.number().finite().optional()
+      })
+    )
     .max(500),
   explicit: z.boolean().optional()
 })

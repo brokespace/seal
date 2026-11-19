@@ -17,6 +17,7 @@ import { getRepoRowIdentity } from '@/store/repos/repo-host-identity'
 import type { ProjectGroup } from '../../../../../shared/project-group-types'
 import type { Repo } from '../../../../../shared/repo-types'
 import { setProjectGroupHidden, setProjectHidden } from './set-project-hidden'
+import { useListedProjectGroups } from '@/components/live-sessions/links/auto-project-listing'
 
 /** A hidden project's row: a repo's host copy, or a project group. */
 type HiddenEntry =
@@ -53,7 +54,7 @@ const HiddenProjectsSection = React.memo(function HiddenProjectsSection() {
   useTranslation()
   const listId = useId()
   const repos = useAppStore((state) => state.repos)
-  const projectGroups = useAppStore((state) => state.projectGroups)
+  const projectGroups = useListedProjectGroups()
   const hiddenEntries = useMemo(
     () => selectHiddenEntries(repos, projectGroups),
     [repos, projectGroups]

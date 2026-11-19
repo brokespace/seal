@@ -39,7 +39,7 @@ describe('autoCreatedVerdict', () => {
     ['its workspace was pinned', { workspaces: [{ ...UNTOUCHED, pinned: true }] }, 'adopt'],
     ['its workspace was renamed', { workspaces: [{ ...UNTOUCHED, renamed: true }] }, 'adopt'],
     ['its workspace got a comment', { workspaces: [{ ...UNTOUCHED, hasComment: true }] }, 'adopt'],
-    ['a tab is open in it', { workspaces: [{ ...UNTOUCHED, inUse: true }] }, 'adopt'],
+    ['a tab is open in it', { workspaces: [{ ...UNTOUCHED, inUse: true }] }, 'keep'],
     ['its checkout has worktrees of its own', { workspaces: [UNTOUCHED, UNTOUCHED] }, 'remove'],
     [
       'a workspace was added to it',
