@@ -35,7 +35,18 @@ export const ProjectGroupUpdateArgs = z.object({
   })
 })
 
-export { ProjectGroupEnsureSessionProjects as ProjectGroupEnsureSessionProjectsArgs } from '../../../shared/rpc-contract/projects/repo-params'
+export const ProjectGroupEnsureSessionProjectsArgs = z.object({
+  projects: z
+    .array(
+      z.object({
+        key: z.string().min(1),
+        name: z.string().min(1).max(200),
+        startedAt: z.number().finite().optional()
+      })
+    )
+    .max(500),
+  explicit: z.boolean().optional()
+})
 
 export const ProjectGroupSelectorArgs = z.object({
   groupId: z.string().min(1)

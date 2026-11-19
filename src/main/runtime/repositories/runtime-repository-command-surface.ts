@@ -50,7 +50,6 @@ export type RuntimeRepositoryCommandSurface = {
   listVisibleFolderWorkspaces: RuntimeProjectGroupController['listVisibleFolderWorkspaces']
   checkProjectGroupHooks: RuntimeProjectGroupController['checkGroupHooks']
   createProjectGroup: RuntimeProjectGroupController['createGroup']
-  ensureSessionProjectGroups: RuntimeProjectGroupController['ensureSessionGroups']
   updateProjectGroup: RuntimeProjectGroupController['updateGroup']
   updateProjectGroups: RuntimeProjectGroupController['updateGroups']
   deleteProjectGroup: RuntimeProjectGroupController['deleteGroup']
@@ -135,7 +134,6 @@ export function installRuntimeRepositoryCommandSurface(
     listVisibleFolderWorkspaces: groups.listVisibleFolderWorkspaces.bind(groups),
     checkProjectGroupHooks: groups.checkGroupHooks.bind(groups),
     createProjectGroup: groups.createGroup.bind(groups),
-    ensureSessionProjectGroups: groups.ensureSessionGroups.bind(groups),
     updateProjectGroup: groups.updateGroup.bind(groups),
     updateProjectGroups: groups.updateGroups.bind(groups),
     deleteProjectGroup: groups.deleteGroup.bind(groups),

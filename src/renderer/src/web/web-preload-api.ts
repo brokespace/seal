@@ -39,7 +39,7 @@ import { createWebOrcaProfilesApi } from './preload-api/web-orca-profiles-api'
 import { createWebPlatformApi } from './preload-api/web-platform-api'
 import { createWebPluginsApi } from './preload-api/web-plugins-api'
 import { createRateLimitsApi } from './preload-api/web-rate-limits-api'
-import { createProjectGroupsApi, createReposApi } from './preload-api/web-repositories-api'
+import { createReposApi } from './preload-api/web-repositories-api'
 import { createHooksApi, createRuntimeNamespaceApi } from './preload-api/web-review-api'
 import { createWebJiraApi } from './preload-api/web-jira-api'
 import { callRuntimeResult } from './preload-api/web-runtime-calls'
@@ -67,12 +67,8 @@ export function installWebPreloadApi(): void {
   window.api = withFallback(createWebPreloadApi(), []) as PreloadApi
 }
 
-function createWebPreloadApi(): Omit<
-  Partial<PreloadApi>,
-  'settings' | 'plugins' | 'speech' | 'projectGroups'
-> & {
+function createWebPreloadApi(): Omit<Partial<PreloadApi>, 'settings' | 'plugins' | 'speech'> & {
   settings: Partial<PreloadApi['settings']>
-  projectGroups: Partial<PreloadApi['projectGroups']>
   plugins: Partial<PreloadApi['plugins']>
   speech: Partial<PreloadApi['speech']>
 } {
@@ -97,7 +93,6 @@ function createWebPreloadApi(): Omit<
     speech: createWebSpeechApi(),
     runtimeEnvironments: createRuntimeEnvironmentsApi(),
     repos: createReposApi(),
-    projectGroups: createProjectGroupsApi(),
     worktrees: createWorktreesApi(),
     fs: createFileApi(),
     git: createGitApi(),

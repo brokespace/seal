@@ -3,7 +3,6 @@ import { projectRepoVisibilityForClient } from '../../workspace-client-views/rep
 import {
   ProjectGroupHooksCheck,
   ProjectGroupCreate,
-  ProjectGroupEnsureSessionProjects,
   ProjectGroupImportNested,
   ProjectGroupMoveProject,
   ProjectGroupScanNested,
@@ -32,14 +31,6 @@ export const PROJECT_GROUP_METHODS = [
     params: ProjectGroupCreate,
     handler: async (params, { runtime }) => ({
       group: await runtime.createProjectGroup(params)
-    })
-  }),
-  defineMethod({
-    name: 'projectGroup.ensureSessionProjects',
-    permission: 'workspace',
-    params: ProjectGroupEnsureSessionProjects,
-    handler: (params, { runtime }) => ({
-      groups: runtime.ensureSessionProjectGroups(params.projects, params.explicit === true)
     })
   }),
   defineMethod({

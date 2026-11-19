@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { isPairedWebClientWindow } from '@/app-shell/chrome/desktop-window-chrome'
 import { useAppStore } from '@/store/index'
 import { getRepoExecutionHostId } from '../../../../../shared/execution-host'
 import { isActiveLiveSession } from '../../../../../shared/live-sessions/live-session-status'
@@ -53,7 +54,8 @@ export function useSessionProjectMaterialization(): void {
     .map(({ id }) => id)
     .join('\n')
   useEffect(() => {
-    if (!shown) {
+    // A paired web client lists its host's projects; that host shows and makes them.
+    if (!shown || isPairedWebClientWindow()) {
       return
     }
     const { projectGroups: current, updateProjectGroup } = useAppStore.getState()
@@ -66,8 +68,7 @@ export function useSessionProjectMaterialization(): void {
     }
   }, [shown])
   useEffect(() => {
-    // A web client asks its host, which may have no window of its own; the host makes each once.
-    if (!names) {
+    if (!names || isPairedWebClientWindow()) {
       return
     }
     let cancelled = false

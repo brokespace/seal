@@ -27,7 +27,6 @@ import {
   getFolderWorkspacePathStatus,
   getFolderWorkspacePathStatusForPath
 } from '../../project-groups/folder-workspace-path-status'
-import type { RuntimeStore } from '../construction/runtime-store-contract'
 import { FolderWorkspaceCreateRefusedError } from '../../project-groups/folder-workspace-create-refusal'
 import {
   runtimeVisibleFolderWorkspaces,
@@ -106,21 +105,6 @@ export class RuntimeProjectGroupController {
     })
     this.deps.notifyReposChanged()
     return group
-  }
-
-  /** Makes the projects running agents name, as the desktop's own window does for its sessions. */
-  ensureSessionGroups(
-    ...args: Parameters<NonNullable<RuntimeStore['ensureSessionProjectGroups']>>
-  ): ProjectGroup[] {
-    const store = this.deps.getStore()
-    if (!store?.ensureSessionProjectGroups) {
-      throw new Error('runtime_unavailable')
-    }
-    const created = store.ensureSessionProjectGroups(...args)
-    if (created.length > 0) {
-      this.deps.notifyReposChanged()
-    }
-    return created
   }
 
   async updateGroup(groupId: string, updates: ProjectGroupUpdate): Promise<ProjectGroup | null> {

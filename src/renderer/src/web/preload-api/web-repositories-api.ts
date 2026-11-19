@@ -1,7 +1,6 @@
 import type { PreloadApi } from '../../../../preload/api-types'
 import { legacyBaseRefSearchResult } from '../../../../shared/base-ref-search-result'
 import type { CloneTargetCheck } from '../../../../shared/git/clone/clone-target-check'
-import type { ProjectGroup } from '../../../../shared/project-group-types'
 import type { Repo } from '../../../../shared/repo-types'
 import { getDefaultCreateProjectParent } from '@/components/sidebar/project-admission/create/create-project-defaults'
 import {
@@ -101,18 +100,5 @@ export function createReposApi(): NonNullable<Partial<PreloadApi>['repos']> {
       return result.refDetails ?? result.refs.map(legacyBaseRefSearchResult)
     },
     onChanged: () => noopUnsubscribe
-  }
-}
-
-/** A Seal server has no window of its own to make the projects its running agents name; its client asks. */
-export function createProjectGroupsApi(): Partial<PreloadApi['projectGroups']> {
-  return {
-    ensureSessionProjects: async (args) =>
-      (
-        await callRuntimeResult<{ groups: ProjectGroup[] }>(
-          'projectGroup.ensureSessionProjects',
-          args
-        )
-      ).groups
   }
 }
