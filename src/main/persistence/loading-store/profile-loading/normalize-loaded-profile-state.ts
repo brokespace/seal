@@ -30,6 +30,7 @@ import {
   normalizeLoadedLocalSession,
   normalizeLoadedProjectCatalog
 } from './normalize-loaded-state-collections'
+import { normalizeDismissedSessionProjects } from '../../tracking-repos/project-group-operations'
 import { normalizeRetiredNameRegistryMap } from '../project-catalog/retired-name-registry-normalization'
 import { hydrateWorktreeMetaAliasProjection } from '../worktree-metadata/worktree-meta-alias-projection'
 
@@ -105,13 +106,7 @@ export function normalizeLoadedProfileState(
     deletedSshConfigAliases: Array.isArray(parsed.deletedSshConfigAliases)
       ? parsed.deletedSshConfigAliases.filter((alias): alias is string => typeof alias === 'string')
       : [],
-    ...(Array.isArray(parsed.dismissedSessionProjects)
-      ? {
-          dismissedSessionProjects: parsed.dismissedSessionProjects.filter(
-            (name): name is string => typeof name === 'string'
-          )
-        }
-      : {}),
+    ...normalizeDismissedSessionProjects(parsed.dismissedSessionProjects),
     retiredWorktreeNamesByRepo: normalizeRetiredNameRegistryMap(parsed.retiredWorktreeNamesByRepo),
     retiredWorktreeNamesByNamespace: normalizeRetiredNameRegistryMap(
       parsed.retiredWorktreeNamesByNamespace

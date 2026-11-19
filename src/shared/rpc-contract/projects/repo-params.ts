@@ -75,6 +75,19 @@ export const RepoReorder = z.object({
   orderedIds: z.array(z.string())
 })
 
+export const ProjectGroupEnsureSessionProjects = z.object({
+  projects: z
+    .array(
+      z.object({
+        key: z.string().min(1),
+        name: z.string().min(1).max(200),
+        startedAt: z.number().finite().optional()
+      })
+    )
+    .max(500),
+  explicit: z.boolean().optional()
+})
+
 export const ProjectGroupCreate = z.object({
   name: requiredString('Missing group name'),
   parentPath: OptionalString,
@@ -92,7 +105,8 @@ export const ProjectGroupUpdate = z.object({
     tabOrder: OptionalFiniteNumber,
     rootProjectOrder: z.number().finite().nullable().optional(),
     color: OptionalString.nullable().optional(),
-    hiddenAt: z.number().finite().nullable().optional()
+    hiddenAt: z.number().finite().nullable().optional(),
+    keptAt: z.number().finite().optional()
   })
 })
 

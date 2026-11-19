@@ -584,6 +584,7 @@ import {
 } from './projects/project-runtime-params'
 import {
   ProjectGroupCreate,
+  ProjectGroupEnsureSessionProjects,
   ProjectGroupHooksCheck,
   ProjectGroupImportNested,
   ProjectGroupMoveProject,
@@ -1658,6 +1659,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'projectGroup.checkHooks': ProjectGroupHooksCheck,
   'projectGroup.create': ProjectGroupCreate,
   'projectGroup.delete': ProjectGroupSelector,
+  'projectGroup.ensureSessionProjects': ProjectGroupEnsureSessionProjects,
   'projectGroup.importNested': ProjectGroupImportNested,
   'projectGroup.list': null,
   'projectGroup.moveProject': ProjectGroupMoveProject,

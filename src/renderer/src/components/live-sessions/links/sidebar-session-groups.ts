@@ -6,6 +6,7 @@ import type {
   LiveSession,
   LiveSessionProject
 } from '../../../../../shared/live-sessions/live-session-types'
+import { isActiveLiveSession } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSessionLink } from './live-session-links'
 import { sessionsHeaderKey, UNASSIGNED_SESSION_GROUP } from '../workspace-rows/session-fold-keys'
 import type { SessionProjectCatalog } from './session-project-catalog'
@@ -27,6 +28,8 @@ export type SidebarSessionGroups = {
   sessionHeaders: readonly SessionsHeader[]
   /** Projects sessions name that no project is yet, one per name, with those sessions: Seal makes each a project. */
   unknownProjects: readonly UnknownSessionProject[]
+  /** The newest running agent of each project that has one, by its header key, listed or not. */
+  runningByHeader: ReadonlyMap<string, LiveSession>
 }
 
 export type UnknownSessionProject = {
@@ -59,6 +62,17 @@ export function groupSidebarSessions(
   const byHeader = new Map<string, LiveSession[]>()
   const unknown = new Map<string, { project: LiveSessionProject; sessions: LiveSession[] }>()
   const places = new Map<string, SidebarSessionPlace>()
+  const runningByHeader = new Map<string, LiveSession>()
+  const running = (headerKey: string | undefined, session: LiveSession): void => {
+    const newest = headerKey && runningByHeader.get(headerKey)
+    if (
+      headerKey &&
+      isActiveLiveSession(session) &&
+      (!newest || (session.startedAt ?? 0) > (newest.startedAt ?? 0))
+    ) {
+      runningByHeader.set(headerKey, session)
+    }
+  }
   const unassignedKey = sessionsHeaderKey(UNASSIGNED_SESSION_GROUP)
   for (const session of sessions) {
     const link = links.get(session.id)
@@ -68,10 +82,12 @@ export function groupSidebarSessions(
     if (link && (!moved || (movedTo && movedTo === catalog.ofWorkspace(link.repoId)))) {
       add(byWorkspace, link.worktreeId, session)
       places.set(session.id, { kind: 'workspace', worktreeId: link.worktreeId })
+      running(catalog.ofWorkspace(link.repoId)?.headerKey, session)
       continue
     }
     const own = moved ?? liveSessionFolderProject(session)
     const project = movedTo ?? (own && catalog.find(own))
+    running(project?.headerKey, session)
     if (own && !project) {
       const nameKey = sessionProjectNameKey(own.name)
       const named = unknown.get(nameKey)
@@ -91,6 +107,7 @@ export function groupSidebarSessions(
     byWorkspace,
     byHeader,
     sessionHeaders: byHeader.has(unassignedKey) ? [{ key: unassignedKey, name: null }] : [],
-    unknownProjects: [...unknown.values()]
+    unknownProjects: [...unknown.values()],
+    runningByHeader
   }
 }

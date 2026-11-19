@@ -82,6 +82,7 @@ export const ProjectGroupSchema = z.object({
     'sessionProject',
     z.object({ key: z.string(), name: z.string() })
   ),
+  keptAt: salvagedOptional('keptAt', z.number()),
   createdAt: z.number(),
   updatedAt: z.number()
 }) satisfies z.ZodType<ProjectGroup, unknown>

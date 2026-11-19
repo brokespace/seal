@@ -26,7 +26,7 @@ import { SidebarWorkspacesEmptyNotice, SidebarWorktreeListEmptyState } from './E
 import { VirtualizedWorktreeViewport } from '../viewport/VirtualizedWorktreeViewport'
 import { markSidebarWorktreeActiveImmediately } from '../rows/option-dom'
 import { isSessionOnViewIn } from '@/components/live-sessions/open/use-agent-session-showing'
-import { EMPTY_PROJECT_GROUPS } from '../viewport/viewport-props'
+import { useListedProjectGroups } from '@/components/live-sessions/links/auto-project-listing'
 import { NOOP_WORKSPACE_BOARD_DRAG_PREVIEW_CALLBACK } from '../drag/drop-commit-context'
 import { useAgentSendTargetWorktreeId } from './use-agent-send-target'
 import { useProjectGroupDialogs } from '../rows/use-project-group-dialogs'
@@ -113,7 +113,7 @@ const WorktreeList = React.memo(function WorktreeList({
   const collapsedGroups = useAppStore((s) => s.collapsedGroups)
   const toggleGroup = useAppStore((s) => s.toggleCollapsedGroup)
   const setCollapsedGroups = useAppStore((s) => s.setCollapsedGroups)
-  const projectGroups = useAppStore((s) => s.projectGroups ?? EMPTY_PROJECT_GROUPS)
+  const projectGroups = useListedProjectGroups()
   const folderWorkspaces = useAppStore((s) => selectFolderWorkspaces(s))
   const settings = useAppStore((s) => s.settings)
   const cardProps = useAppStore((s) => s.worktreeCardProperties)

@@ -117,3 +117,24 @@ it('lists a session with no project while the list draws no header for its proje
     unknown: []
   })
 })
+
+it("names each project's newest running agent, whether or not the list has its header", () => {
+  const groups = groupSidebarSessions(
+    [
+      sampleLiveSession('older', { startedAt: 1_000 }),
+      sampleLiveSession('newer', { startedAt: 2_000 }),
+      sampleLiveSession('ended', { startedAt: 3_000, alive: false, status: 'done' }),
+      sampleLiveSession('elsewhere', { cwd: '/home/brian/fitness', project: 'fitness' })
+    ],
+    new Map([
+      ['older', LINK],
+      ['newer', LINK],
+      ['ended', LINK]
+    ]),
+    CATALOG,
+    new Set()
+  )
+  expect([...groups.runningByHeader].map(([key, session]) => [key, session.id])).toEqual([
+    [HEADER, 'newer']
+  ])
+})

@@ -20,6 +20,7 @@ export type RuntimeStore = {
   deleteProjectHostSetup?: Store['deleteProjectHostSetup']
   getProjectGroups?: Store['getProjectGroups']
   createProjectGroup?: Store['createProjectGroup']
+  ensureSessionProjectGroups?: Store['ensureSessionProjectGroups']
   updateProjectGroup?: Store['updateProjectGroup']
   updateProjectGroups?: Store['updateProjectGroups']
   deleteProjectGroup?: Store['deleteProjectGroup']
