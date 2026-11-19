@@ -56,6 +56,7 @@ function clientTabs(page: Page, worktreeId: string) {
 
 test('opening a session in a host workspace creates no shell on the host', async (// oxlint-disable-next-line no-empty-pattern -- This test owns its host launch.
 {}, testInfo) => {
+  // Two app launches, a pairing and a session scan come before the 15 s watch for a stray shell.
   test.setTimeout(300_000)
   const repoPath = existsSync(TEST_REPO_PATH_FILE)
     ? readFileSync(TEST_REPO_PATH_FILE, 'utf8').trim()
@@ -114,7 +115,7 @@ test('opening a session in a host workspace creates no shell on the host', async
     await expect
       .poll(() => clientTabs(client!.page, worktree.id))
       .toEqual({ unified: ['external-agent-session'], terminals: 0 })
-    // The stray shell came from the host's first, asynchronous tab list: give it time to land.
+    // ast-grep-ignore: test-no-real-time-wait -- asserts an absence: the stray shell came from the host's first asynchronous tab list, which raises no event to wait on.
     await client.page.waitForTimeout(15_000)
     expect(await hostTabTypes(client.page, client.environmentId, worktree.id)).toEqual([])
     expect(await clientTabs(client.page, worktree.id)).toEqual({
