@@ -26,7 +26,9 @@ import {
 import { runMachineHostScript } from './machine-host-script'
 
 const READ_TIMEOUT_MS = 3 * 60_000
-/** `docker system df` is slow on a busy daemon; every reader within this window shares one answer. */
+/** `docker system df` is slow on a busy daemon; a ready answer this young is served without reading. */
+const FRESH_READ_MS = 3 * 60_000
+/** How long an answer that Docker is unavailable is shared. */
 const SHARE_READ_MS = 20_000
 const IMAGE_LIMIT = 500
 const IMAGE_TAG_LIMIT = 1000
@@ -230,32 +232,68 @@ export function parseDockerInventory(output: string, collectedAt: number): Docke
   }
 }
 
-const shared = new Map<string, { at: number; storage: Promise<DockerStorage> }>()
+type SettledStorage = { at: number; storage: DockerStorage }
+type Read = { storage: Promise<DockerStorage> }
+
+const settled = new Map<string, SettledStorage>()
+// At most one read per machine runs at a time, so a slow `docker system df` is never stacked.
+const reading = new Map<string, Read>()
 
 export function forgetDockerInventory(connection: MachineConnection): void {
-  shared.delete(connection.machineId)
+  settled.delete(connection.machineId)
+  reading.delete(connection.machineId)
 }
 
-/** `force` reads the machine again instead of sharing a recent answer. */
-export function readMachineDockerStorage(
-  connection: MachineConnection,
-  options: { force?: boolean } = {}
-): Promise<DockerStorage> {
-  const cached = shared.get(connection.machineId)
-  if (cached && !options.force && Date.now() - cached.at < SHARE_READ_MS) {
-    return cached.storage
-  }
-  const entry = {
-    at: Date.now(),
+function startRead(connection: MachineConnection): Read {
+  const machineId = connection.machineId
+  const read: Read = {
     storage: runMachineHostScript(connection, DOCKER_INVENTORY_SCRIPT, {
       timeoutMs: READ_TIMEOUT_MS
     }).then((result) => parseDockerInventory(result.stdout, Date.now()))
   }
-  shared.set(connection.machineId, entry)
-  entry.storage.catch(() => {
-    if (shared.get(connection.machineId) === entry) {
-      shared.delete(connection.machineId)
+  reading.set(machineId, read)
+  // A read that was forgotten or forced past while running must not become the cached answer.
+  read.storage.then(
+    (storage) => {
+      if (reading.get(machineId) === read) {
+        reading.delete(machineId)
+        settled.set(machineId, { at: Date.now(), storage })
+      }
+    },
+    () => {
+      if (reading.get(machineId) === read) {
+        reading.delete(machineId)
+      }
     }
-  })
-  return entry.storage
+  )
+  return read
+}
+
+/**
+ * Answers from the last settled read: within `FRESH_READ_MS` as is, and past it immediately while
+ * one background read renews it. `force` reads the machine again instead.
+ */
+export function readMachineDockerStorage(
+  connection: MachineConnection,
+  options: { force?: boolean } = {}
+): Promise<DockerStorage> {
+  if (options.force) {
+    return startRead(connection).storage
+  }
+  const machineId = connection.machineId
+  const last = settled.get(machineId)
+  if (last) {
+    const age = Date.now() - last.at
+    // Only a ready answer is worth serving stale; "no Docker" answers are cheap to re-read.
+    if (last.storage.state === 'ready') {
+      if (age >= FRESH_READ_MS && !reading.has(machineId)) {
+        startRead(connection)
+      }
+      return Promise.resolve(last.storage)
+    }
+    if (age < SHARE_READ_MS) {
+      return Promise.resolve(last.storage)
+    }
+  }
+  return (reading.get(machineId) ?? startRead(connection)).storage
 }

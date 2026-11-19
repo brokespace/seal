@@ -1,6 +1,8 @@
 // Session recap: a rolling overview of one agent session, made on the host that owns the registry.
 // Plain JSON, shared by main, the runtime RPC, the renderer and mobile. See docs/session-recap.md.
 
+import type { UtilityModelProviderId } from '../utility-model/utility-model-types'
+
 export const SESSION_RECAP_VERSION = 1
 
 export const RECAP_WORK_STATES = ['done', 'in-progress', 'blocked'] as const
@@ -142,6 +144,17 @@ export const SESSION_RECAP_STATES = [
 ] as const
 export type SessionRecapState = (typeof SESSION_RECAP_STATES)[number]
 
+/** The exact cause behind a view with no recap to show, so a client never has to guess. */
+export type SessionRecapUnavailableReason =
+  | { kind: 'recaps-off' }
+  | { kind: 'provider-not-set-up'; provider: UtilityModelProviderId }
+  /** The host has not yet checked whether the recap provider has an account. */
+  | { kind: 'provider-unchecked' }
+  | { kind: 'transcript-unreadable' }
+  | { kind: 'session-unknown' }
+  /** The server that keeps the recap gave no usable answer. */
+  | { kind: 'server-unreachable'; message: string | null }
+
 /** What a client draws for one session. */
 export type SessionRecapView = {
   sessionId: string
@@ -158,6 +171,8 @@ export type SessionRecapView = {
   rev: number
   /** The session's turn has ended: nothing is running or parked. Absent from an older host. */
   turnEnded?: boolean
+  /** Why `unavailable` (or an `empty` with nothing to read); absent from an older host. */
+  unavailableReason?: SessionRecapUnavailableReason
 }
 
 /** What every session row carries, so labels and badges need no fetch. */

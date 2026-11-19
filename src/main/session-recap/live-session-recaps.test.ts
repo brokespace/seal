@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
 import {
   emptySessionRecap,
-  type SessionRecap
+  type SessionRecap,
+  type SessionRecapUnavailableReason
 } from '../../shared/session-recap/session-recap-types'
 import { LiveSessionRecaps, type LiveSessionRecapsDeps } from './live-session-recaps'
 import { ServerSessionRecaps } from './server-session-recaps'
@@ -31,7 +32,13 @@ function recap(updatedAt: number): SessionRecap {
 }
 
 /** `serverReply` is what a paired server answers every call with; without it no server is reached. */
-async function harness(options: { enabled?: boolean; serverReply?: unknown } = {}) {
+async function harness(
+  options: {
+    enabled?: boolean
+    unavailableReason?: SessionRecapUnavailableReason
+    serverReply?: unknown
+  } = {}
+) {
   const store = new SessionRecapStore(
     join(await mkdtemp(join(tmpdir(), 'seal-live-recaps-')), 'recaps.json')
   )
@@ -68,6 +75,7 @@ async function harness(options: { enabled?: boolean; serverReply?: unknown } = {
     engine,
     store,
     enabled: () => options.enabled ?? true,
+    unavailableReason: () => options.unavailableReason ?? null,
     pausedUntil: () => null,
     session: (sessionId) => sessions.get(sessionId) ?? null,
     readable: (session) => session.transcriptPath !== null,
@@ -117,6 +125,47 @@ describe('LiveSessionRecaps', () => {
     h.store.setRecap('local:claude:abc', recap(2_000), {})
 
     expect(h.recaps.decorate(session()).recap).toBeUndefined()
+  })
+
+  it('says why recaps are unavailable, with the provider that has no account', async () => {
+    const off = await harness({ enabled: false, unavailableReason: { kind: 'recaps-off' } })
+    const noAccount = await harness({
+      enabled: false,
+      unavailableReason: { kind: 'provider-not-set-up', provider: 'openrouter' }
+    })
+
+    expect(off.recaps.view('local:claude:abc', false)).toMatchObject({
+      state: 'unavailable',
+      unavailableReason: { kind: 'recaps-off' }
+    })
+    expect(noAccount.recaps.view('local:claude:abc', false).unavailableReason).toEqual({
+      kind: 'provider-not-set-up',
+      provider: 'openrouter'
+    })
+  })
+
+  it('says when there is nothing to recap because the conversation cannot be read or is unknown', async () => {
+    const h = await harness()
+    h.sessions.set('local:claude:abc', session({ transcriptPath: null }))
+
+    expect(h.recaps.view('local:claude:abc', false)).toMatchObject({
+      state: 'empty',
+      unavailableReason: { kind: 'transcript-unreadable' }
+    })
+    expect(h.recaps.view('local:claude:gone', false)).toMatchObject({
+      state: 'empty',
+      unavailableReason: { kind: 'session-unknown' }
+    })
+  })
+
+  it('gives no reason when the recap simply has not been written yet', async () => {
+    const h = await harness()
+    h.sessions.set('local:claude:abc', session())
+
+    const view = h.recaps.view('local:claude:abc', false)
+
+    expect(view.state).toBe('empty')
+    expect(view.unavailableReason).toBeUndefined()
   })
 
   it('recaps a session four minutes into a working turn, and again when it stops', async () => {

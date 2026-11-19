@@ -1,6 +1,4 @@
 import React, { useState } from 'react'
-import { PageCard } from '@/components/page-layout/PageCard'
-import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTranslate } from '@/i18n/use-translate'
 import { diskMountOfPath } from '../../../../../shared/machines/machine-disk-mount-rules'
@@ -13,7 +11,8 @@ import { MachineCleanupSection } from './MachineCleanupSection'
 import { MachineDiskLargestList } from './MachineDiskLargestList'
 import { MachineDiskMountsCard } from './MachineDiskMountsCard'
 import { MachineDiskUsageBrowser } from './MachineDiskUsageBrowser'
-import { MachineDockerStorageStats, useMachineDockerStorage } from './MachineDockerStorage'
+import { useMachineDockerStorage } from './MachineDockerStorage'
+import { MachineDockerStorageCard } from './MachineDockerStorageCard'
 import { MachineDockerStorageManager } from './MachineDockerStorageManager'
 import { useMachineDiskIndex } from './use-machine-disk-index'
 
@@ -30,7 +29,6 @@ export function MachineDiskDetail({
   const machineId = machine.id
   const index = useMachineDiskIndex(machineId)
   const docker = useMachineDockerStorage(machineId)
-  const dockerStorage = docker.storage
   const reloadDockerStorage = docker.reload
   const [picked, setPicked] = useState<string | null>(null)
   const [tab, setTab] = useState('usage')
@@ -64,31 +62,15 @@ export function MachineDiskDetail({
           }
         }}
       />
-      {dockerStorage?.state === 'ready' && dockerStorage.rows.length > 0 ? (
-        <PageCard
-          title={t('auto.components.machines.disk.dockerStorage', 'Docker storage')}
-          action={
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              className="-mr-1.5"
-              onClick={() => setTab('docker')}
-              data-machine-docker-manage
-            >
-              {t('auto.components.machines.disk.dockerManage', 'Manage')}
-            </Button>
-          }
-        >
-          <MachineDockerStorageStats
-            storage={dockerStorage}
-            onPick={(kind) => {
-              setDockerKind(kind)
-              setTab('docker')
-            }}
-          />
-        </PageCard>
-      ) : null}
+      <MachineDockerStorageCard
+        machine={machine}
+        docker={docker}
+        onManage={() => setTab('docker')}
+        onPick={(kind) => {
+          setDockerKind(kind)
+          setTab('docker')
+        }}
+      />
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList size="sm">
           <TabsTrigger value="usage">

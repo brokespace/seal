@@ -1,12 +1,15 @@
 // What clients are shown of a recap this host or a paired server keeps: the list under "Not
 // addressed", the brief on the session's row, and the state the panel draws.
+import type { LiveSession } from '../../shared/live-sessions/live-session-types'
 import {
   openRecapItems,
   type LiveSessionRecapBrief,
   type RecapMarks,
   type SessionRecap,
-  type SessionRecapState
+  type SessionRecapState,
+  type SessionRecapUnavailableReason
 } from '../../shared/session-recap/session-recap-types'
+import type { UtilityModelProviderId } from '../../shared/utility-model/utility-model-types'
 import { recapNotAddressedRequests } from '../../shared/session-recap/session-recap-request-display'
 
 /**
@@ -88,4 +91,43 @@ export function recapViewState(at: {
     return 'over-budget'
   }
   return at.hasRecap ? 'ready' : 'empty'
+}
+
+/** Why this host cannot run recaps, in the order a user would fix it; null when it can. */
+export function recapHostReason(at: {
+  on: boolean
+  configured: boolean
+  /** The first check of the provider's account has answered. */
+  checked: boolean
+  provider: UtilityModelProviderId
+}): SessionRecapUnavailableReason | null {
+  if (!at.on) {
+    return { kind: 'recaps-off' }
+  }
+  if (at.configured) {
+    return null
+  }
+  return at.checked
+    ? { kind: 'provider-not-set-up', provider: at.provider }
+    : { kind: 'provider-unchecked' }
+}
+
+/** The cause behind a state with nothing to show; undefined when the state needs none. */
+export function recapUnavailableReason(at: {
+  state: SessionRecapState
+  /** Why this host cannot run recaps at all; null when it can. */
+  hostReason: SessionRecapUnavailableReason | null
+  session: LiveSession | null
+  readable: boolean
+}): SessionRecapUnavailableReason | undefined {
+  if (at.state === 'unavailable') {
+    return at.hostReason ?? undefined
+  }
+  if (at.state !== 'empty') {
+    return undefined
+  }
+  if (!at.session) {
+    return { kind: 'session-unknown' }
+  }
+  return at.readable ? undefined : { kind: 'transcript-unreadable' }
 }

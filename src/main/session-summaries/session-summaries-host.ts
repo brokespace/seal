@@ -10,7 +10,9 @@ import type {
 import type { ReplyAskVerdict } from '../live-sessions/live-session-notifier'
 import { liveSessionTranscripts } from '../live-sessions/transcripts/live-session-transcripts'
 import { structuredChatJournal } from '../live-sessions/transcripts/journal-session-transcript'
+import type { SessionRecapUnavailableReason } from '../../shared/session-recap/session-recap-types'
 import type { LiveSessionRecaps } from '../session-recap/live-session-recaps'
+import { recapHostReason } from '../session-recap/session-recap-shown'
 import { createLiveSessionRecaps } from '../session-recap/session-recap-install'
 import {
   normalizeSessionSummaryModels,
@@ -19,6 +21,7 @@ import {
   type UtilityModelTask
 } from '../../shared/utility-model/utility-model-selection'
 import { getUtilityModelHost, type UtilityModelClient } from '../utility-model/utility-model-host'
+import { ConfiguredUtilityModels } from './configured-utility-models'
 import { renameCliSessionTab } from './cli-session-tab-title'
 import { lastAssistantText } from './last-assistant-text'
 import { LiveSessionSummaries } from './live-session-summaries'
@@ -33,7 +36,6 @@ import type { SessionSummariesInstallOptions } from './session-summaries-install
 
 export type { SessionSummariesInstallOptions }
 
-const CONFIGURED_RECHECK_MS = 60_000
 const log = (message: string, error?: unknown): void => console.warn(message, error ?? '')
 
 /** Session status summaries on this host: what makes them, and what clients read. */
@@ -44,11 +46,7 @@ export class SessionSummariesHost {
   private readonly replyAsks: ReturnType<typeof createSessionStatusJudges> | null
   private readonly recap: { recaps: LiveSessionRecaps; dispose: () => void } | null
   private readonly releases: (() => void)[] = []
-  private readonly configured: Record<UtilityModelTask, boolean> = {
-    summaries: false,
-    recaps: false
-  }
-  private configuredCheckedAt = 0
+  private readonly configured: ConfiguredUtilityModels
   private available = false
   private recapReady = false
   private republishQueued = false
@@ -59,6 +57,7 @@ export class SessionSummariesHost {
       summaries: options.utilityModel ?? this.chosenModel('summaries'),
       recaps: options.utilityModel ?? this.chosenModel('recaps')
     }
+    this.configured = new ConfiguredUtilityModels(this.models)
     const cache = new SessionSummaryCache(
       join(options.userDataPath, 'session-summaries', 'cache.json'),
       log
@@ -112,7 +111,8 @@ export class SessionSummariesHost {
             utility: this.models.recaps,
             decisions: judgeHost?.clef,
             userDataPath: options.userDataPath,
-            enabled: () => this.recapOn() && this.isConfigured('recaps'),
+            enabled: () => this.recapUnavailableReason() === null,
+            unavailableReason: () => this.recapUnavailableReason(),
             serverRecapCall: options.serverRecapCall,
             onChange: () => this.republishSoon(),
             setTimer: unrefTimer,
@@ -195,10 +195,10 @@ export class SessionSummariesHost {
     return {
       enabled: this.settingOn(),
       recapEnabled: this.recapOn(),
-      configured: this.configured.summaries,
+      configured: this.configured.has('summaries'),
       pausedUntil: this.models.summaries.health().pausedUntil,
       models: this.selection(),
-      recapConfigured: this.configured.recaps,
+      recapConfigured: this.configured.has('recaps'),
       recapPausedUntil: this.models.recaps.health().pausedUntil
     }
   }
@@ -242,6 +242,16 @@ export class SessionSummariesHost {
     return getUtilityModelHost().client(() => utilityModelChoiceFor(this.selection(), task))
   }
 
+  /** Why recaps cannot run on this host; null when they can. */
+  recapUnavailableReason(): SessionRecapUnavailableReason | null {
+    return recapHostReason({
+      on: this.recapOn(),
+      configured: this.isConfigured('recaps'),
+      checked: this.configured.known,
+      provider: utilityModelChoiceFor(this.selection(), 'recaps').provider
+    })
+  }
+
   private recapOn(): boolean {
     return this.options.store.getSettings().sessionRecapEnabled !== false
   }
@@ -271,15 +281,15 @@ export class SessionSummariesHost {
   }
 
   private isConfigured(task: UtilityModelTask): boolean {
-    if (Date.now() - this.configuredCheckedAt > CONFIGURED_RECHECK_MS) {
+    if (this.configured.due()) {
       // A config file dropped in later is found without a restart.
       void this.refreshAvailability(true)
     }
-    return this.configured[task]
+    return this.configured.has(task)
   }
 
   private running(task: UtilityModelTask): boolean {
-    return this.configured[task] && this.models[task].health().pausedUntil === null
+    return this.configured.has(task) && this.models[task].health().pausedUntil === null
   }
 
   private isAvailable(): boolean {
@@ -288,14 +298,7 @@ export class SessionSummariesHost {
 
   private async refreshAvailability(recheckConfigured: boolean): Promise<void> {
     if (recheckConfigured) {
-      this.configuredCheckedAt = Date.now()
-      const [summaries, recaps] = await Promise.all(
-        (['summaries', 'recaps'] as const).map((task) =>
-          this.models[task].isConfigured().catch(() => false)
-        )
-      )
-      this.configured.summaries = summaries
-      this.configured.recaps = recaps
+      await this.configured.check()
     }
     const available = this.settingOn() && this.running('summaries')
     const cameBack = available && !this.available

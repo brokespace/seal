@@ -11,8 +11,10 @@ import {
   type RecapReference,
   type RecapRequest,
   type SessionRecap,
+  type SessionRecapUnavailableReason,
   type SessionRecapView
 } from './session-recap-types'
+import { UTILITY_MODEL_PROVIDER_IDS } from '../utility-model/utility-model-types'
 
 const Timestamp = z.number().finite()
 
@@ -89,6 +91,21 @@ export const sessionRecapSchema: z.ZodType<SessionRecap> = z.object({
 
 export const recapMarksSchema = z.record(z.string(), z.enum(RECAP_ITEM_MARKS))
 
+const unavailableReasonSchema: z.ZodType<SessionRecapUnavailableReason> = z.discriminatedUnion(
+  'kind',
+  [
+    z.object({ kind: z.literal('recaps-off') }),
+    z.object({
+      kind: z.literal('provider-not-set-up'),
+      provider: z.enum(UTILITY_MODEL_PROVIDER_IDS)
+    }),
+    z.object({ kind: z.literal('provider-unchecked') }),
+    z.object({ kind: z.literal('transcript-unreadable') }),
+    z.object({ kind: z.literal('session-unknown') }),
+    z.object({ kind: z.literal('server-unreachable'), message: z.string().nullable() })
+  ]
+)
+
 export const sessionRecapViewSchema: z.ZodType<SessionRecapView> = z.object({
   sessionId: z.string().min(1),
   recap: sessionRecapSchema.nullable(),
@@ -99,7 +116,9 @@ export const sessionRecapViewSchema: z.ZodType<SessionRecapView> = z.object({
   pausedUntil: Timestamp.nullable(),
   failure: z.string().nullable(),
   rev: z.number(),
-  turnEnded: z.boolean().optional()
+  turnEnded: z.boolean().optional(),
+  // A kind a newer host adds must not discard the whole view.
+  unavailableReason: unavailableReasonSchema.optional().catch(undefined)
 })
 
 export const liveSessionRecapBriefSchema: z.ZodType<LiveSessionRecapBrief> = z.object({

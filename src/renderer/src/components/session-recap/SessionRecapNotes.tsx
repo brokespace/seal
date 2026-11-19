@@ -1,6 +1,12 @@
 import { useTranslate } from '@/i18n/use-translate'
+import { getProviderAccountsOwnerKey } from '@/runtime/provider-accounts/observations/runtime-provider-accounts-client'
+import {
+  LOCAL_USAGE_CREDENTIAL_HOST,
+  type UsageCredentialHost
+} from '../settings/accounts/usage/usage-credential-host'
 import type { SessionRecapView } from '../../../../shared/session-recap/session-recap-types'
 import { recapFailureNote, recapStateNote } from './session-recap-copy'
+import { SessionRecapSettingsFix } from './SessionRecapSettingsFix'
 import type { SessionRecapFailure } from './use-session-recap'
 
 const NOTE = 'border-b border-border bg-muted/40 px-3 py-2 text-xs leading-5 text-muted-foreground'
@@ -9,17 +15,19 @@ const NOTE = 'border-b border-border bg-muted/40 px-3 py-2 text-xs leading-5 tex
 export function SessionRecapNotes({
   view,
   failed,
-  server,
-  onOpenSettings
+  host = LOCAL_USAGE_CREDENTIAL_HOST,
+  onSettingsChanged
 }: {
   view: SessionRecapView | null
   failed: SessionRecapFailure | null
-  /** The Seal server that keeps the recap; its settings are not this computer's. */
-  server: string | null
-  onOpenSettings?: () => void
+  /** The computer or Seal server that keeps the recap; its settings are not always this one's. */
+  host?: UsageCredentialHost
+  /** A recap setting was saved on `host`. */
+  onSettingsChanged: () => void
 }): React.JSX.Element {
   const t = useTranslate()
-  const note = view ? recapStateNote(view, t, server) : null
+  const unavailable = view?.state === 'unavailable'
+  const note = view && !unavailable ? recapStateNote(view, t, host.label) : null
   return (
     <>
       {failed ? (
@@ -27,22 +35,17 @@ export function SessionRecapNotes({
           {recapFailureNote(failed, t)}
         </p>
       ) : null}
-      {note ? (
+      {view && unavailable ? (
+        <SessionRecapSettingsFix
+          key={getProviderAccountsOwnerKey(host.owner)}
+          view={view}
+          host={host}
+          className={NOTE}
+          onChanged={onSettingsChanged}
+        />
+      ) : note ? (
         <p data-recap-note={view?.state} className={NOTE}>
           {note}
-          {view?.state === 'unavailable' && !server && onOpenSettings ? (
-            <>
-              {' '}
-              <button
-                type="button"
-                data-recap-open-settings=""
-                onClick={onOpenSettings}
-                className="cursor-pointer rounded-sm text-foreground underline underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {t('seal.sessionRecap.openSettings', 'Open settings')}
-              </button>
-            </>
-          ) : null}
         </p>
       ) : null}
     </>

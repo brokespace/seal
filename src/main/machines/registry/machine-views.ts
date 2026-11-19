@@ -20,6 +20,7 @@ export type MachineServerInstallActivity = {
   reportedKeeper(sshTargetId: string): {
     manager: MachineServerKeeper
     startsAtBoot?: boolean | null
+    linger?: boolean
     hostUser?: string
     launchdNeedsLogin?: true
   } | null
@@ -54,6 +55,7 @@ function serverInstallView(
   | 'serverHostUser'
   | 'serverOwnServe'
   | 'serverLaunchdNeedsLogin'
+  | 'serverLingerOff'
   | 'serverInstallWaitsForHost'
 > {
   const serverInstall = record.serverInstall ?? null
@@ -104,6 +106,9 @@ function serverInstallView(
       : {}),
     ...(reported?.hostUser ? { serverHostUser: reported.hostUser } : {}),
     ...(ownServe && action === 'reuse' ? { serverOwnServe: ownServe } : {}),
+    ...(keeper === 'systemd-user' && (reported?.linger ?? serverInstall?.linger) === false
+      ? { serverLingerOff: true as const }
+      : {}),
     ...(reported?.launchdNeedsLogin ? { serverLaunchdNeedsLogin: true as const } : {}),
     ...(waitsForHost && action === 'installing' ? { serverInstallWaitsForHost: true as const } : {})
   }

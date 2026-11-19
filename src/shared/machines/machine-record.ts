@@ -34,6 +34,8 @@ export const MachineRecordSchema = z.object({
   hostnames: z.array(z.string()).catch([]),
   /** OS machine ids (/etc/machine-id, IOPlatformUUID, MachineGuid) seen over either transport. */
   machineIds: z.array(z.string()).catch([]),
+  /** Servers proven to be this machine's host; hidden here instead of listed as a second machine. */
+  absorbedEnvironmentIds: z.array(z.string()).catch([]),
   /** Absent on machines added before Seal installed its server by default. */
   serverInstall: MachineServerInstallSchema.optional().catch(undefined),
   createdAt: z.number(),

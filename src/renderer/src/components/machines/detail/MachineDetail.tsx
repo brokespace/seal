@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import {
   ArrowLeft,
   ArrowLeftRight,
+  Cable,
   EllipsisVertical,
   KeyRound,
   Pencil,
@@ -38,15 +39,15 @@ import { MachineConnectionBadge } from '../list/MachineConnectionBadge'
 import { refreshMachineMetrics } from '../model/machine-metrics-store'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
+import { MachineServerLingerLine } from '../server-install/MachineServerLingerLine'
 import { MachineServerStatus } from '../server-install/MachineServerStatus'
 import {
   serverInstallProgressText,
   serverInstallStatusText
 } from '../server-install/seal-server-install-copy'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { sealFleetMachineId } from '@/components/settings/seal-accounts/SealAccountsPage'
-import { MachineConnectorsSection } from '@/components/settings/seal-connectors/ConnectorsHere'
 import { MachineAccountsDialog } from './MachineAccountsDialog'
+import { MachineConnectorsDialog } from './MachineConnectorsDialog'
 import { MachineEditDialog } from './MachineEditDialog'
 import { MachineSessionList } from './MachineSessionList'
 import { MachineStatusDot, MachineVitalsStrip, useMachineStatusLabel } from './MachineVitals'
@@ -82,6 +83,7 @@ export function MachineDetail({
   const [editing, setEditing] = useState<SshTarget | null>(null)
   const [removing, setRemoving] = useState(false)
   const [accountsOpen, setAccountsOpen] = useState(false)
+  const [connectorsOpen, setConnectorsOpen] = useState(false)
   const explorerRef = useRef<MachineFileExplorerHandle>(null)
   const [opened, setOpened] = useState<{ machineId: string; kind: MachineResourceKind } | null>(
     null
@@ -145,6 +147,9 @@ export function MachineDetail({
                 ? machine.statusDetail
                 : machine.address}
             </p>
+          ) : null}
+          {view?.serverLingerOff ? (
+            <MachineServerLingerLine hostUser={view.serverHostUser} />
           ) : null}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -224,6 +229,10 @@ export function MachineDetail({
                 <UserRound />
                 {t('auto.components.machines.detail.accounts', 'Accounts…')}
               </DropdownMenuItem>
+              <DropdownMenuItem disabled={!online} onSelect={() => setConnectorsOpen(true)}>
+                <Cable />
+                {t('auto.components.machines.detail.connectors', 'Connectors…')}
+              </DropdownMenuItem>
               {machine.connection !== 'local' ? <DropdownMenuSeparator /> : null}
               {machine.sshTargetId ? (
                 <DropdownMenuItem onSelect={() => void editSshDetails()}>
@@ -271,12 +280,6 @@ export function MachineDetail({
           <MachineSessionList sessions={sessions} />
         </section>
       ) : null}
-      {online ? (
-        <MachineConnectorsSection
-          machineKeys={[sealFleetMachineId(machine) ?? machine.id, machine.id]}
-          className={cn('shrink-0 border-b border-border py-3', PAGE_GUTTER_X)}
-        />
-      ) : null}
       {resource ? (
         <MachineResourcePanel
           key={`${machine.id}:${resource}`}
@@ -302,6 +305,11 @@ export function MachineDetail({
         unreachableText={view && installStatus ? serverInstallProgressText(t, view) : null}
       />
       <MachineAccountsDialog machine={machine} open={accountsOpen} onOpenChange={setAccountsOpen} />
+      <MachineConnectorsDialog
+        machine={machine}
+        open={connectorsOpen}
+        onOpenChange={setConnectorsOpen}
+      />
       <MachineEditDialog
         machineId={machine.id}
         target={editing}

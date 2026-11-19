@@ -226,7 +226,6 @@ export const serverWaitsForHostConnecting = serverInstallFixture('waitsForHost',
 })
 export const serverInstall = serverInstallFixture('install')
 export const serverKeepRunning = serverInstallFixture('keepRunning')
-export const serverOwnServer = serverInstallFixture('ownServer')
 export const serverOwnService = serverInstallFixture('ownService')
 export const serverServiceRemains = serverInstallFixture('serviceRemains')
 export const serverWaitsForTerminals = serverInstallFixture('waitsForTerminals')

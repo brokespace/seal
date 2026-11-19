@@ -22,18 +22,17 @@ function accountOf(machine: MachineSummary): string | null {
   return /^([^@\s]+)@/.exec(machine.address ?? '')?.[1] ?? null
 }
 
-/** Why there is no Docker inventory to manage, and what would change that. */
-export function MachineDockerStorageUnavailable({
-  machine,
-  docker,
-  loading,
-  onRefresh
-}: {
-  machine: MachineSummary
+export type MachineDockerUnavailableCopy = {
+  reason: 'missing' | 'permission' | 'not-running' | 'other'
+  title: string
+  hint: string | null
+}
+
+/** What to tell the user about a machine with no Docker inventory. */
+export function useMachineDockerUnavailableCopy(
+  machine: MachineSummary,
   docker: MachineDockerUnavailable
-  loading: boolean
-  onRefresh: () => void
-}): React.JSX.Element {
+): MachineDockerUnavailableCopy {
   const t = useTranslate()
   const names = { machine: machine.label, user: accountOf(machine) ?? '' }
   const reason = docker.state === 'missing' ? 'missing' : docker.reason
@@ -83,6 +82,22 @@ export function MachineDockerStorageUnavailable({
               ),
               hint: null
             }
+  return { reason, ...copy }
+}
+
+/** Why there is no Docker inventory to manage, and what would change that. */
+export function MachineDockerStorageUnavailable({
+  machine,
+  docker,
+  loading,
+  onRefresh
+}: {
+  machine: MachineSummary
+  docker: MachineDockerUnavailable
+  loading: boolean
+  onRefresh: () => void
+}): React.JSX.Element {
+  const { reason, ...copy } = useMachineDockerUnavailableCopy(machine, docker)
   return (
     <div className="space-y-2 px-3 py-4 text-xs" data-machine-docker-unavailable={reason}>
       <div className="space-y-1">

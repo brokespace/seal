@@ -28,18 +28,21 @@ function fakeConnection(
 }
 
 function registryFor(
-  sshTargets: MachineRegistrySshTarget[],
+  sshTargets: MachineRegistrySshTarget[] | (() => MachineRegistrySshTarget[] | null),
   environments: MachineRegistryEnvironment[],
-  identities: Record<string, string> = {}
+  identities: Record<string, string> = {},
+  initial: MachineStore = EMPTY_MACHINE_STORE
 ) {
-  let saved: MachineStore = EMPTY_MACHINE_STORE
+  let saved = initial
+  let writes = 0
   const dialed: Dialed[] = []
   const registry = new MachineRegistry({
     readStore: () => saved,
     writeStore: (store) => {
+      writes += 1
       saved = store
     },
-    sshTargets: () => sshTargets,
+    sshTargets: typeof sshTargets === 'function' ? sshTargets : () => sshTargets,
     environments: () => environments,
     local: createLocalMachineConnection,
     sshConnection: (id, targetId) =>
@@ -49,7 +52,7 @@ function registryFor(
     changed: () => {},
     now: () => 1000
   })
-  return { registry, dialed, saved: () => saved }
+  return { registry, dialed, saved: () => saved, writes: () => writes }
 }
 
 const kesselSsh: MachineRegistrySshTarget = {
@@ -70,6 +73,23 @@ const kesselServer: MachineRegistryEnvironment = {
 }
 
 describe('MachineRegistry', () => {
+  it('leaves saved machines alone until the SSH targets have loaded', () => {
+    let targets: MachineRegistrySshTarget[] | null = [kesselSsh]
+    const first = registryFor(() => targets, [kesselServer])
+    first.registry.list()
+    const merged = first.saved()
+
+    targets = null
+    const restarted = registryFor(() => targets, [kesselServer], {}, merged)
+    expect(restarted.registry.reconcile()).toEqual(merged)
+    expect(restarted.writes()).toBe(0)
+
+    targets = [kesselSsh]
+    expect(restarted.registry.reconcile()).toEqual(merged)
+    expect(restarted.writes()).toBe(0)
+    expect(merged.machines.map((machine) => machine.sshTargetId)).toEqual(['ssh-kessel'])
+  })
+
   it('routes every feature of a merged machine through the transport it is set to', () => {
     const { registry, dialed } = registryFor([kesselSsh], [kesselServer])
 

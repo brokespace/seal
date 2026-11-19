@@ -56,14 +56,21 @@ async function installOwnServerService(conn: SshConnection): Promise<SealService
 }
 
 /** Null when the machine's service manager cannot tell. */
-async function readOwnServerService(conn: SshConnection): Promise<SealServiceOutcome | null> {
+export async function readOwnServerService(
+  conn: SshConnection
+): Promise<SealServiceOutcome | null> {
   const result = await runServiceCommand(conn, 'status', STATUS_TIMEOUT_MS)
   const manager = serviceManagerOf(result)
   if (result.verdict === 'unverifiable') {
     return null
   }
   return result.installed === true && result.verdict === 'live' && manager
-    ? { manager }
+    ? {
+        manager,
+        ...(result.linger === 'yes' || result.linger === 'no'
+          ? { linger: result.linger === 'yes' }
+          : {})
+      }
     : { manager: 'detached' }
 }
 

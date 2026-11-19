@@ -5,7 +5,16 @@ import { buildWorkspaceSessionRows } from '../live-sessions/workspace-rows/works
 import { AgentSessionChatFrameView } from '../live-sessions/chat/AgentSessionChatFrame'
 import { externalAgentSessionChatRows } from '../live-sessions/chat/external-agent-session-chat-rows'
 import { NativeChatMessageList } from '../native-chat/NativeChatMessageList'
-import type { SessionRecapView } from '../../../../shared/session-recap/session-recap-types'
+import type {
+  SessionRecapUnavailableReason,
+  SessionRecapView
+} from '../../../../shared/session-recap/session-recap-types'
+import type { SessionSummariesStatus } from '../../../../shared/session-summaries/session-summary-contracts'
+import type { UsageCredentialHost } from '../settings/accounts/usage/usage-credential-host'
+import {
+  fixtureProviderStatuses,
+  stubUtilityModelFixtureHost
+} from '../settings/accounts/utility-model/utility-model-fixture-host'
 import {
   SAMPLE_RECAP_BRIEF,
   SAMPLE_RECAP_TRANSCRIPT,
@@ -72,48 +81,125 @@ export const folded = defineFixture({
   render: () => <Pane view={sampleRecapView()} height={560} />
 })
 
+const BUILD_BOX: UsageCredentialHost = {
+  owner: { kind: 'environment', environmentId: 'build-box' },
+  label: 'build-box'
+}
+
 function Panels(): React.JSX.Element {
   const noop = (): void => {}
-  const panel = (
-    view: SessionRecapView | null,
-    server: string | null = null
-  ): React.JSX.Element => (
+  const panel = (view: SessionRecapView | null, host?: UsageCredentialHost): React.JSX.Element => (
     <div className="flex h-64 justify-self-start border border-border">
       <SessionRecapPanel
         view={view}
         refreshing={false}
         now={SAMPLE_NOW}
-        server={server}
+        host={host}
         onRefresh={noop}
         onMark={noop}
         onJump={noop}
         onOpenLink={noop}
-        onOpenSettings={noop}
         onClose={noop}
       />
     </div>
   )
+  const none = { recap: null, marks: {}, since: null }
   return (
     <div className="grid grid-cols-2 gap-4 bg-background p-4">
-      {panel(sampleRecapView({ recap: null, state: 'updating', marks: {}, since: null }))}
+      {panel(sampleRecapView({ ...none, state: 'updating' }))}
+      {panel(sampleRecapView({ ...none, state: 'paused', pausedUntil: SAMPLE_NOW + 5 * 60 * MIN }))}
+      {panel(sampleRecapView({ ...none, state: 'empty' }))}
       {panel(
         sampleRecapView({
-          recap: null,
-          state: 'paused',
-          pausedUntil: SAMPLE_NOW + 5 * 60 * MIN,
-          marks: {},
-          since: null
-        })
+          ...none,
+          state: 'empty',
+          unavailableReason: { kind: 'transcript-unreadable' }
+        }),
+        BUILD_BOX
       )}
-      {panel(sampleRecapView({ recap: null, state: 'unavailable', marks: {}, since: null }))}
-      {panel(sampleRecapView({ recap: null, state: 'empty', marks: {}, since: null }))}
       {panel(
-        sampleRecapView({ recap: null, state: 'unavailable', marks: {}, since: null }),
-        'build-box'
+        sampleRecapView({
+          ...none,
+          state: 'failed',
+          failure: 'The server that runs this session did not answer',
+          unavailableReason: { kind: 'server-unreachable', message: 'Request timed out' }
+        }),
+        BUILD_BOX
       )}
+      {panel(sampleRecapView({ ...none, state: 'unavailable' }), BUILD_BOX)}
     </div>
   )
 }
+
+function UnavailablePanel({
+  reason,
+  host
+}: {
+  reason: SessionRecapUnavailableReason
+  host: UsageCredentialHost
+}): React.JSX.Element {
+  const noop = (): void => {}
+  return (
+    <div className="flex h-[640px] w-[420px] border border-border">
+      <SessionRecapPanel
+        view={sampleRecapView({
+          recap: null,
+          marks: {},
+          since: null,
+          state: 'unavailable',
+          unavailableReason: reason
+        })}
+        refreshing={false}
+        now={SAMPLE_NOW}
+        host={host}
+        onRefresh={noop}
+        onMark={noop}
+        onJump={noop}
+        onOpenLink={noop}
+        onClose={noop}
+      />
+    </div>
+  )
+}
+
+const FIXTURE_PROVIDERS = fixtureProviderStatuses({
+  'cloudflare-workers-ai': { configured: false },
+  claude: { configured: true, source: 'agent-cli' }
+})
+
+function serverSettings(status: Partial<SessionSummariesStatus>): () => void {
+  return stubUtilityModelFixtureHost({
+    providers: FIXTURE_PROVIDERS,
+    summaries: {
+      enabled: true,
+      recapEnabled: true,
+      configured: true,
+      recapConfigured: true,
+      pausedUntil: null,
+      recapPausedUntil: null,
+      ...status
+    }
+  })
+}
+
+/** The server keeps recaps off: the switch is in the tab, and flips on that server. */
+export const recapsOffOnServer = defineFixture({
+  width: 460,
+  setup: serverSettings({ recapEnabled: false }),
+  render: () => <UnavailablePanel reason={{ kind: 'recaps-off' }} host={BUILD_BOX} />
+})
+
+/** The server has no account for the recap provider: its provider rows are in the tab. */
+export const providerNotSetUpOnServer = defineFixture({
+  width: 460,
+  setup: serverSettings({ recapConfigured: false, configured: false }),
+  render: () => (
+    <UnavailablePanel
+      reason={{ kind: 'provider-not-set-up', provider: 'cloudflare-workers-ai' }}
+      host={BUILD_BOX}
+    />
+  )
+})
 
 function PanelHalves(): React.JSX.Element {
   const noop = (): void => {}
@@ -225,8 +311,8 @@ export const requests = defineFixture({
 })
 
 /**
- * The recap before it exists: being written, paused by the daily limit, not set up here, nothing
- * yet, and not set up on the server that keeps it.
+ * The recap before it exists: being written, paused by the daily limit, nothing yet, a transcript
+ * the server cannot read, a server that did not answer, and a server with no reason to give.
  */
 export const states = defineFixture({
   width: 720,

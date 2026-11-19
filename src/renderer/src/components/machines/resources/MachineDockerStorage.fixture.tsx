@@ -9,7 +9,7 @@ import type { MachineSummary } from '../../../../../shared/machines/machine-summ
 import { toMachineId } from '../../../../../shared/machines/machine-types'
 import { fakeMachinesApi, KESSEL, METRICS } from '../machine-api-fixture'
 import { MachineDiskDetail } from './MachineDiskDetail'
-import { useMachineDockerStorage } from './MachineDockerStorage'
+import { clearMachineDockerStorageCache, useMachineDockerStorage } from './MachineDockerStorage'
 import { MachineDockerStorageManager } from './MachineDockerStorageManager'
 
 type Api = typeof fakeMachinesApi
@@ -390,11 +390,12 @@ export const rowOpensDetails = manager('volumes', WIDE, [
   () => document.querySelector<HTMLElement>('[data-machine-docker-row="hf-cache"]')?.click()
 ])
 
-function diskDetail(width: number, steps: Step[]) {
+function diskDetail(width: number, steps: Step[], api: Partial<Api> = {}) {
   return defineFixture({
     width,
     setup: () => {
-      window.api.machines = fakeMachinesApi
+      clearMachineDockerStorageCache()
+      window.api.machines = { ...fakeMachinesApi, ...api }
     },
     render: () => (
       <div className="@container bg-background">
@@ -414,3 +415,23 @@ export const diskDockerTab = diskDetail(WIDE, [() => press('Manage')])
 export const diskDockerTabNarrow = diskDetail(NARROW, [
   () => document.querySelector<HTMLElement>('[data-machine-docker-storage-stat="volumes"]')?.click()
 ])
+
+export const diskDockerCard = diskDetail(WIDE, [])
+
+export const diskDockerCardNarrow = diskDetail(NARROW, [])
+
+/** The first Docker read is still running. */
+export const diskDockerCardLoading = diskDetail(WIDE, [], {
+  dockerStorage: () => new Promise(() => {})
+})
+
+export const diskDockerCardMissing = diskDetail(WIDE, [], {
+  dockerStorage: async () => ({ state: 'missing' })
+})
+
+export const diskDockerCardEmpty = diskDetail(WIDE, [], {
+  dockerStorage: async () => ({
+    ...(await fakeMachinesApi.dockerStorage({ machineId: MACHINE.id })),
+    rows: []
+  })
+})

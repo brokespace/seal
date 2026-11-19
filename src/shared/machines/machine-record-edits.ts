@@ -62,6 +62,7 @@ export function separateMachine(store: MachineStore, machineId: string, now: num
     sshTargetId: null,
     hostnames: [],
     machineIds: [],
+    absorbedEnvironmentIds: [],
     createdAt: now,
     updatedAt: now
   }
@@ -76,6 +77,7 @@ export function separateMachine(store: MachineStore, machineId: string, now: num
               environmentId: null,
               hostnames: [],
               machineIds: [],
+              absorbedEnvironmentIds: [],
               updatedAt: now
             }
           : candidate
@@ -84,7 +86,10 @@ export function separateMachine(store: MachineStore, machineId: string, now: num
     ],
     separations: [
       ...store.separations,
-      { sshTargetId: machine.sshTargetId, environmentId: machine.environmentId }
+      ...[machine.environmentId, ...machine.absorbedEnvironmentIds].map((environmentId) => ({
+        sshTargetId: machine.sshTargetId!,
+        environmentId
+      }))
     ]
   }
 }
@@ -142,13 +147,21 @@ export function attachToMachine(
       ? !(pair.sshTargetId === link.sshTargetId && pair.environmentId === machine.environmentId)
       : !(pair.environmentId === link.environmentId && pair.sshTargetId === machine.sshTargetId)
   )
+  const replacedEnvironmentId =
+    'environmentId' in link && machine.environmentId && machine.environmentId !== link.environmentId
+      ? [machine.environmentId]
+      : []
   return {
     version: 1,
     separations,
     machines: store.machines
       .filter((candidate) => candidate === machine || candidate !== owner)
-      .map((candidate) =>
-        candidate === machine
+      .map((candidate) => {
+        const absorbed =
+          'environmentId' in link
+            ? candidate.absorbedEnvironmentIds.filter((id) => id !== link.environmentId)
+            : candidate.absorbedEnvironmentIds
+        return candidate === machine
           ? {
               ...candidate,
               ...('sshTargetId' in link
@@ -156,9 +169,13 @@ export function attachToMachine(
                 : { environmentId: link.environmentId }),
               hostnames: union(candidate.hostnames, owner?.hostnames ?? []),
               machineIds: union(candidate.machineIds, owner?.machineIds ?? []),
+              absorbedEnvironmentIds: union(absorbed, [
+                ...replacedEnvironmentId,
+                ...(owner?.absorbedEnvironmentIds ?? [])
+              ]),
               updatedAt: now
             }
-          : candidate
-      )
+          : { ...candidate, absorbedEnvironmentIds: absorbed }
+      })
   }
 }

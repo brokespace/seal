@@ -48,6 +48,8 @@ export type MachineView = {
   serverOwnServe?: { manager: 'systemd-user' | 'launchd'; name: string }
   /** macOS: launchd was asked for but no one is logged in at the screen, so the server is not a service. */
   serverLaunchdNeedsLogin?: true
+  /** A systemd user service whose host refused lingering, so the machine stops the server when the last session there ends. */
+  serverLingerOff?: true
   /** The running install waits for another install on the machine to finish or to be given up. */
   serverInstallWaitsForHost?: true
 }
@@ -59,8 +61,6 @@ export type MachineView = {
  * `installing`: an install is running.
  * `reuse`: the machine already runs the user's own `seal serve` service; Seal can connect through it instead of installing.
  * `keep-running`: a server runs here that is not a service yet, and Seal can make it one over SSH.
- * `own-server`: the user runs this server and Seal has no SSH details for the machine, so only
- *   `seal serve service install` on the host applies.
  * `none`: nothing to offer.
  */
 export type MachineServerInstallAction =
@@ -70,7 +70,6 @@ export type MachineServerInstallAction =
   | 'installing'
   | 'reuse'
   | 'keep-running'
-  | 'own-server'
   | 'none'
 
 /**

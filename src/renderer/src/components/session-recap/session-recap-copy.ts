@@ -3,8 +3,10 @@ import { formatShortTimeAgo } from '@/lib/time-format/short-time-ago'
 import type {
   RecapJudgeCriterion,
   RecapItem,
+  SessionRecapUnavailableReason,
   SessionRecapView
 } from '../../../../shared/session-recap/session-recap-types'
+import { utilityModelProvider } from '../../../../shared/utility-model/utility-model-provider-catalog'
 import {
   recapIsChecking,
   type RecapNewsSection,
@@ -147,15 +149,66 @@ export function recapFailureNote(failed: 'refresh' | 'mark', t: Translate): stri
     : t('seal.sessionRecap.failed.mark', 'That change was not saved. Try again.')
 }
 
+/** The exact cause, as one sentence; `where` names the computer or server that keeps the recap. */
+function recapReasonNote(
+  reason: SessionRecapUnavailableReason,
+  t: Translate,
+  where: string
+): string {
+  switch (reason.kind) {
+    case 'recaps-off':
+      return t('seal.sessionRecap.state.recapsOff', 'Recaps are off on {{where}}.', { where })
+    case 'provider-not-set-up':
+      return t(
+        'seal.sessionRecap.state.providerNotSetUp',
+        'No {{provider}} account is set up on {{where}} for recaps.',
+        { provider: utilityModelProvider(reason.provider).label, where }
+      )
+    case 'provider-unchecked':
+      return t(
+        'seal.sessionRecap.state.providerUnchecked',
+        'Seal is still checking the recap model on {{where}}.',
+        { where }
+      )
+    case 'transcript-unreadable':
+      return t(
+        'seal.sessionRecap.state.transcriptUnreadable',
+        'Seal cannot read this session\u2019s conversation on {{where}}.',
+        { where }
+      )
+    case 'session-unknown':
+      return t(
+        'seal.sessionRecap.state.sessionUnknown',
+        'This session is not listed on {{where}}.',
+        { where }
+      )
+    case 'server-unreachable':
+      return reason.message
+        ? t('seal.sessionRecap.state.unreachableWhy', 'Could not reach {{where}}: {{message}}', {
+            where,
+            message: reason.message
+          })
+        : t('seal.sessionRecap.state.unreachable', 'Could not reach {{where}}.', { where })
+  }
+}
+
 /**
  * Why the recap is not fresh, in words; null when it is, or while it is being written. `server`
- * names the Seal server that keeps the recap of a session it runs.
+ * names the Seal server that keeps the recap of a session it runs; null is this computer.
  */
 export function recapStateNote(
   view: SessionRecapView,
   t: Translate,
   server: string | null = null
 ): string | null {
+  const where = server ?? t('seal.sessionRecap.thisComputer', 'this computer')
+  const { unavailableReason: reason } = view
+  if (
+    reason &&
+    (view.state === 'unavailable' || view.state === 'empty' || view.state === 'failed')
+  ) {
+    return recapReasonNote(reason, t, where)
+  }
   switch (view.state) {
     case 'paused': {
       const time =
@@ -188,16 +241,7 @@ export function recapStateNote(
           })
         : t('seal.sessionRecap.state.failed', 'The last update failed.')
     case 'unavailable':
-      return server
-        ? t(
-            'seal.sessionRecap.state.unavailableOnServer',
-            'This session\u2019s recap is kept by {{server}}, the Seal server that runs it. Recaps are off there, or it has no model provider for them. That is set on the server, not here.',
-            { server }
-          )
-        : t(
-            'seal.sessionRecap.state.unavailable',
-            'Recaps are off, or the model provider chosen for them is not set up on this computer.'
-          )
+      return t('seal.sessionRecap.state.noRecapYet', 'No recap from {{where}} yet.', { where })
     case 'empty':
       return t(
         'seal.sessionRecap.state.empty',

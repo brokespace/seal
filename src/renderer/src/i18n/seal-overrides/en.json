@@ -98,7 +98,10 @@
           "sessions": "Agents on this machine",
           "accountsTitle": "Accounts on {{value0}}",
           "accountsDescription": "The Claude and Codex logins signed in on this machine, and which one its new sessions use.",
-          "accounts": "Accounts…"
+          "accounts": "Accounts…",
+          "connectorsTitle": "Connectors on {{value0}}",
+          "connectorsDescription": "The connectors agents on this machine get, and whether this machine's copy of each sign-in is current.",
+          "connectors": "Connectors…"
         },
         "edit": {
           "saved": "Machine updated"
@@ -184,7 +187,9 @@
           "truncated": "Showing first {{size}}",
           "edit": "Edit",
           "save": "Save",
-          "close": "Close preview"
+          "close": "Close preview",
+          "fullScreen": "Full screen",
+          "exitFullScreen": "Exit full screen"
         },
         "prompt": {
           "cancel": "Cancel"
@@ -371,6 +376,8 @@
           "listingAge": "Folder sizes are from the index, {{age}} old. Files are listed as they are now.",
           "loading": "Reading this folder…",
           "dockerManage": "Manage",
+          "dockerRefresh": "Refresh Docker storage",
+          "dockerEmpty": "Docker is not holding any images, containers, volumes or build cache.",
           "dockerTab": "Docker"
         },
         "goTo": {
@@ -2192,7 +2199,7 @@
       "references": "Files, PRs and links",
       "partial": "recent history only",
       "refresh": "Refresh recap",
-      "openSettings": "Open settings",
+      "thisComputer": "this computer",
       "updatedNow": "Updated just now",
       "updatedAgo": "Updated {{age}} ago",
       "kind": {
@@ -2207,8 +2214,14 @@
         "overBudget": "Today’s budget for recaps is used. It resets at midnight UTC.",
         "failedWhy": "The last update failed: {{reason}}",
         "failed": "The last update failed.",
-        "unavailable": "Recaps are off, or the model provider chosen for them is not set up on this computer.",
-        "unavailableOnServer": "This session’s recap is kept by {{server}}, the Seal server that runs it. Recaps are off there, or it has no model provider for them. That is set on the server, not here.",
+        "recapsOff": "Recaps are off on {{where}}.",
+        "providerNotSetUp": "No {{provider}} account is set up on {{where}} for recaps.",
+        "providerUnchecked": "Seal is still checking the recap model on {{where}}.",
+        "transcriptUnreadable": "Seal cannot read this session’s conversation on {{where}}.",
+        "sessionUnknown": "This session is not listed on {{where}}.",
+        "unreachableWhy": "Could not reach {{where}}: {{message}}",
+        "unreachable": "Could not reach {{where}}.",
+        "noRecapYet": "No recap from {{where}} yet.",
         "empty": "Nothing to recap yet. A recap is written when the agent stops or waits for you.",
         "degraded": "The model’s last reply could not be used, so the newest part lists only what you asked. Refresh to try again.",
         "stale": "The session has moved on since this was written.",
@@ -2507,14 +2520,14 @@
         "pm2": "Kept running by PM2",
         "detached": "Starts when Seal connects and stops when idle",
         "version": "Version {{version}}",
-        "lingerOff": "Lingering is off for your account on this machine, so the machine stops Seal server when your last session there ends. That can be 10 seconds after this computer disconnects. To keep it running, run this on the machine:",
+        "lingerRun": "Run as service:",
+        "lingerSudo": "needs sudo",
         "pm2NoBoot": "PM2 is not set to start at boot on this machine. Run <code>pm2 startup</code> there to keep the server across reboots.",
         "copyCommand": "Copy command",
         "notInstalled": "Not installed on this machine",
         "install": "Install Seal server",
         "keepRunning": "Keep it running as a service",
         "keepRunningHelp": "As a user service, Seal server keeps running after this computer disconnects.",
-        "ownServer": "To keep this server running as a service, run this on the machine:",
         "desktopOnly": "Seal server is installed from the Seal desktop app.",
         "serviceRemains": "Seal server was stopped, but its service is still registered on this machine. Remove it again to finish.",
         "notService": "Not kept running as a service",
@@ -2776,11 +2789,9 @@
         "noSignIn": "No sign-in needed"
       },
       "here": {
-        "title": "Connectors here",
         "refresher": "Refresher",
         "offline": "Seal cannot read this machine right now.",
         "none": "No connectors reach this machine.",
-        "off": "Off",
         "accountsTitle": "Connectors",
         "noneForAccount": "None"
       },

@@ -20,7 +20,7 @@ type ZoomStep = (zoom: number, fitScale: number) => number
 /** Movement under this many pixels still counts as a click. */
 const CLICK_SLOP = 4
 
-type PointerGesture = { start: PanZoomPoint; last: PanZoomPoint; pan: boolean; alt: boolean }
+type PointerGesture = { start: PanZoomPoint; last: PanZoomPoint; dragged: boolean; alt: boolean }
 
 // Pinch zoom back to the fit lands near, not on, 1.
 const FIT_ZOOM_EPSILON = 1e-3
@@ -59,7 +59,7 @@ function settleView(view: PanZoomView, geometry: PanZoomGeometry): PanZoomView {
   return geometry.contain ? containPanZoomView(view, geometry) : view
 }
 
-/** Fit, wheel/pinch zoom at the cursor, click to toggle fit and actual size, and Alt-drag to pan. */
+/** Fit, wheel/pinch zoom at the cursor, click to toggle fit and actual size, and drag to pan. */
 export function usePanZoomViewport({
   content,
   upscale = false,
@@ -261,20 +261,25 @@ export function usePanZoomViewport({
         }
         event.currentTarget.setPointerCapture(event.pointerId)
         const point = { x: event.clientX, y: event.clientY }
-        // Touch and pen have no Alt key, so they keep dragging to pan.
-        const pan = event.altKey || event.pointerType === 'touch' || event.pointerType === 'pen'
-        gestureRef.current = { start: point, last: point, pan, alt: event.altKey }
-        setDragging(pan)
+        gestureRef.current = { start: point, last: point, dragged: false, alt: event.altKey }
       },
       onPointerMove: (event) => {
         setAltHeld(event.altKey)
         const gesture = gestureRef.current
-        if (!gesture?.pan || !geometry) {
+        if (!gesture || !geometry) {
           return
         }
-        const last = gesture.last
-        gesture.last = { x: event.clientX, y: event.clientY }
-        const delta = { x: event.clientX - last.x, y: event.clientY - last.y }
+        const { clientX: x, clientY: y } = event
+        if (!gesture.dragged) {
+          if (Math.hypot(x - gesture.start.x, y - gesture.start.y) < CLICK_SLOP) {
+            return
+          }
+          gesture.dragged = true
+          setDragging(true)
+        }
+        // Panning from the press point keeps the image from jumping when the slop is crossed.
+        const delta = { x: x - gesture.last.x, y: y - gesture.last.y }
+        gesture.last = { x, y }
         // Compose every pointer move even when several arrive before React renders.
         setManualView((current) => {
           const from = current
@@ -292,14 +297,11 @@ export function usePanZoomViewport({
       onPointerUp: (event) => {
         const gesture = gestureRef.current
         endDrag()
-        if (!gesture || gesture.alt) {
+        if (!gesture || gesture.dragged || gesture.alt) {
           return
         }
-        const moved = Math.hypot(event.clientX - gesture.start.x, event.clientY - gesture.start.y)
-        if (moved < CLICK_SLOP) {
-          const rect = event.currentTarget.getBoundingClientRect()
-          toggleZoomAt({ x: event.clientX - rect.left, y: event.clientY - rect.top })
-        }
+        const rect = event.currentTarget.getBoundingClientRect()
+        toggleZoomAt({ x: event.clientX - rect.left, y: event.clientY - rect.top })
       },
       onPointerCancel: endDrag,
       onLostPointerCapture: endDrag

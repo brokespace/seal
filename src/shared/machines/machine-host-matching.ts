@@ -93,6 +93,12 @@ export function isSeparated(
   )
 }
 
+/** A server-only record whose id is the target's (or its `-N` uniqueId form) was cut from that target. */
+export function wasCreatedFromTarget(server: MachineRecord, targetId: string): boolean {
+  const suffix = server.id.slice(targetId.length)
+  return server.id.startsWith(targetId) && (suffix === '' || /^-\d+$/.test(suffix))
+}
+
 export type Candidate = {
   ssh: MachineRecord
   server: MachineRecord
@@ -106,7 +112,7 @@ export function matchReason(
   environment: MachineEnvironmentFacts,
   identifyingAddresses: ReadonlySet<string>
 ): MachineMergeReason | null {
-  if (environment.linkedSshTargetId === target.id) {
+  if (environment.linkedSshTargetId === target.id || wasCreatedFromTarget(server, target.id)) {
     return 'linked'
   }
   const sshIds = new Set(ssh.machineIds)
