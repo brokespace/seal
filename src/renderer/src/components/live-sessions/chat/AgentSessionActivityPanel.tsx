@@ -1,15 +1,17 @@
-import { Check, Circle, CircleDot, FileText } from 'lucide-react'
+import { Check, ChevronRight, Circle, CircleDot, FileText } from 'lucide-react'
 import { AgentStateDot, type AgentDotState } from '@/components/AgentStateDot'
 import { Button } from '@/components/ui/button'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/class-names'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { formatShortTimeAgo } from '@/lib/time-format/short-time-ago'
-import type {
-  LiveBackgroundTask,
-  LiveSessionActivity,
-  LiveSubagent,
-  LiveSubagentStatus,
-  LiveTodo
+import {
+  runningSubagents,
+  type LiveBackgroundTask,
+  type LiveSessionActivity,
+  type LiveSubagent,
+  type LiveSubagentStatus,
+  type LiveTodo
 } from '../../../../../shared/live-sessions/live-session-activity'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { liveSessionLeftoverLabel } from '../live-session-presentation'
@@ -112,6 +114,103 @@ function SubagentRow({
   )
 }
 
+function SubagentList({
+  subagents,
+  now,
+  openSubagentId,
+  onOpen
+}: {
+  subagents: readonly LiveSubagent[]
+  now: number
+  openSubagentId: string | null
+  onOpen: (subagentId: string) => void
+}): React.JSX.Element {
+  return (
+    <ul className="flex flex-col gap-0.5 p-1">
+      {subagents.map((subagent) => (
+        <SubagentRow
+          key={subagent.id}
+          subagent={subagent}
+          now={now}
+          open={subagent.id === openSubagentId}
+          onOpen={onOpen}
+        />
+      ))}
+    </ul>
+  )
+}
+
+/** Running subagents stay in view; those that ended fold away until asked for. */
+function SubagentsPanelBody({
+  activity,
+  now,
+  openSubagentId,
+  onOpen
+}: {
+  activity: LiveSessionActivity | undefined
+  now: number
+  openSubagentId: string | null
+  onOpen: (subagentId: string) => void
+}): React.JSX.Element {
+  const t = useTranslate()
+  const subagents = activity?.subagents ?? []
+  if (subagents.length === 0) {
+    return (
+      <Empty>
+        {t(
+          'auto.components.live-sessions.activity.noSubagents',
+          'This session has not started any subagents.'
+        )}
+      </Empty>
+    )
+  }
+  const running = runningSubagents(activity)
+  const ended = subagents.filter((subagent) => subagent.status !== 'running')
+  return (
+    <>
+      {running.length > 0 ? (
+        <SubagentList
+          subagents={running}
+          now={now}
+          openSubagentId={openSubagentId}
+          onOpen={onOpen}
+        />
+      ) : (
+        <Empty>
+          {t('auto.components.live-sessions.activity.noRunningSubagents', 'No subagents running.')}
+        </Empty>
+      )}
+      {ended.length > 0 ? (
+        <Collapsible data-live-subagents-ended="">
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="group flex w-full items-center gap-1.5 px-3 pt-3 pb-1 text-left text-2xs font-semibold tracking-wider text-muted-foreground uppercase outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            >
+              <ChevronRight
+                aria-hidden
+                className="size-3 shrink-0 group-data-[state=open]:rotate-90"
+              />
+              <span className="flex-1">
+                {t('auto.components.live-sessions.activity.endedSubagents', 'Previous')}
+              </span>
+              <span className="tabular-nums">{ended.length}</span>
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <SubagentList
+              subagents={ended}
+              now={now}
+              openSubagentId={openSubagentId}
+              onOpen={onOpen}
+            />
+          </CollapsibleContent>
+        </Collapsible>
+      ) : null}
+    </>
+  )
+}
+
 function TaskRow({ task, now }: { task: LiveBackgroundTask; now: number }): React.JSX.Element {
   const t = useTranslate()
   return (
@@ -196,7 +295,6 @@ export function AgentSessionActivityPanel({
   now
 }: AgentSessionActivityPanelProps): React.JSX.Element {
   const t = useTranslate()
-  const subagents = activity?.subagents ?? []
   const tasks = activity?.tasks ?? []
   const todos = activity?.todos ?? []
   const leftover = liveSessionLeftoverLabel({ activity })
@@ -207,26 +305,12 @@ export function AgentSessionActivityPanel({
   return (
     <AgentSessionSidePanel panel={panel} title={titles[panel]} onClose={onClose}>
       {panel === 'subagents' ? (
-        subagents.length > 0 ? (
-          <ul className="flex flex-col gap-0.5 p-1">
-            {subagents.map((subagent) => (
-              <SubagentRow
-                key={subagent.id}
-                subagent={subagent}
-                now={now}
-                open={subagent.id === openSubagentId}
-                onOpen={onOpenSubagent}
-              />
-            ))}
-          </ul>
-        ) : (
-          <Empty>
-            {t(
-              'auto.components.live-sessions.activity.noSubagents',
-              'This session has not started any subagents.'
-            )}
-          </Empty>
-        )
+        <SubagentsPanelBody
+          activity={activity}
+          now={now}
+          openSubagentId={openSubagentId}
+          onOpen={onOpenSubagent}
+        />
       ) : null}
       {panel === 'tasks' ? (
         <>

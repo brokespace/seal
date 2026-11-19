@@ -35,3 +35,71 @@ export const leftoversRunning = defineFixture({
     </div>
   )
 })
+
+const subagent = (id: string, title: string, status: 'running' | 'completed' | 'failed') => ({
+  id,
+  title,
+  agentType: 'general-purpose',
+  model: null,
+  status,
+  background: false,
+  activity: status === 'running' ? 'Grep: runningSubagents' : null,
+  startedAt: SAMPLE_NOW - 6 * 60_000,
+  lastActivityAt: SAMPLE_NOW - 60_000,
+  transcriptPath: '/tmp/agent.jsonl'
+})
+
+/** One subagent still running; two that ended fold under Previous. */
+export const subagentsRunningAndEnded = defineFixture({
+  width: 320,
+  render: () => (
+    <div className="flex h-80">
+      <AgentSessionActivityPanel
+        panel="subagents"
+        provider="claude"
+        activity={{
+          subagents: [
+            subagent('a1', 'Find badge call sites', 'running'),
+            subagent('a2', 'Review the diff', 'completed'),
+            subagent('a3', 'Run e2e suite', 'failed')
+          ],
+          todos: [],
+          tasks: []
+        }}
+        openSubagentId={null}
+        onOpenSubagent={() => undefined}
+        onClose={() => undefined}
+        now={SAMPLE_NOW}
+      />
+    </div>
+  )
+})
+
+/** The same session with Previous opened. */
+export const subagentsEndedExpanded = defineFixture({
+  width: 320,
+  render: () => (
+    <div className="flex h-80">
+      <AgentSessionActivityPanel
+        panel="subagents"
+        provider="claude"
+        activity={{
+          subagents: [
+            subagent('a1', 'Find badge call sites', 'running'),
+            subagent('a2', 'Review the diff', 'completed'),
+            subagent('a3', 'Run e2e suite', 'failed')
+          ],
+          todos: [],
+          tasks: []
+        }}
+        openSubagentId={null}
+        onOpenSubagent={() => undefined}
+        onClose={() => undefined}
+        now={SAMPLE_NOW}
+      />
+    </div>
+  ),
+  interact: (frame) => {
+    frame.querySelector<HTMLButtonElement>('[data-live-subagents-ended] button')?.click()
+  }
+})
