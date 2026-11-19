@@ -2,6 +2,7 @@ import { claudeAccountUsagePreparation } from './claude-account-usage-preparatio
 import { claudeProfileSelectionHomes } from './claude-profile-selection-homes'
 import { prepareClaudeProfileForLaunch } from './claude-profile-launch-preparation'
 import { getClaudeAgentViewService } from '../../../claude/agent-view/agent-view-service'
+import { applyClaudeAccountPluginTargets } from '../../../agent-plugins/claude-account-plugin-targets'
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -251,6 +252,13 @@ export class ClaudeProfileRouter {
       claudeVersion: claudeVersion ?? undefined
     })
     if (report.outcome === 'prepared') {
+      // Setup just copied the default home's plugin switches; this account's targets go on top.
+      await applyClaudeAccountPluginTargets({
+        userHome: this.userHome,
+        profileHome: profile.home,
+        stateFile: claudeStateFile(profile.home, this.userHome),
+        email: this.savedAccount(profile.accountId)?.email
+      })
       await getClaudeAgentViewService(this.args.dataRoot).prepareProfile(profile.home)
     }
     if (report.outcome === 'refused' || report.warnings.length > 0) {

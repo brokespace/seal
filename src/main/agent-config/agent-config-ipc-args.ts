@@ -13,6 +13,11 @@ import {
   stringList,
   stringRecord
 } from '../../shared/agent-config/agent-config-values'
+import { parseAgentPluginTargets } from '../../shared/agent-plugins/agent-plugin-targets'
+import {
+  AGENT_PLUGIN_HARNESSES,
+  type AgentPluginInstallRequest
+} from '../../shared/agent-plugins/agent-plugin-types'
 import { machineIdOf, requireString, requireStrings } from '../machines/machine-ipc-args'
 import type { DocumentRef } from './agent-config-documents'
 
@@ -80,6 +85,26 @@ export function pluginCommandOf(value: unknown): AgentConfigPluginCommand {
     }
   }
   throw new Error('Unknown plugin command')
+}
+
+export function agentPluginRequestOf(value: unknown): AgentPluginInstallRequest {
+  if (!isPlainObject(value)) {
+    throw new Error('Name the plugin to install')
+  }
+  const listings = (Array.isArray(value.listings) ? value.listings : []).map((listing) => {
+    const harness = AGENT_PLUGIN_HARNESSES.find(
+      (candidate) => isPlainObject(listing) && candidate === listing.harness
+    )
+    if (!harness || !isPlainObject(listing)) {
+      throw new Error('Unknown marketplace listing')
+    }
+    return { harness, id: requireString(listing.id, 'listing id') }
+  })
+  return {
+    name: requireString(value.name, 'name'),
+    listings,
+    targets: parseAgentPluginTargets(value.targets)
+  }
 }
 
 export function refOf(value: unknown): DocumentRef {

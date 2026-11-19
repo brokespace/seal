@@ -43,6 +43,7 @@ const SETTINGS_NAV_TARGETS = [
   'plugins',
   'agents',
   'agent-config',
+  'agent-plugins',
   'orchestration',
   'artifacts',
   'session-history',

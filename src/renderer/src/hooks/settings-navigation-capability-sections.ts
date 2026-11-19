@@ -1,6 +1,7 @@
 import { LinearIcon } from '@/components/icons/LinearIcon'
 import { getAccountsPaneSearchEntries } from '@/components/settings/accounts/accounts-search'
 import { getAgentConfigSearchEntries } from '@/components/settings/agent-config/agent-config-search'
+import { getAgentPluginsSearchEntries } from '@/components/settings/agent-plugins/agent-plugins-search'
 import { getAgentsPaneSearchEntries } from '@/components/settings/agents/agents-search'
 import { getComputerUsePaneSearchEntries } from '@/components/settings/computer-use/computer-use-search'
 import { getGeneralPaneSearchEntries } from '@/components/settings/general/general-search'
@@ -27,6 +28,7 @@ import {
   MousePointerClick,
   Network,
   Plug,
+  Puzzle,
   SlidersHorizontal,
   Smartphone,
   Sparkles,
@@ -69,6 +71,17 @@ export function buildCapabilitySettingsSections(
             ),
             icon: FileCog,
             searchEntries: getAgentConfigSearchEntries(undefined, t),
+            group: 'capabilities'
+          },
+          {
+            id: 'agent-plugins',
+            title: t('seal.agentPlugins.title', 'Agent plugins'),
+            description: t(
+              'seal.agentPlugins.description',
+              'Install a plugin from Claude Code’s or Codex’s marketplaces once for every agent, account and machine.'
+            ),
+            icon: Puzzle,
+            searchEntries: getAgentPluginsSearchEntries(t),
             group: 'capabilities'
           }
         ]

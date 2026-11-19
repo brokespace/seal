@@ -118,6 +118,11 @@ export type AgentConfigMcpServer = {
   /** Set when a server in a higher scope with the same name replaces this one. */
   shadowedBy?: AgentConfigScope
   issue?: string
+  /**
+   * The Agent plugin that brought it. `native` servers live in the plugin's own folder and are
+   * read-only here; the others are Seal's copy in this agent's file.
+   */
+  plugin?: { name: string; enabled: boolean; native: boolean }
 }
 
 /** What the MCP form submits; a value left as the mask keeps the stored secret. */
@@ -338,6 +343,11 @@ export const AGENT_CONFIG_IPC = {
   setPluginEnabled: 'agentConfig:setPluginEnabled',
   setSkillEnabled: 'agentConfig:setSkillEnabled',
   runPluginCommand: 'agentConfig:runPluginCommand',
+  agentPluginCatalog: 'agentConfig:agentPluginCatalog',
+  agentPluginInventory: 'agentConfig:agentPluginInventory',
+  installAgentPlugin: 'agentConfig:installAgentPlugin',
+  setAgentPluginEnabled: 'agentConfig:setAgentPluginEnabled',
+  removeAgentPlugin: 'agentConfig:removeAgentPlugin',
   listBackups: 'agentConfig:listBackups',
   restoreBackup: 'agentConfig:restoreBackup',
   removePaths: 'agentConfig:removePaths',

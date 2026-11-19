@@ -143,15 +143,19 @@ export function codexPluginSkillFolders(
   })
 }
 
+/** The newest of a cache's version folder names. */
+export function newestPluginVersion(versions: readonly string[]): string | undefined {
+  return versions.toSorted(VERSION_ORDER.compare).at(-1)
+}
+
 /** Narrows a plugin whose cache keeps one folder per version to the newest one found. */
 export function latestPluginVersion<T extends { path: string }>(
   folder: PluginSkillFolder,
   records: readonly T[]
 ): PluginSkillFolder {
-  const versions = records
-    .flatMap((record) => relativeTo(folder.root, record.path)?.split('/')[0] ?? [])
-    .toSorted(VERSION_ORDER.compare)
-  const version = versions.at(-1)
+  const version = newestPluginVersion(
+    records.flatMap((record) => relativeTo(folder.root, record.path)?.split('/')[0] ?? [])
+  )
   return version === undefined
     ? folder
     : {
