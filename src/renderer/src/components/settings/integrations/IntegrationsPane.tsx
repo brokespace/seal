@@ -12,6 +12,7 @@ import { LinearIntegrationCard } from '../../integrations/task-trackers/linear-i
 import { IntegrationCardPresentationProvider } from '../../integrations/presentation/integration-card-presentation'
 import { useIntegrationProviderStatusRefresh } from '../../../hooks/use-integration-provider-status-refresh'
 import { SettingsGroup } from '../section-layout/SettingsGroup'
+import { AgentConnectorsSettingsGroup } from './AgentConnectorsSettingsGroup'
 import { INTEGRATION_SETTING_TARGET_IDS } from './integrations-search'
 import { useTranslate } from '@/i18n/use-translate'
 
@@ -76,6 +77,8 @@ export function IntegrationsPane(): React.JSX.Element {
             <JiraIntegrationCard />
           </ProviderRow>
         </SettingsGroup>
+
+        <AgentConnectorsSettingsGroup />
       </div>
     </IntegrationCardPresentationProvider>
   )

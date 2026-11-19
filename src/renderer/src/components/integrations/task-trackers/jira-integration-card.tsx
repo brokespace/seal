@@ -107,6 +107,10 @@ export function JiraIntegrationCard(): React.JSX.Element {
                 'Browse, create, and start work from Jira Cloud issues.'
               )
       }
+      note={t(
+        'auto.components.settings.task.tracker.integration.cards.jiraAgentNote',
+        'Connects Seal’s task browsing only; agents get Jira access through Settings › Integrations › Agent connectors.'
+      )}
       checking={checking}
       statusTone={connected ? 'connected' : 'attention'}
       statusLabel={

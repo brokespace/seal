@@ -14,6 +14,8 @@ export function IntegrationCardShell(props: {
   icon: React.ReactNode
   name: string
   description: React.ReactNode
+  /** A second line under the description, such as what the integration does not cover. */
+  note?: React.ReactNode
   statusLabel: string
   statusTone: IntegrationCardStatusTone
   checking?: boolean
@@ -43,6 +45,7 @@ export function IntegrationCardShell(props: {
         <div className="min-w-0 flex-1 basis-[16rem] space-y-0.5">
           <p className="text-sm font-medium">{props.name}</p>
           <p className="text-xs text-muted-foreground">{props.description}</p>
+          {props.note ? <p className="text-xs text-muted-foreground">{props.note}</p> : null}
         </div>
         {/* Wrap actions before narrow Settings layouts squeeze provider copy into unreadable columns. */}
         <div className="flex basis-full shrink-0 flex-wrap items-center justify-start gap-1.5 min-[1100px]:ml-auto min-[1100px]:basis-auto min-[1100px]:justify-end">

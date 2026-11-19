@@ -1,90 +1,14 @@
-import { useId, useState } from 'react'
-import { Check, CircleAlert, Copy, ExternalLink, LoaderCircle } from 'lucide-react'
+import { Check, CircleAlert, ExternalLink, LoaderCircle } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
-import { useClipboardTextCopyFeedback } from '@/hooks/clipboard/use-clipboard-text-copy-feedback'
 import {
   isHostAccountSignInPage,
   type HostAccountSignInStatus
 } from '../../../../../shared/host-account-sign-in-types'
 import type { SealProvider } from '../../../../../shared/seal-accounts/seal-accounts-config'
 import { Button } from '../../ui/button'
-import { Input } from '../../ui/input'
+import { SignInCopyButton, SignInPastedCodeForm } from '../../sign-in/SignInPageControls'
 import type { SealSignInController } from './use-seal-sign-in'
 import { openAppHttpLink } from '@/lib/browser/navigation/app-http-link-open'
-
-function CopyButton({ text, label }: { text: string; label: string }): React.JSX.Element {
-  const t = useTranslate()
-  const { copyText, status } = useClipboardTextCopyFeedback(text)
-  return (
-    <Button variant="outline" size="xs" onClick={() => void copyText()}>
-      {status === 'copied' ? <Check /> : <Copy />}
-      {status === 'copied'
-        ? t('seal.accounts.signIn.copied', 'Copied')
-        : status === 'failed'
-          ? t('seal.accounts.signIn.copyFailed', 'Could not copy')
-          : label}
-    </Button>
-  )
-}
-
-function PastedCodeForm({
-  onSubmit
-}: {
-  onSubmit: (code: string) => Promise<string | null>
-}): React.JSX.Element {
-  const t = useTranslate()
-  const [code, setCode] = useState('')
-  const [pending, setPending] = useState(false)
-  const [refusal, setRefusal] = useState<string | null>(null)
-  const helpId = useId()
-  const trimmed = code.trim()
-  return (
-    <form
-      className="space-y-1.5"
-      onSubmit={(event) => {
-        event.preventDefault()
-        if (!trimmed || pending) {
-          return
-        }
-        setPending(true)
-        void onSubmit(trimmed)
-          .then(setRefusal)
-          .finally(() => setPending(false))
-      }}
-    >
-      <p id={helpId} className="text-xs text-muted-foreground">
-        {t(
-          'seal.accounts.signIn.pasteCodeHelp',
-          'If the page shows a code instead of returning here, paste it:'
-        )}
-      </p>
-      <div className="flex items-center gap-2">
-        <Input
-          autoComplete="off"
-          spellCheck={false}
-          maxLength={2048}
-          aria-labelledby={helpId}
-          aria-invalid={refusal !== null}
-          value={code}
-          disabled={pending}
-          data-slot="seal-sign-in-code"
-          onChange={(event) => {
-            setCode(event.target.value)
-            setRefusal(null)
-          }}
-        />
-        <Button type="submit" size="sm" variant="outline" disabled={pending || !trimmed}>
-          {t('seal.accounts.signIn.submitCode', 'Continue')}
-        </Button>
-      </div>
-      {refusal !== null ? (
-        <p role="alert" className="text-xs text-destructive">
-          {refusal}
-        </p>
-      ) : null}
-    </form>
-  )
-}
 
 function Line({
   icon,
@@ -165,7 +89,7 @@ export function SealSignInProgress({
           <span className="min-w-0 flex-1 truncate rounded bg-muted px-1.5 py-1 font-mono text-2xs text-foreground/80">
             {url}
           </span>
-          <CopyButton text={url} label={t('seal.accounts.signIn.copyLink', 'Copy link')} />
+          <SignInCopyButton text={url} label={t('seal.accounts.signIn.copyLink', 'Copy link')} />
           <Button
             variant="outline"
             size="xs"
@@ -187,14 +111,14 @@ export function SealSignInProgress({
           >
             {prompt.userCode}
           </span>
-          <CopyButton
+          <SignInCopyButton
             text={prompt.userCode}
             label={t('seal.accounts.signIn.copyCode', 'Copy code')}
           />
         </div>
       ) : null}
       {url && status && prompt?.needsCode ? (
-        <PastedCodeForm key={status.flowId} onSubmit={signIn.submitCode} />
+        <SignInPastedCodeForm key={status.flowId} onSubmit={signIn.submitCode} />
       ) : null}
       {phase === 'signedIn' && status?.seal ? (
         <>

@@ -72,6 +72,33 @@
           "default": "Default",
           "makeDefault": "Make default",
           "defaultHint": "The default app is the editor a machine opens in."
+        },
+        "IntegrationsPane": {
+          "agentConnectors": "Agent connectors",
+          "agentConnectorsDescription": "The MCP connectors (Jira, Slack and others) agents use. Each account an agent runs as signs in on its own.",
+          "agentConnectorsMachine": "Where the agents run. Seal checks every account it launches agents with there."
+        },
+        "integrations": {
+          "search": {
+            "agentConnectors": "Agent connectors",
+            "agentConnectorsDescription": "MCP connectors agents use per account, their sign-in status, and duplicates.",
+            "mcp": "mcp",
+            "connector": "connector",
+            "slack": "slack",
+            "claudeAi": "claude.ai",
+            "needsAuth": "needs authentication",
+            "signIn": "sign in"
+          }
+        },
+        "task": {
+          "tracker": {
+            "integration": {
+              "cards": {
+                "jiraAgentNote": "Connects Seal’s task browsing only; agents get Jira access through Settings › Integrations › Agent connectors.",
+                "linearAgentNote": "Connects Seal’s task browsing only; agents get Linear access through Settings › Integrations › Agent connectors."
+              }
+            }
+          }
         }
       },
       "machines": {
@@ -1302,6 +1329,56 @@
           "extraFolder": "~/notes",
           "variable": "NAME"
         }
+      },
+      "agentConnectors": {
+        "status": {
+          "connected": "Connected",
+          "needsAuth": "Needs sign-in",
+          "failed": "Failed",
+          "disabled": "Off",
+          "configured": "Not checked"
+        },
+        "kind": {
+          "claudeAi": "claude.ai connector",
+          "plugin": "Plugin",
+          "user": "User",
+          "project": "Project"
+        },
+        "signIn": "Sign in",
+        "reconnect": "Reconnect",
+        "signInTitle": "Sign in to {{name}}",
+        "signInDescription": "For agents running as {{account}} on {{machine}}.",
+        "starting": "Asking the agent for a sign-in page…",
+        "waitingLocal": "Open the page and approve access. The browser returns to this computer and Seal finishes on its own.",
+        "waitingRemote": "Open the page and approve access. The browser then lands on a localhost address that will not load, because the agent runs on {{machine}}. Paste that address below.",
+        "copyLink": "Copy link",
+        "openInBrowser": "Open in browser",
+        "pasteLocal": "If the browser shows an error page instead, paste its address here:",
+        "pasteRemote": "Address the browser ended on:",
+        "signedIn": "Signed in. New agent sessions for this account can use {{name}}.",
+        "signInFailed": "The sign-in did not finish.",
+        "retry": "Try again",
+        "done": "Done",
+        "close": "Close",
+        "cancel": "Cancel",
+        "keep": {
+          "connected": "it is the one that is connected",
+          "claudeAi": "claude.ai connectors sign in once for the account on every machine",
+          "original": "it is the original, not a copy"
+        },
+        "duplicates": "Possible duplicates",
+        "duplicatesDescription": "These reach the same service. Seal removes nothing: claude.ai connectors are removed on claude.ai, others in Agent configuration.",
+        "keepSuggestion": "Keep {{name}}: {{reason}}.",
+        "defaultConfig": "{{agent}} default config",
+        "sealAccount": "{{agent}} account in Seal",
+        "claudeAiDisabled": "claude.ai connectors are not listed: disableClaudeAiConnectors is set in this account’s Claude settings.",
+        "none": "No connectors for this account.",
+        "desktopOnly": "Agent connectors need the desktop app.",
+        "checking": "Checking every account on this machine. Each agent contacts all of its servers, so this can take a minute.",
+        "checkedAt": "Checked at {{time}}.",
+        "refresh": "Check again",
+        "noAgents": "Neither Claude Code nor Codex is installed on this machine.",
+        "agentMachine": "the agent’s machine"
       }
     },
     "web": {

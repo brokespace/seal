@@ -1,10 +1,9 @@
 import React, { useState } from 'react'
 import { useTranslate } from '@/i18n/use-translate'
-import { HostCombobox } from '../../host-picker/HostCombobox'
 import { AgentConfigPanel } from '../../agent-config/AgentConfigPanel'
-import { MachineStatusDot } from '../../machines/detail/MachineVitals'
 import { SettingsRow } from '../form-controls/SettingsFormControls'
 import { SettingsGroup } from '../section-layout/SettingsGroup'
+import { MachineStatusCombobox } from './MachineStatusCombobox'
 import { useAgentConfigMachines } from './use-agent-config-machines'
 
 /** What each agent is set up with on a machine, for every project there. */
@@ -25,20 +24,11 @@ export function AgentConfigSettingsPane(): React.JSX.Element {
           )}
           control={
             <div className="w-56" data-agent-config-machine="">
-              <HostCombobox
+              <MachineStatusCombobox
+                machines={machines}
                 value={machine?.id ?? ''}
                 onChange={setMachineId}
                 ariaLabel={t('auto.components.agentConfig.pane.machine', 'Machine')}
-                options={machines.map((item) => ({
-                  id: item.id,
-                  label: item.label,
-                  content: (
-                    <span className="flex min-w-0 items-center gap-2">
-                      <MachineStatusDot status={item.status} />
-                      <span className="truncate">{item.label}</span>
-                    </span>
-                  )
-                }))}
               />
             </div>
           }
