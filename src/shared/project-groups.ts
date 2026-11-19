@@ -89,12 +89,6 @@ export function normalizeProjectGroups(value: unknown): ProjectGroup[] {
       ...(typeof raw.hiddenAt === 'number' && Number.isFinite(raw.hiddenAt)
         ? { hiddenAt: raw.hiddenAt }
         : {}),
-      ...(typeof raw.sessionProject?.key === 'string' && typeof raw.sessionProject.name === 'string'
-        ? { sessionProject: { key: raw.sessionProject.key, name: raw.sessionProject.name } }
-        : {}),
-      ...(typeof raw.keptAt === 'number' && Number.isFinite(raw.keptAt)
-        ? { keptAt: raw.keptAt }
-        : {}),
       createdAt:
         typeof raw.createdAt === 'number' && Number.isFinite(raw.createdAt) ? raw.createdAt : now,
       updatedAt:

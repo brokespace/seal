@@ -91,9 +91,6 @@ export function buildSessionProjectCatalog({
     byWorkspace.set(group.id, project)
     claim(byKey, group.id, project)
     claim(byName, sessionProjectNameKey(group.name), project)
-    // A project made for sessions stays theirs after the user renames it.
-    claim(byKey, group.sessionProject?.key, project)
-    claim(byName, group.sessionProject && sessionProjectNameKey(group.sessionProject.name), project)
   }
   return {
     projects: [...byHeader.values()],

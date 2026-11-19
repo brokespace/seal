@@ -1,6 +1,5 @@
 import type { GroupHookCheckResult } from '../../../shared/project-group-hooks'
 import type { RepoCreateFailure } from '../../../shared/repo-create-failure-copy'
-import type { LiveSessionProject } from '../../../shared/live-sessions/live-session-types'
 import type {
   CloneTargetArgs,
   CloneTargetCheck
@@ -139,14 +138,6 @@ export type ProjectGroupsApi = {
     parentGroupId?: string | null
     createdFrom?: ProjectGroup['createdFrom']
   }) => Promise<ProjectGroup>
-  /**
-   * Makes a project for each session project none is named for. One the user removed comes back for
-   * an agent started after that (`startedAt`), or when `explicit` names it.
-   */
-  ensureSessionProjects: (args: {
-    projects: readonly (LiveSessionProject & { startedAt?: number })[]
-    explicit?: boolean
-  }) => Promise<ProjectGroup[]>
   update: (args: { groupId: string; updates: ProjectGroupUpdate }) => Promise<ProjectGroup | null>
   updateMany: (args: {
     mutations: readonly ProjectGroupMutation[]

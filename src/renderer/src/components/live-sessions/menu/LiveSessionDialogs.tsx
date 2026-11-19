@@ -15,6 +15,7 @@ import { useSessionMachineName } from '@/components/machines/model/use-local-mac
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store/index'
 import { errorMessage } from '../../../../../shared/error-message'
+import { LOCAL_EXECUTION_HOST_ID } from '../../../../../shared/execution-host'
 import { liveSessionTranscriptFiles } from '../../../../../shared/live-sessions/live-session-transcript-files'
 import type {
   LiveRemoveRequest,
@@ -110,15 +111,19 @@ function ProjectDialog({ session }: { session: LiveSession }): React.JSX.Element
             return
           }
           const project = sessionProjectNamed(name, catalog)
-          // Asked for by name: made even if the user once removed a project so named.
-          if (!catalog.find(project)) {
-            void window.api.projectGroups.ensureSessionProjects({
-              projects: [project],
-              explicit: true
-            })
-          }
-          void window.api.liveSessions.annotate({ sessionId: session.id, project })
           close()
+          void (async () => {
+            // A name no project has yet becomes a project group, as New group does.
+            const group = catalog.find(project)
+              ? null
+              : await useAppStore
+                  .getState()
+                  .createProjectGroup(project.name, LOCAL_EXECUTION_HOST_ID)
+            await window.api.liveSessions.annotate({
+              sessionId: session.id,
+              project: group ? { key: group.id, name: group.name } : project
+            })
+          })().catch((error: unknown) => console.error('Failed to move a session:', error))
         }}
       >
         <Input

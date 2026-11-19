@@ -13,6 +13,7 @@ import {
 } from '../../../../shared/remote-runtime/pairing/mobile-pairing-custom-address'
 import { normalizeSourceControlGroupOrder } from '../../../../shared/source-control/listing/source-control-group-order'
 import { normalizeProjectGroups } from '../../../../shared/project-groups'
+import { withoutRetiredSessionProjectGroups } from './retired-session-project-groups'
 import { normalizeDisabledTuiAgents } from '../../../../shared/agent-launch/catalog/tui-agent-selection'
 import { hasUnsupportedTuiAgentArgs } from '../../../../shared/agent-launch/choices/tui-agent-launch-defaults'
 import { normalizeTerminalCursorStyleDefault } from '../../../../shared/terminal/appearance/terminal-cursor-style-settings'
@@ -221,7 +222,11 @@ export function prepareLoadedProfileSettings(
   if (!parsed.onboarding) {
     markNeedsSave()
   }
-  const normalizedProjectGroups = normalizeProjectGroups(parsed.projectGroups)
+  const loadedProjectGroups = withoutRetiredSessionProjectGroups(parsed)
+  if (loadedProjectGroups.dropped) {
+    markNeedsSave()
+  }
+  const normalizedProjectGroups = normalizeProjectGroups(loadedProjectGroups.groups)
   const loadedCompactWorktreeCards =
     parsed.settings?.compactWorktreeCards ??
     parsed.settings?.experimentalCompactWorktreeCards ??

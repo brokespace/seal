@@ -2792,13 +2792,9 @@
       "promptReadOnly": "Seal can’t answer this prompt. Answer it where the session runs.",
       "answerFailed": "Seal couldn’t answer this prompt."
     },
-    "sessionProjects": {
-      "rename": "Rename Project"
-    },
     "autoProjects": {
       "makePermanent": "Make Permanent",
-      "makePermanentFailed": "Couldn't make {{name}} permanent.",
-      "noAgentFolder": "Start an agent in {{name}} on a machine with Seal first."
+      "makePermanentFailed": "Couldn't make {{name}} permanent."
     },
     "projectMerge": {
       "action": "Merge into project",

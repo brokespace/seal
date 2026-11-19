@@ -9,7 +9,6 @@ import { notifyReposChanged } from './repos-changed-notification'
 import {
   ProjectGroupCancelNestedScanArgs,
   ProjectGroupCreateArgs,
-  ProjectGroupEnsureSessionProjectsArgs,
   ProjectGroupMoveProjectArgs,
   ProjectGroupScanNestedArgs,
   ProjectGroupSelectorArgs,
@@ -55,23 +54,6 @@ export function registerProjectGroupHandlers(
     notifyReposChanged(mainWindow)
     return group
   })
-
-  // One writer for every window: a project its sessions name is made once, and never again once removed.
-  ipcMain.handle(
-    'projectGroups:ensureSessionProjects',
-    (_event, rawArgs: unknown): ProjectGroup[] => {
-      const args = parseProjectGroupIpcArgs(
-        ProjectGroupEnsureSessionProjectsArgs,
-        rawArgs,
-        'invalid_project_group_ensure_session_projects_args'
-      )
-      const created = store.ensureSessionProjectGroups(args.projects, args.explicit === true)
-      if (created.length > 0) {
-        notifyReposChanged(mainWindow)
-      }
-      return created
-    }
-  )
 
   ipcMain.handle('projectGroups:update', (_event, rawArgs: unknown): ProjectGroup | null => {
     const args = parseProjectGroupIpcArgs(
