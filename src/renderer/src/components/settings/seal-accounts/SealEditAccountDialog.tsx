@@ -89,7 +89,7 @@ export function SealEditAccountDialog({
             <p className="text-xs text-muted-foreground">
               {t(
                 'seal.accounts.edit.aliasHelp',
-                'Shown everywhere instead of the email, and accepted by `seal account` commands.'
+                'Shown everywhere before the account’s email, as in “AR (you@example.com)”.'
               )}
             </p>
           </div>

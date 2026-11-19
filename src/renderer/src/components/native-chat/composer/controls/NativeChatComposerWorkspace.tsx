@@ -199,7 +199,7 @@ export function NativeChatComposerWorkspace({
         </div>
       )}
       <SealSessionAccountBadge
-        className="ml-auto"
+        className="ml-auto max-w-56"
         worktreeId={rowWorktreeId}
         {...(hasTransport
           ? { chatSessionId: sessionId, runtimeEnvironmentId }
