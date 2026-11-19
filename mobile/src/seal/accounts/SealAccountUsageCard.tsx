@@ -28,7 +28,7 @@ export function SealAccountUsageCard({
   const name = candidate.label || candidate.email || candidate.key
   const meta = [
     candidate.plan,
-    candidate.email && candidate.email !== name ? candidate.email : null
+    candidate.email && !name.includes(candidate.email) ? candidate.email : null
   ].filter(Boolean)
   // A failed check that kept the last good figures is named by their age, not by the failure.
   const keptAt = keptUsageReadAt(limits)

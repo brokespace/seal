@@ -1753,7 +1753,7 @@
       "edit": {
         "title": "Rename and limits",
         "alias": "Name",
-        "aliasHelp": "Shown everywhere instead of the email, and accepted by `seal account` commands.",
+        "aliasHelp": "Shown everywhere before the account’s email, as in “AR (you@example.com)”.",
         "plan": "Plan label",
         "planPlaceholder": "e.g. Max 20x",
         "sessionLimit": "Swap at 5h usage (%)",
