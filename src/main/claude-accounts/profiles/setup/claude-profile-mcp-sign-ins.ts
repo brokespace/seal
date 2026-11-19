@@ -6,7 +6,6 @@ import {
   readClaudeHomeCredentials,
   writeClaudeHomeCredentials
 } from '../../../seal-accounts/seal-claude-home-credentials'
-import { readClaudeProfileObject } from '../claude-profile-paths'
 import type { ClaudeProfileSurfaceOutcome } from '../claude-profile-report'
 import { ClaudeProfileSurfaceError } from '../claude-profile-report'
 
@@ -35,44 +34,37 @@ export type McpSignInPlan = {
 
 /**
  * Converges one profile's MCP OAuth sign-ins (`mcpOAuth`, keyed `<server>|<config hash>`) with the
- * default home's. The later expiry wins because servers such as Atlassian rotate refresh tokens,
- * and a key the default home signed out of since the last sync leaves the profile too.
+ * default home's, which decides which servers are signed in. The later expiry wins because servers
+ * such as Atlassian rotate refresh tokens, and a key the default home signed out of since the last
+ * sync leaves the profile too. A profile only writes back a refresh of a sign-in the default home
+ * still holds, so a sign-out there cannot come back.
  */
 export function planMcpSignIns(args: {
   defaults: Entries
   profile: Entries
   synced: readonly string[]
-  writeDefaults: boolean
 }): McpSignInPlan {
   const profile = { ...args.profile }
   const defaults = { ...args.defaults }
   const adopted: string[] = []
-  const signedOut = new Set(args.synced.filter((key) => !signedIn(args.defaults[key])))
-  for (const key of signedOut) {
-    if (signedIn(profile[key])) {
+  for (const key of args.synced) {
+    if (!signedIn(args.defaults[key]) && signedIn(profile[key])) {
       delete profile[key]
     }
   }
-  for (const key of new Set([...Object.keys(args.defaults), ...Object.keys(args.profile)])) {
-    if (signedOut.has(key)) {
+  for (const [key, fromDefaults] of Object.entries(args.defaults)) {
+    if (!signedIn(fromDefaults)) {
       continue
     }
-    const fromDefaults = args.defaults[key]
     const own = args.profile[key]
-    if (signedIn(fromDefaults) && (!signedIn(own) || expiry(fromDefaults) > expiry(own))) {
+    if (!signedIn(own) || expiry(fromDefaults) > expiry(own)) {
       profile[key] = fromDefaults
       adopted.push(key.split('|')[0] ?? key)
-    } else if (
-      args.writeDefaults &&
-      signedIn(own) &&
-      (!signedIn(fromDefaults) || expiry(own) > expiry(fromDefaults))
-    ) {
+    } else if (expiry(own) > expiry(fromDefaults)) {
       defaults[key] = own
     }
   }
-  const synced = Object.keys(args.writeDefaults ? defaults : args.defaults).filter((key) =>
-    signedIn((args.writeDefaults ? defaults : args.defaults)[key])
-  )
+  const synced = Object.keys(defaults).filter((key) => signedIn(defaults[key]))
   return { profile, defaults, synced, adopted }
 }
 
@@ -106,15 +98,13 @@ function changed(before: unknown, after: Entries): boolean {
 }
 
 /** Claude skips a server it cached as needing sign-in, so drop the ones that now have one. */
-function forgetNeedsAuth(profileHome: string, servers: readonly string[]): void {
+async function forgetNeedsAuth(profileHome: string, servers: readonly string[]): Promise<void> {
   const file = join(profileHome, 'mcp-needs-auth-cache.json')
-  const cache = readClaudeProfileObject(file)
-  if (cache.kind !== 'present' || !servers.some((name) => Object.hasOwn(cache.value, name))) {
+  const cache = parseCredentials(await readFile(file, 'utf8').catch(() => null))
+  if (!cache || !servers.some((name) => Object.hasOwn(cache, name))) {
     return
   }
-  const next = Object.fromEntries(
-    Object.entries(cache.value).filter(([name]) => !servers.includes(name))
-  )
+  const next = Object.fromEntries(Object.entries(cache).filter(([name]) => !servers.includes(name)))
   writeFileAtomically(file, JSON.stringify(next), { mode: 0o600 })
 }
 
@@ -140,11 +130,15 @@ export async function shareClaudeMcpSignIns(args: {
   record: string
   platform: NodeJS.Platform
 }): Promise<ClaudeProfileSurfaceOutcome> {
-  // macOS keeps the default login in a keychain item Seal must not author; share one way there.
-  const writeDefaults = args.platform !== 'darwin'
+  // macOS keeps these in keychain items too large for `security -i` to rewrite safely, and a
+  // one-way copy there would let a profile's refresh retire the default home's rotating token.
+  if (args.platform === 'darwin') {
+    return 'absent'
+  }
   // Taking Claude's locks creates lock folders, so skip homes with no login to share.
   if (
-    (await readClaudeHomeCredentials(args.defaultHome, { system: args.systemDefault })) === null
+    (await readClaudeHomeCredentials(args.defaultHome, { system: args.systemDefault })) === null ||
+    (await readClaudeHomeCredentials(args.profileHome)) === null
   ) {
     return 'absent'
   }
@@ -167,22 +161,17 @@ export async function shareClaudeMcpSignIns(args: {
     const defaults = isRecord(defaultCredentials.mcpOAuth) ? defaultCredentials.mcpOAuth : {}
     const profile = isRecord(profileCredentials.mcpOAuth) ? profileCredentials.mcpOAuth : {}
     const synced = await readSynced(args.record)
-    const plan = planMcpSignIns({
-      defaults,
-      profile,
-      synced,
-      writeDefaults
-    })
+    const plan = planMcpSignIns({ defaults, profile, synced })
     let outcome: ClaudeProfileSurfaceOutcome = 'unchanged'
     if (changed(profile, plan.profile)) {
       await writeClaudeHomeCredentials(
         args.profileHome,
         JSON.stringify(withEntries(profileCredentials, plan.profile))
       )
-      forgetNeedsAuth(args.profileHome, plan.adopted)
+      await forgetNeedsAuth(args.profileHome, plan.adopted)
       outcome = 'merged'
     }
-    if (writeDefaults && changed(defaults, plan.defaults)) {
+    if (changed(defaults, plan.defaults)) {
       await writeClaudeHomeCredentials(
         args.defaultHome,
         JSON.stringify(withEntries(defaultCredentials, plan.defaults))
@@ -197,20 +186,15 @@ export async function shareClaudeMcpSignIns(args: {
 }
 
 /**
- * `login` with the MCP sign-ins of both it and `copy`, the later expiry winning, so copying one
- * home's account login over another never drops a server sign-in only the other holds.
+ * `login` carrying `copy`'s own MCP sign-ins, so copying an account login between homes leaves
+ * each home's server sign-ins to the sharing above instead of overwriting them.
  */
 export function keepMcpSignIns(login: string, copy: string | null): string {
   const into = parseCredentials(login)
   const from = parseCredentials(copy)
-  if (!into || !from || !isRecord(from.mcpOAuth)) {
+  if (!into || !from) {
     return login
   }
-  const merged = planMcpSignIns({
-    defaults: isRecord(into.mcpOAuth) ? into.mcpOAuth : {},
-    profile: from.mcpOAuth,
-    synced: [],
-    writeDefaults: true
-  }).defaults
-  return changed(into.mcpOAuth, merged) ? JSON.stringify(withEntries(into, merged)) : login
+  const own = isRecord(from.mcpOAuth) ? from.mcpOAuth : {}
+  return changed(into.mcpOAuth, own) ? JSON.stringify(withEntries(into, own)) : login
 }

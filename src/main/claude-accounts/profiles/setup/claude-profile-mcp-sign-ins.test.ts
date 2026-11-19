@@ -11,8 +11,7 @@ describe('planMcpSignIns', () => {
     const plan = planMcpSignIns({
       defaults: { [SLACK]: signedIn('a', 100) },
       profile: { [SLACK]: stub },
-      synced: [],
-      writeDefaults: true
+      synced: []
     })
     expect(plan.profile[SLACK]).toEqual(signedIn('a', 100))
     expect(plan.adopted).toEqual(['plugin:slack:slack'])
@@ -23,19 +22,17 @@ describe('planMcpSignIns', () => {
     const plan = planMcpSignIns({
       defaults: { [JIRA]: signedIn('old', 100) },
       profile: { [JIRA]: signedIn('new', 200) },
-      synced: [JIRA],
-      writeDefaults: true
+      synced: [JIRA]
     })
     expect(plan.profile[JIRA]).toEqual(signedIn('new', 200))
     expect(plan.defaults[JIRA]).toEqual(signedIn('new', 200))
   })
 
-  it('leaves the default home alone when it cannot be written', () => {
+  it('never writes a profile-only sign-in back to the default home', () => {
     const plan = planMcpSignIns({
       defaults: {},
       profile: { [JIRA]: signedIn('own', 200) },
-      synced: [],
-      writeDefaults: false
+      synced: []
     })
     expect(plan.defaults).toEqual({})
     expect(plan.profile[JIRA]).toEqual(signedIn('own', 200))
@@ -45,8 +42,7 @@ describe('planMcpSignIns', () => {
     const plan = planMcpSignIns({
       defaults: {},
       profile: { [SLACK]: signedIn('a', 100) },
-      synced: [SLACK],
-      writeDefaults: true
+      synced: [SLACK]
     })
     expect(plan.profile).toEqual({})
     expect(plan.defaults).toEqual({})
