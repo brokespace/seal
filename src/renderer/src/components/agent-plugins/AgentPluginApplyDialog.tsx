@@ -60,12 +60,14 @@ export function AgentPluginApplyDialog({
   const [picking, setPicking] = useState(false)
   const [busy, setBusy] = useState(false)
   const [results, setResults] = useState<AgentPluginMachineResult[] | null>(null)
+  const [waiting, setWaiting] = useState<MachineId[]>([])
   if (seededFor !== request) {
     setSeededFor(request)
     setTargets(request?.targets ?? null)
     setPicking(false)
     setBusy(false)
     setResults(null)
+    setWaiting([])
   }
   const changing = (request?.installedOn.length ?? 0) > 0
   const label = (machineId: MachineId): string =>
@@ -76,10 +78,13 @@ export function AgentPluginApplyDialog({
       return
     }
     setBusy(true)
-    const online = machines.filter((machine) => machine.status === 'online').map((m) => m.id)
-    const into =
-      targets.machines === 'all' ? online : online.filter((id) => targets.machines.includes(id))
-    const outOf = request.installedOn.filter((id) => !into.includes(id))
+    const online = new Set(machines.filter((m) => m.status === 'online').map((m) => m.id))
+    const targeted = targets.machines === 'all' ? machines.map((m) => m.id) : targets.machines
+    const into = targeted.filter((id) => online.has(id))
+    // Only the selection takes a machine out; one that is unreachable right now keeps it.
+    const outOf = request.installedOn.filter(
+      (id) => targets.machines !== 'all' && !targets.machines.includes(id)
+    )
     const api = agentConfigApi()
     const settled = await Promise.all([
       ...into.map((machineId) =>
@@ -97,6 +102,7 @@ export function AgentPluginApplyDialog({
       )
     ])
     setResults(settled)
+    setWaiting(targeted.filter((id) => !online.has(id)))
     setBusy(false)
     onApplied()
   }
@@ -175,6 +181,14 @@ export function AgentPluginApplyDialog({
                 {result.record ? (
                   <AgentPluginAgentList lines={linesFromStates(result.record.agents)} />
                 ) : null}
+              </li>
+            ))}
+            {waiting.map((machineId) => (
+              <li key={machineId} className="text-sm">
+                <span className="font-medium">{label(machineId)}</span>{' '}
+                <span className="text-muted-foreground">
+                  {t('seal.agentPlugins.apply.waiting', 'will apply when it’s online')}
+                </span>
               </li>
             ))}
           </ul>

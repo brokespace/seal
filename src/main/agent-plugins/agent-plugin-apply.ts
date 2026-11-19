@@ -1,6 +1,7 @@
 import { agentPluginView } from '../../shared/agent-plugins/agent-plugin-ledger'
 import { targetsInclude } from '../../shared/agent-plugins/agent-plugin-targets'
 import type {
+  AgentPluginInstalledListing,
   AgentPluginInstallRequest,
   AgentPluginMachineResult,
   AgentPluginRecord
@@ -12,11 +13,12 @@ import {
   installedRoot,
   installNative,
   startAgentPluginRun,
+  switchNative,
   uninstallNative,
-  type AgentPluginListingRef,
   type AgentPluginRun
 } from './agent-plugin-native'
 import { applyRecord, undoTranslations } from './agent-plugin-translation'
+import { retireClaudeMcpCopies } from './claude-account-plugin-targets'
 
 function resultOf(
   run: AgentPluginRun,
@@ -48,13 +50,18 @@ export async function installAgentPlugin(
   const previous = (await readAgentPluginLedger(connection, run.home)).plugins.find(
     (plugin) => plugin.name === request.name
   )
-  const native: AgentPluginListingRef[] = []
+  const native: AgentPluginInstalledListing[] = []
   for (const listing of request.listings) {
-    if (
-      targetsInclude(request.targets.agents, listing.harness) &&
-      (await installNative(run, listing))
-    ) {
-      native.push(listing)
+    const installed = targetsInclude(request.targets.agents, listing.harness)
+      ? await installNative(run, listing)
+      : null
+    if (installed) {
+      // A listing Seal already manages keeps whether it was there before Seal.
+      native.push(
+        previous?.listings.find(
+          (old) => old.harness === installed.harness && old.id === installed.id
+        ) ?? installed
+      )
     }
   }
   // An agent taken out of the targets keeps its install, switched off.
@@ -98,7 +105,8 @@ export async function installAgentPlugin(
     return {
       ledger: {
         ...ledger,
-        plugins: [...ledger.plugins.filter((plugin) => plugin.name !== request.name), next]
+        plugins: [...ledger.plugins.filter((plugin) => plugin.name !== request.name), next],
+        retiredMcpServers: retireClaudeMcpCopies(ledger.retiredMcpServers, old, next)
       },
       result: next
     }
@@ -129,7 +137,10 @@ export async function setAgentPluginEnabled(
   return resultOf(run, record)
 }
 
-/** Takes the plugin out of every agent: Seal's copies first, then each native install. */
+/**
+ * Takes the plugin out of every agent: Seal's copies first, then each native install. One that
+ * was there before Seal stays installed, switched back to how Seal found it.
+ */
 export async function removeAgentPlugin(
   connection: MachineConnection,
   name: string
@@ -140,11 +151,17 @@ export async function removeAgentPlugin(
     if (old) {
       await undoTranslations(run, old)
       for (const listing of old.listings) {
-        await uninstallNative(run, listing)
+        await (listing.preexisting
+          ? switchNative(run, listing, listing.enabledBefore ?? true)
+          : uninstallNative(run, listing))
       }
     }
     return {
-      ledger: { ...ledger, plugins: ledger.plugins.filter((plugin) => plugin.name !== name) },
+      ledger: {
+        ...ledger,
+        plugins: ledger.plugins.filter((plugin) => plugin.name !== name),
+        retiredMcpServers: retireClaudeMcpCopies(ledger.retiredMcpServers, old, undefined)
+      },
       result: undefined
     }
   })

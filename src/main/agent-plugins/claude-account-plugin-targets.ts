@@ -1,12 +1,16 @@
-import { readFile } from 'node:fs/promises'
+import { lstat, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { isDeepStrictEqual } from 'node:util'
 import { isPlainObject } from '../../shared/agent-config/agent-config-values'
 import { withPluginRoot } from '../../shared/agent-plugins/agent-plugin-plan'
 import {
   targetsInclude,
   targetsIncludeAccount
 } from '../../shared/agent-plugins/agent-plugin-targets'
-import type { AgentPluginLedger } from '../../shared/agent-plugins/agent-plugin-types'
+import type {
+  AgentPluginLedger,
+  AgentPluginRecord
+} from '../../shared/agent-plugins/agent-plugin-types'
 import { oauthAccountKey } from '../../shared/seal-accounts/seal-account-key'
 import { writeFileAtomicallyIfUnchanged } from '../filesystem/atomic-file-publication'
 import { readLocalAgentPluginLedger } from './agent-plugin-ledger-io'
@@ -34,11 +38,15 @@ function child(parent: Record<string, unknown>, key: string): Record<string, unk
   return next
 }
 
-/** Writes only when something changed, and never over a file that moved under us. */
+/** Writes only when something changed, never over a file that moved under us or a symlink. */
 async function rewrite(
   path: string,
   edit: (value: Record<string, unknown>) => void
 ): Promise<void> {
+  // A linked file is the user's own, like claude-profile-settings treats it.
+  if ((await lstat(path).catch(() => null))?.isSymbolicLink()) {
+    return
+  }
   const text = await readText(path)
   const value = readObject(text)
   if (!value) {
@@ -51,6 +59,42 @@ async function rewrite(
       mode: 0o600
     })
   }
+}
+
+type McpEntries = AgentPluginLedger['retiredMcpServers']
+
+/** Each MCP entry Seal gives Claude Code for a plugin it translates there, as written. */
+function claudeMcpCopies(record: AgentPluginRecord | undefined): McpEntries {
+  if (!record?.agents.some((state) => state.agent === 'claude' && state.mode === 'translated')) {
+    return {}
+  }
+  return Object.fromEntries(
+    Object.entries(record.provides.mcpServers).flatMap(([name, entry]) => {
+      const ours = withPluginRoot(entry, record.root)
+      return isPlainObject(ours) ? [[name, ours]] : []
+    })
+  )
+}
+
+/** Tombstones each Claude MCP copy `old` had that `next` drops; one `next` writes again is cleared. */
+export function retireClaudeMcpCopies(
+  retired: McpEntries,
+  old: AgentPluginRecord | undefined,
+  next: AgentPluginRecord | undefined
+): McpEntries {
+  const kept = claudeMcpCopies(next)
+  const out = { ...retired }
+  for (const [name, entry] of Object.entries(claudeMcpCopies(old))) {
+    if (!isDeepStrictEqual(kept[name], entry)) {
+      out[name] = entry
+    }
+  }
+  for (const [name, entry] of Object.entries(kept)) {
+    if (isDeepStrictEqual(out[name], entry)) {
+      delete out[name]
+    }
+  }
+  return out
 }
 
 /**
@@ -84,7 +128,7 @@ async function applyTargets(args: {
   accountKey: string | null
 }): Promise<void> {
   const ledger = await readLocalAgentPluginLedger(args.userHome)
-  if (!ledger || ledger.plugins.length === 0) {
+  if (!ledger) {
     return
   }
   const included = (plugin: AgentPluginLedger['plugins'][number]): boolean =>
@@ -111,24 +155,36 @@ async function applyTargets(args: {
       }
     }
   })
-  const translated = ledger.plugins.filter((plugin) =>
-    plugin.agents.some((state) => state.agent === 'claude' && state.mode === 'translated')
-  )
-  if (translated.length === 0) {
+  const copies = ledger.plugins.map((plugin) => ({ plugin, entries: claudeMcpCopies(plugin) }))
+  if (
+    copies.every(({ entries }) => Object.keys(entries).length === 0) &&
+    Object.keys(ledger.retiredMcpServers).length === 0
+  ) {
     return
   }
   await rewrite(args.stateFile, (state) => {
-    for (const plugin of translated) {
-      const servers = child(state, 'mcpServers')
-      for (const [name, entry] of Object.entries(plugin.provides.mcpServers)) {
-        const ours = withPluginRoot(entry, plugin.root)
+    const hadServers = isPlainObject(state.mcpServers)
+    const servers = child(state, 'mcpServers')
+    // Only Seal's own copy goes; a server of the account's own under that name stays.
+    const dropOurs = (name: string, ours: Record<string, unknown>): void => {
+      if (isDeepStrictEqual(servers[name], ours)) {
+        delete servers[name]
+      }
+    }
+    for (const [name, ours] of Object.entries(ledger.retiredMcpServers)) {
+      dropOurs(name, ours)
+    }
+    for (const { plugin, entries } of copies) {
+      for (const [name, ours] of Object.entries(entries)) {
         if (included(plugin)) {
           servers[name] ??= ours
-        } else if (JSON.stringify(servers[name]) === JSON.stringify(ours)) {
-          // Only Seal's copy goes; a server of the account's own under that name stays.
-          delete servers[name]
+        } else {
+          dropOurs(name, ours)
         }
       }
+    }
+    if (!hadServers && Object.keys(servers).length === 0) {
+      delete state.mcpServers
     }
   })
 }

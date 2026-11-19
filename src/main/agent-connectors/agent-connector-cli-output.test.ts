@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { findAuthorizeUrl, parseClaudeMcpList } from './agent-connector-cli-output'
+import {
+  findAuthorizeUrl,
+  parseClaudeMcpList,
+  sanitizeConnectorCommand
+} from './agent-connector-cli-output'
 import { findConnectorDuplicates } from './agent-connector-duplicates'
 
 const LIST = [
@@ -57,6 +61,37 @@ describe('findAuthorizeUrl', () => {
       'Visit this URL to authorize:\r\n  \u001b]8;;https://mcp.example.com/authorize?state=s&code_challenge=c\u0007\u001b[94mhttps://mcp.exa\r\nmple.com/authorize?state=s\u001b[39m\u001b]8;;\u0007\r\nWaiting for authorization…'
     expect(findAuthorizeUrl(output)).toBe(
       'https://mcp.example.com/authorize?state=s&code_challenge=c'
+    )
+  })
+
+  it('waits for a plain URL to end before taking it, since output arrives in chunks', () => {
+    const start = 'Open this URL to authorize: https://mcp.example.com/author'
+    expect(findAuthorizeUrl(start)).toBeNull()
+    expect(findAuthorizeUrl(`${start}ize?state=s\n`)).toBe(
+      'https://mcp.example.com/authorize?state=s'
+    )
+  })
+})
+
+describe('sanitizeConnectorCommand', () => {
+  it('masks secrets glued to header and variable names', () => {
+    expect(
+      sanitizeConnectorCommand([
+        'npx',
+        'mcp-remote',
+        '--header',
+        'X-Api-Key:abc',
+        '--header',
+        'Authorization:Bearer',
+        'xyz',
+        'API_TOKEN=def',
+        'Authorization:',
+        'Basic',
+        'ghi',
+        'PORT=3000'
+      ])
+    ).toBe(
+      'npx mcp-remote --header X-Api-Key:•••• --header Authorization:•••• •••• API_TOKEN=•••• Authorization: •••• •••• PORT=3000'
     )
   })
 })

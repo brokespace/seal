@@ -7,8 +7,8 @@ import {
   AGENT_PLUGIN_HARNESSES,
   type AgentPluginAgentState,
   type AgentPluginComponentKind,
+  type AgentPluginInstalledListing,
   type AgentPluginLedger,
-  type AgentPluginListing,
   type AgentPluginMode,
   type AgentPluginProvides,
   type AgentPluginRecord,
@@ -72,15 +72,18 @@ function agentStateOf(value: unknown): AgentPluginAgentState[] {
   })
 }
 
+function mcpEntriesOf(value: unknown): Record<string, Record<string, unknown>> {
+  return Object.fromEntries(
+    Object.entries(isPlainObject(value) ? value : {}).filter(
+      (entry): entry is [string, Record<string, unknown>] => isPlainObject(entry[1])
+    )
+  )
+}
+
 function providesOf(value: unknown): AgentPluginProvides {
   const record = isPlainObject(value) ? value : {}
-  const servers = isPlainObject(record.mcpServers) ? record.mcpServers : {}
   return {
-    mcpServers: Object.fromEntries(
-      Object.entries(servers).filter((entry): entry is [string, Record<string, unknown>] =>
-        isPlainObject(entry[1])
-      )
-    ),
+    mcpServers: mcpEntriesOf(record.mcpServers),
     skills: (Array.isArray(record.skills) ? record.skills : [])
       .filter(isPlainObject)
       .flatMap((skill) =>
@@ -96,10 +99,21 @@ function providesOf(value: unknown): AgentPluginProvides {
   }
 }
 
-function listingsOf(value: unknown): Pick<AgentPluginListing, 'harness' | 'id'>[] {
+function listingsOf(value: unknown): AgentPluginInstalledListing[] {
   return (Array.isArray(value) ? value : []).filter(isPlainObject).flatMap((listing) => {
     const harness = AGENT_PLUGIN_HARNESSES.find((candidate) => candidate === listing.harness)
-    return harness && text(listing.id) ? [{ harness, id: text(listing.id) }] : []
+    if (!harness || !text(listing.id)) {
+      return []
+    }
+    return [
+      {
+        harness,
+        id: text(listing.id),
+        ...(listing.preexisting === true
+          ? { preexisting: true as const, enabledBefore: listing.enabledBefore !== false }
+          : {})
+      }
+    ]
   })
 }
 
@@ -127,7 +141,8 @@ export function parseAgentPluginLedger(value: unknown): AgentPluginLedger {
           agents: agentStateOf(plugin.agents)
         }
       ]
-    })
+    }),
+    retiredMcpServers: mcpEntriesOf(isPlainObject(value) ? value.retiredMcpServers : undefined)
   }
 }
 

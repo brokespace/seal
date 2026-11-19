@@ -4,17 +4,22 @@ import type {
   AgentConnectorKind,
   AgentConnectorStatus
 } from '../../shared/agent-connectors/agent-connector-types'
+import { isSecretValue } from '../../shared/agent-config/agent-config-secrets'
 import { isPlainObject } from '../../shared/agent-config/agent-config-values'
 
 const SECRET_FLAG = /(token|secret|password|passwd|api[-_]?key|auth|credential|bearer)/i
 // Long opaque strings in a command line are usually keys.
 const OPAQUE = /^[A-Za-z0-9+/=_.-]{24,}$/
 const MASK = '••••'
+// `--flag=value`, `Header:value` or `NAME=value`.
+const NAMED_VALUE = /^(-{0,2}[A-Za-z][\w-]*)([:=])(.*)$/s
+const AUTH_SCHEME = /^(bearer|basic|token)$/i
 // `name: target - <status>`; the status starts with the CLI's mark (✔, !, ✘ or -).
 const LIST_LINE = /^(.+?): (.*?)\s+- ([✔✓!✘✗⚠-] .*)$/u
 // eslint-disable-next-line no-control-regex -- OSC 8 hyperlinks are delimited by ESC and BEL.
 const OSC8_LINK = /\u001b\]8;[^;\u0007\u001b]*;(https?:\/\/[^\u0007\u001b]+)(?:\u0007|\u001b\\)/
-const WEB_URL = /https?:\/\/\S+/
+// Only once whitespace ends it: output arrives in chunks, so a URL at the very end may be cut.
+const WEB_URL = /https?:\/\/\S+(?=\s)/
 
 export function cleanCliOutput(text: string): string {
   return stripAnsiEscapeSequences(text).replaceAll('\r', '')
@@ -31,14 +36,31 @@ export function sanitizeConnectorUrl(raw: string): string {
 }
 
 export function sanitizeConnectorCommand(words: readonly string[]): string {
+  // Set after a secret's name (`--token`, `Authorization:`) or an auth scheme, for the word next.
+  let hideNext = false
   return words
-    .map((word, index) => {
-      const [flag, value] = word.split('=', 2)
-      if (value !== undefined && SECRET_FLAG.test(flag)) {
-        return `${flag}=${MASK}`
+    .map((word) => {
+      const hide = hideNext
+      hideNext = false
+      const named = NAMED_VALUE.exec(word)
+      if (named && named[3] !== '') {
+        const [, name, separator, value] = named
+        if (isSecretValue(name, value)) {
+          hideNext = AUTH_SCHEME.test(value)
+          return `${name}${separator}${MASK}`
+        }
       }
-      if (index > 0 && SECRET_FLAG.test(words[index - 1]) && words[index - 1].startsWith('-')) {
+      if (hide) {
+        hideNext = AUTH_SCHEME.test(word)
         return MASK
+      }
+      if (AUTH_SCHEME.test(word)) {
+        hideNext = true
+        return word
+      }
+      if (SECRET_FLAG.test(word) && (word.startsWith('-') || named?.[3] === '')) {
+        hideNext = true
+        return word
       }
       return OPAQUE.test(word) && !word.includes('/') ? MASK : word
     })
@@ -166,10 +188,8 @@ export function parseCodexMcpList(output: string): AgentConnector[] {
 export function findAuthorizeUrl(raw: string): string | null {
   const linked = OSC8_LINK.exec(raw)?.[1]
   const text = cleanCliOutput(raw)
-  const afterPrompt = text
-    .split(/authoriz/i)
-    .slice(1)
-    .join(' ')
+  // From the first "authoriz", so one inside the URL's own path does not cut it.
+  const afterPrompt = text.slice(Math.max(0, text.search(/authoriz/i)))
   const candidate = linked ?? WEB_URL.exec(afterPrompt)?.[0] ?? WEB_URL.exec(text)?.[0]
   if (!candidate) {
     return null

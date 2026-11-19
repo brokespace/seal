@@ -470,6 +470,7 @@
             "removeDescription": "The CPU temperature of {{machine}} will no longer be shown.",
             "cancel": "Cancel",
             "installConfirm": "Set up",
+            "removeKeepsPreexisting": "Installed before Seal on some machines; Seal will stop managing it there but won’t uninstall it.",
             "removeConfirm": "Remove",
             "declined": "The Windows prompt was declined, so nothing was changed.",
             "notRun": "Windows did not run the setup.",
@@ -1184,6 +1185,7 @@
           "empty": "No servers here.",
           "removeTitle": "Remove {{name}}?",
           "removeDescription": "The server is taken out of {{path}} on {{machine}}. The file as it is now is kept in backups.",
+          "removeKeepsPreexisting": "Installed before Seal on some machines; Seal will stop managing it there but won’t uninstall it.",
           "removeConfirm": "Remove",
           "saved": "Saved {{name}}",
           "editTitle": "Edit {{name}}",
@@ -2191,6 +2193,7 @@
         "revokeDescription": "Its token stops working at once and cannot be turned back on. The client stays in the list so its past calls keep a name.",
         "removeTitle": "Remove {{name}}?",
         "removeDescription": "Its token stops working at once and the client leaves this list. Its entries stay in the audit log.",
+        "removeKeepsPreexisting": "Installed before Seal on some machines; Seal will stop managing it there but won’t uninstall it.",
         "removeConfirm": "Remove",
         "revokeFailed": "Could not revoke the client",
         "removeFailed": "Could not remove the client",
@@ -2844,7 +2847,8 @@
         "close": "Close",
         "cancel": "Cancel",
         "save": "Apply",
-        "install": "Install"
+        "install": "Install",
+        "waiting": "will apply when it’s online"
       },
       "targets": {
         "systemLogin": "{{agent}}: this machine’s own login",
@@ -2895,7 +2899,7 @@
         "share": "Share with every agent…"
       },
       "someFailed": "Not finished on {{machines}}",
-      "reconciled": "Installed on machines added since",
+      "reconciled": "Installed on machines that came online",
       "tabs": {
         "installed": "Installed",
         "browse": "Browse",
@@ -2908,6 +2912,7 @@
       "switchedOff": "{{name}} is off",
       "removeTitle": "Remove {{name}}?",
       "removeDescription": "Seal takes its MCP servers and skill links out of every agent, then each agent’s own plugin command uninstalls it, on {{count}} machines.",
+      "removeKeepsPreexisting": "Installed before Seal on some machines; Seal will stop managing it there but won’t uninstall it.",
       "removeConfirm": "Remove",
       "removed": "Removed {{name}}",
       "title": "Agent plugins",

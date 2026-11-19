@@ -10,6 +10,7 @@ import {
 } from '../../shared/agent-plugins/agent-plugin-targets'
 import type {
   AgentPluginHarness,
+  AgentPluginInstalledListing,
   AgentPluginListing,
   AgentPluginRecord,
   AgentPluginStep
@@ -112,6 +113,16 @@ export async function claudeUserInstalls(
   return installs
 }
 
+/** Claude Code's account-wide switches: `enabledPlugins` in its user settings. */
+export async function claudeEnabledPlugins(run: AgentPluginRun): Promise<Record<string, unknown>> {
+  const settings = await readRegistry(
+    run.connection,
+    joinRelative(run.home, '.claude/settings.json'),
+    'json'
+  )
+  return isPlainObject(settings.enabledPlugins) ? settings.enabledPlugins : {}
+}
+
 /** Codex lists installed plugins as `[plugins."name@marketplace"]` in its config. */
 export async function codexInstalls(run: AgentPluginRun): Promise<Map<string, boolean>> {
   const config = await readRegistry(
@@ -174,16 +185,21 @@ async function runNative(
   return result.ok
 }
 
-/** The agent's own installer, unless the plugin is already there. */
+/** The agent's own installer; a plugin already there is taken over as it is switched now. */
 export async function installNative(
   run: AgentPluginRun,
   listing: AgentPluginListingRef
-): Promise<boolean> {
-  if (await installedRoot(run, listing)) {
-    run.steps.push({ label: `${HARNESS_LABELS[listing.harness]}: already installed`, ok: true })
-    return true
+): Promise<AgentPluginInstalledListing | null> {
+  const ref = { harness: listing.harness, id: listing.id }
+  if (await installedRoot(run, ref)) {
+    run.steps.push({ label: `${HARNESS_LABELS[ref.harness]}: already installed`, ok: true })
+    const enabledBefore =
+      ref.harness === 'claude'
+        ? (await claudeEnabledPlugins(run))[ref.id] === true
+        : (await codexInstalls(run)).get(ref.id) !== false
+    return { ...ref, preexisting: true, enabledBefore }
   }
-  return runNative(run, listing, 'install')
+  return (await runNative(run, ref, 'install')) ? ref : null
 }
 
 export async function uninstallNative(
@@ -199,10 +215,20 @@ export async function setNativeEnabled(
   record: AgentPluginRecord,
   listing: AgentPluginListingRef
 ): Promise<void> {
-  const enabled =
+  await switchNative(
+    run,
+    listing,
     record.enabled &&
-    targetsInclude(record.targets.agents, listing.harness) &&
-    targetsIncludeSystemAccount(record.targets, listing.harness)
+      targetsInclude(record.targets.agents, listing.harness) &&
+      targetsIncludeSystemAccount(record.targets, listing.harness)
+  )
+}
+
+export async function switchNative(
+  run: AgentPluginRun,
+  listing: AgentPluginListingRef,
+  enabled: boolean
+): Promise<void> {
   const target = { machineId: run.connection.machineId, agent: listing.harness }
   await runStep(run, `${HARNESS_LABELS[listing.harness]}: switch ${listing.id}`, () =>
     listing.harness === 'claude'

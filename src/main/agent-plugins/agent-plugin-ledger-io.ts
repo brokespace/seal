@@ -26,7 +26,7 @@ export async function readAgentPluginLedger(
   const path = agentPluginLedgerPath(home)
   const stat = await connection.files.stat(path).catch(() => null)
   if (!stat) {
-    return { version: 1, plugins: [] }
+    return { version: 1, plugins: [], retiredMcpServers: {} }
   }
   const read = await connection.files.readFile(path, MAX_LEDGER_BYTES)
   const parsed = parseJsonObject(read.data.toString('utf8'))

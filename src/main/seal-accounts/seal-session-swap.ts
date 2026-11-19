@@ -147,7 +147,7 @@ async function deliver(
       claudePointer: prepared.claudePointer,
       codexHome: prepared.codexHome,
       ...(session.provider === 'codex'
-        ? { codexArgs: await codexAccountPluginArgs(request.to.key) }
+        ? { codexArgs: await codexAccountPluginArgs(request.to.key, prepared.codexHome ?? null) }
         : {})
     }),
     enter: true

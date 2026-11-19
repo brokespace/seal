@@ -121,13 +121,21 @@ export type AgentPluginProvides = {
   apps: string[]
 }
 
+/** A native install Seal manages. */
+export type AgentPluginInstalledListing = Pick<AgentPluginListing, 'harness' | 'id'> & {
+  /** Installed before Seal took it over: Seal never uninstalls it, only switches it back. */
+  preexisting?: true
+  /** How a preexisting install was switched when Seal took it over. */
+  enabledBefore?: boolean
+}
+
 /** One plugin in Seal's ledger on a machine: the single record every page reads. */
 export type AgentPluginRecord = {
   name: string
   description: string
   version: string | null
   /** The listings installed natively; the first one's folder is what others are translated from. */
-  listings: Pick<AgentPluginListing, 'harness' | 'id'>[]
+  listings: AgentPluginInstalledListing[]
   root: string
   enabled: boolean
   installedAt: string
@@ -136,7 +144,12 @@ export type AgentPluginRecord = {
   agents: AgentPluginAgentState[]
 }
 
-export type AgentPluginLedger = { version: 1; plugins: AgentPluginRecord[] }
+export type AgentPluginLedger = {
+  version: 1
+  plugins: AgentPluginRecord[]
+  /** Claude MCP entries Seal wrote for plugins since removed, so account profiles can drop them. */
+  retiredMcpServers: Record<string, Record<string, unknown>>
+}
 
 /** A ledger record as the page sees it: MCP entries reduced to names so no secret leaves main. */
 export type AgentPluginView = Omit<AgentPluginRecord, 'provides'> & {

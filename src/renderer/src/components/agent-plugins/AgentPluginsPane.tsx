@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTranslate } from '@/i18n/use-translate'
 import { preferredAgentPluginListings } from '../../../../shared/agent-plugins/agent-plugin-catalog'
+import { targetsInclude } from '../../../../shared/agent-plugins/agent-plugin-targets'
 import {
   AGENT_PLUGIN_ALL_TARGETS,
   type AgentPluginMachineResult
@@ -72,19 +73,18 @@ export function AgentPluginsPane(): React.JSX.Element {
     [machines, reload, t]
   )
 
-  // A plugin meant for every machine follows the user onto machines added since.
+  // A plugin follows the user onto targeted machines that were offline or added since.
   const reconciled = useRef(new Set<string>())
   useEffect(() => {
     if ([...fleet.states.values()].some((state) => state.kind === 'loading')) {
       return
     }
     const work = fleet.entries.flatMap((entry) =>
-      entry.targets.machines !== 'all'
-        ? []
-        : [...fleet.states.entries()]
-            .filter(([id, state]) => state.kind === 'ready' && !entry.byMachine.has(id))
-            .filter(([id]) => !reconciled.current.has(`${entry.name}\n${id}`))
-            .map(([id]) => ({ entry, machineId: id }))
+      [...fleet.states.entries()]
+        .filter(([id, state]) => state.kind === 'ready' && !entry.byMachine.has(id))
+        .filter(([id]) => targetsInclude(entry.targets.machines, id))
+        .filter(([id]) => !reconciled.current.has(`${entry.name}\n${id}`))
+        .map(([id]) => ({ entry, machineId: id }))
     )
     if (work.length === 0) {
       return
@@ -102,7 +102,7 @@ export function AgentPluginsPane(): React.JSX.Element {
           .catch((error: unknown) => failedMachineResult(target, error))
       )
     ).then((results) =>
-      report(results, t('seal.agentPlugins.reconciled', 'Installed on machines added since'))
+      report(results, t('seal.agentPlugins.reconciled', 'Installed on machines that came online'))
     )
   }, [fleet.entries, fleet.states, report, t])
 
@@ -202,11 +202,23 @@ export function AgentPluginsPane(): React.JSX.Element {
             onRemove={(entry) =>
               setConfirm({
                 title: t('seal.agentPlugins.removeTitle', 'Remove {{name}}?', { name: entry.name }),
-                description: t(
-                  'seal.agentPlugins.removeDescription',
-                  'Seal takes its MCP servers and skill links out of every agent, then each agent’s own plugin command uninstalls it, on {{count}} machines.',
-                  { count: entry.byMachine.size }
-                ),
+                description: [
+                  t(
+                    'seal.agentPlugins.removeDescription',
+                    'Seal takes its MCP servers and skill links out of every agent, then each agent’s own plugin command uninstalls it, on {{count}} machines.',
+                    { count: entry.byMachine.size }
+                  ),
+                  ...([...entry.byMachine.values()].some((plugin) =>
+                    plugin.listings.some((listing) => listing.preexisting)
+                  )
+                    ? [
+                        t(
+                          'seal.agentPlugins.removeKeepsPreexisting',
+                          'Installed before Seal on some machines; Seal will stop managing it there but won’t uninstall it.'
+                        )
+                      ]
+                    : [])
+                ].join(' '),
                 confirmLabel: t('seal.agentPlugins.removeConfirm', 'Remove'),
                 destructive: true,
                 run: async () => {

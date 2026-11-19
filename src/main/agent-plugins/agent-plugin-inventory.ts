@@ -1,4 +1,3 @@
-import { isPlainObject } from '../../shared/agent-config/agent-config-values'
 import { splitAgentPluginId } from '../../shared/agent-plugins/agent-plugin-catalog'
 import { agentPluginView } from '../../shared/agent-plugins/agent-plugin-ledger'
 import type {
@@ -6,12 +5,11 @@ import type {
   AgentPluginUnshared
 } from '../../shared/agent-plugins/agent-plugin-types'
 import type { MachineConnection } from '../machines/connection/machine-connection'
-import { joinRelative } from '../agent-config/agent-config-locations'
 import { readAgentPluginLedger } from './agent-plugin-ledger-io'
 import {
+  claudeEnabledPlugins,
   claudeUserInstalls,
   codexInstalls,
-  readRegistry,
   startAgentPluginRun
 } from './agent-plugin-native'
 
@@ -20,18 +18,15 @@ export async function readAgentPluginInventory(
   connection: MachineConnection
 ): Promise<AgentPluginInventory> {
   const run = await startAgentPluginRun(connection)
-  const [ledger, claude, codex, claudeSettings] = await Promise.all([
+  const [ledger, claude, codex, claudeEnabled] = await Promise.all([
     readAgentPluginLedger(connection, run.home),
     claudeUserInstalls(run),
     codexInstalls(run),
-    readRegistry(connection, joinRelative(run.home, '.claude/settings.json'), 'json')
+    claudeEnabledPlugins(run)
   ])
   const shared = new Set(
     ledger.plugins.flatMap((plugin) => plugin.listings.map((listing) => listing.id))
   )
-  const claudeEnabled = isPlainObject(claudeSettings.enabledPlugins)
-    ? claudeSettings.enabledPlugins
-    : {}
   const unshared: AgentPluginUnshared[] = [
     ...[...claude.keys()].map((id) => ({
       harness: 'claude' as const,

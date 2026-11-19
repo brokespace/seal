@@ -1,4 +1,8 @@
+import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
+import { join } from 'node:path'
+import { parseTomlObject } from '../../shared/agent-config/agent-config-toml-edit'
+import { isPlainObject } from '../../shared/agent-config/agent-config-values'
 import {
   targetsInclude,
   targetsIncludeAccount,
@@ -7,6 +11,7 @@ import {
 import type { AgentPluginLedger } from '../../shared/agent-plugins/agent-plugin-types'
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
 import type { SealAccountKey } from '../../shared/seal-accounts/seal-accounts-config'
+import { getSystemCodexHomePath } from '../codex/configuration/homes/codex-home-paths'
 import { getSealAccountManager } from '../seal-accounts/seal-account-manager'
 import { readLocalAgentPluginLedger } from './agent-plugin-ledger-io'
 
@@ -19,10 +24,13 @@ function configKey(...segments: string[]): string | null {
  * `codex -c` overrides that give one Codex account its own plugin targets. Account homes mirror
  * `~/.codex/config.toml` and promote edits made in them back to it, so a per-account switch can
  * only live on the command line: native plugins switch on or off, and Seal's MCP copies switch off.
+ * Codex refuses to start on an `mcp_servers` override for a server its config lacks, so only
+ * `configuredServers` are switched.
  */
 export function codexAccountPluginOverrides(
   ledger: AgentPluginLedger,
-  accountKey: string
+  accountKey: string,
+  configuredServers: ReadonlySet<string>
 ): string[] {
   return ledger.plugins.flatMap((plugin) => {
     if (!plugin.enabled || !targetsInclude(plugin.targets.agents, 'codex')) {
@@ -37,9 +45,9 @@ export function codexAccountPluginOverrides(
       .map((listing) => configKey('plugins', listing.id, 'enabled'))
     const copies = wanted
       ? []
-      : (plugin.agents.find((state) => state.agent === 'codex')?.mcpServers ?? []).map((server) =>
-          configKey('mcp_servers', server.name, 'enabled')
-        )
+      : (plugin.agents.find((state) => state.agent === 'codex')?.mcpServers ?? [])
+          .filter((server) => configuredServers.has(server.name))
+          .map((server) => configKey('mcp_servers', server.name, 'enabled'))
     return [...native, ...copies].flatMap((key) => (key ? ['-c', `${key}=${wanted}`] : []))
   })
 }
@@ -67,11 +75,26 @@ function codexHomeAccountKey(home: string): SealAccountKey | null {
   )
 }
 
-/** Plugin overrides for a Codex launch on one saved account. */
-export async function codexAccountPluginArgs(accountKey: SealAccountKey): Promise<string[]> {
+/** MCP server names in the `config.toml` a launch in `home` loads. */
+async function configuredMcpServers(home: string | null): Promise<Set<string>> {
+  const text = await readFile(join(home ?? getSystemCodexHomePath(), 'config.toml'), 'utf8').catch(
+    () => ''
+  )
+  const parsed = parseTomlObject(text)
+  const servers = parsed.ok ? parsed.value.mcp_servers : undefined
+  return new Set(isPlainObject(servers) ? Object.keys(servers) : [])
+}
+
+/** Plugin overrides for a Codex launch on one saved account; a null home is `~/.codex`. */
+export async function codexAccountPluginArgs(
+  accountKey: SealAccountKey,
+  home: string | null
+): Promise<string[]> {
   try {
     const ledger = await readLocalAgentPluginLedger(homedir())
-    return ledger ? codexAccountPluginOverrides(ledger, accountKey) : []
+    return ledger
+      ? codexAccountPluginOverrides(ledger, accountKey, await configuredMcpServers(home))
+      : []
   } catch (error) {
     console.warn('[agent-plugins] Could not read account targets for a Codex launch:', error)
     return []
@@ -86,5 +109,5 @@ export async function codexHomePluginArgs(home: string | null): Promise<string[]
   } catch (error) {
     console.warn('[agent-plugins] Could not tell which account a Codex launch runs on:', error)
   }
-  return accountKey ? codexAccountPluginArgs(accountKey) : []
+  return accountKey ? codexAccountPluginArgs(accountKey, home) : []
 }
