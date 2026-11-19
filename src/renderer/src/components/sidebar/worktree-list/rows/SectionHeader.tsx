@@ -41,8 +41,7 @@ import { LiveSessionsBadge } from '@/components/live-sessions/links/LiveSessions
 import {
   ProjectGroupHeaderAddButton,
   folderProjectGroupOf,
-  ProjectGroupHeaderMenu,
-  sessionProjectGroupOf
+  ProjectGroupHeaderMenu
 } from './project-group-header-actions'
 import {
   RepoHeaderCreateWorkspaceButton,
@@ -154,7 +153,6 @@ export function renderWorktreeSectionHeaderRow(
   })
   const headerGroup = isProjectGroupHeader && !row.repo ? row.projectGroup : undefined
   const folderBackedProjectGroup = folderProjectGroupOf(headerGroup)
-  const sessionProjectGroup = sessionProjectGroupOf(headerGroup)
   const projectGroupPathStatus = folderBackedProjectGroup
     ? ctx.getCachedFolderWorkspacePathStatus({
         scope: 'project-group',
@@ -365,7 +363,6 @@ export function renderWorktreeSectionHeaderRow(
                 hostId={projectGroupHostIdForHeader}
                 label={label}
                 projectGroup={folderBackedProjectGroup}
-                sessionProjectGroup={sessionProjectGroup}
                 onRefreshProjectGroup={ctx.onRefreshProjectGroup}
                 onRename={ctx.onRenameProjectGroup}
                 onDelete={ctx.onDeleteProjectGroup}
@@ -374,7 +371,6 @@ export function renderWorktreeSectionHeaderRow(
 
             <ProjectGroupHeaderAddButton
               folderGroup={folderBackedProjectGroup}
-              sessionGroup={sessionProjectGroup}
               label={label}
               pathStatus={projectGroupPathStatus}
               onCreateFolderWorkspace={ctx.onCreateFolderWorkspace}

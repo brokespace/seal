@@ -78,11 +78,6 @@ export const ProjectGroupSchema = z.object({
   color: z.string().nullable(),
   // Older desktops omit both; the group then stays listed, as it did.
   hiddenAt: salvagedOptional('hiddenAt', z.number()),
-  sessionProject: salvagedOptional(
-    'sessionProject',
-    z.object({ key: z.string(), name: z.string() })
-  ),
-  keptAt: salvagedOptional('keptAt', z.number()),
   createdAt: z.number(),
   updatedAt: z.number()
 }) satisfies z.ZodType<ProjectGroup, unknown>

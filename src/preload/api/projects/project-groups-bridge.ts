@@ -6,7 +6,6 @@ export const projectGroupsApi = {
   checkHooks: (args) => ipcRenderer.invoke('projectGroups:checkHooks', args),
   list: () => ipcRenderer.invoke('projectGroups:list'),
   create: (args) => ipcRenderer.invoke('projectGroups:create', args),
-  ensureSessionProjects: (args) => ipcRenderer.invoke('projectGroups:ensureSessionProjects', args),
   update: (args) => ipcRenderer.invoke('projectGroups:update', args),
   updateMany: (args) => ipcRenderer.invoke('projectGroups:updateMany', args),
   delete: (args) => ipcRenderer.invoke('projectGroups:delete', args),

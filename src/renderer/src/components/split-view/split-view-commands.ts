@@ -1,5 +1,6 @@
 import { useAppStore } from '@/store/index'
 import { activateAndRevealWorkspace } from '@/lib/workspace/activation/worktree-activation'
+import type { WorktreeActivationSurfaceSelection } from '@/lib/workspace/activation/worktree-activation-surface-selection'
 import { selectWorktreeCreationSurfaceShown } from '@/lib/workspace/creation/worktree-creation-surface'
 import { measureAllTabGroupBodies } from '../tab-group/tab-group-body-geometry'
 import {
@@ -62,7 +63,10 @@ function canResolve(item: SplitViewItem): boolean {
 }
 
 /** Makes an item the current one through the open path a sidebar click takes. */
-export function navigateToSplitViewItem(item: SplitViewItem): void {
+export function navigateToSplitViewItem(
+  item: SplitViewItem,
+  surface?: WorktreeActivationSurfaceSelection
+): void {
   const state = useAppStore.getState()
   switch (item.kind) {
     case 'workspace': {
@@ -71,6 +75,7 @@ export function navigateToSplitViewItem(item: SplitViewItem): void {
       activateAndRevealWorkspace(item.worktreeId, {
         revealInSidebar: false,
         clearSidebarFilters: false,
+        ...surface,
         ...(executionHostId ? { executionHostId } : {})
       })
       return
@@ -86,12 +91,12 @@ export function navigateToSplitViewItem(item: SplitViewItem): void {
 }
 
 /** After a grid command: the focused pane's active chip becomes the current item, in the same turn. */
-function navigateToFocusedChip(): void {
+function navigateToFocusedChip(surface?: WorktreeActivationSurfaceSelection): void {
   const state = splitViewStore.getState()
   const item = state.focusedPaneId ? activeSplitViewItem(state, state.focusedPaneId) : null
   const current = currentSplitViewItem()
   if (item && (!current || splitViewItemKey(current) !== splitViewItemKey(item))) {
-    navigateToSplitViewItem(item)
+    navigateToSplitViewItem(item, surface)
   }
   // The registry measures on resize, not on move.
   requestAnimationFrame(measureAllTabGroupBodies)
@@ -172,7 +177,8 @@ export type SplitViewDropPlace = {
 export function placeItemsInSplitView(
   items: readonly SplitViewItem[],
   place: SplitViewDropPlace,
-  activeKey?: string
+  activeKey?: string,
+  surface?: WorktreeActivationSurfaceSelection
 ): void {
   if (items.length === 0) {
     return
@@ -206,16 +212,28 @@ export function placeItemsInSplitView(
   })
   const next = splitViewStore.getState()
   if (next.layout) {
-    navigateToFocusedChip()
+    navigateToFocusedChip(surface)
     return
   }
   // No split came of it (a lone item, or the current item dropped on itself): a plain open.
-  navigateToSplitViewItem(items.find((item) => splitViewItemKey(item) === activeKey) ?? items[0])
+  navigateToSplitViewItem(
+    items.find((item) => splitViewItemKey(item) === activeKey) ?? items[0],
+    surface
+  )
 }
 
 /** The focused pane, or single view's implicit pane. */
-export function openItemsInSplitView(items: readonly SplitViewItem[], zone: SplitViewZone): void {
-  placeItemsInSplitView(items, { paneId: splitViewStore.getState().focusedPaneId, zone })
+export function openItemsInSplitView(
+  items: readonly SplitViewItem[],
+  zone: SplitViewZone,
+  surface?: WorktreeActivationSurfaceSelection
+): void {
+  placeItemsInSplitView(
+    items,
+    { paneId: splitViewStore.getState().focusedPaneId, zone },
+    undefined,
+    surface
+  )
 }
 
 /**

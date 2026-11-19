@@ -88,7 +88,6 @@ export const PERSISTED_STATE_DISPOSITIONS = {
   sshTargets: notApplicableDisposition(62),
   sshTargetGenerationCounter: notApplicableDisposition(62),
   deletedSshConfigAliases: notApplicableDisposition(62),
-  dismissedSessionProjects: notApplicableDisposition(62, 'Desktop-wide names, no paths.'),
   removedSshTargetTombstones: notApplicableDisposition(62),
   sshRemotePtyLeases: notApplicableDisposition(60),
   sshPtyConsumerRecoveries: notApplicableDisposition(60),

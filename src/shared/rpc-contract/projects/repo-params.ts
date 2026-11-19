@@ -92,8 +92,7 @@ export const ProjectGroupUpdate = z.object({
     tabOrder: OptionalFiniteNumber,
     rootProjectOrder: z.number().finite().nullable().optional(),
     color: OptionalString.nullable().optional(),
-    hiddenAt: z.number().finite().nullable().optional(),
-    keptAt: z.number().finite().optional()
+    hiddenAt: z.number().finite().nullable().optional()
   })
 })
 

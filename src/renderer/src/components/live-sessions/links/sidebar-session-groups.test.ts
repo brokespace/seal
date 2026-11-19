@@ -35,12 +35,11 @@ function group(
   return {
     cards: [...groups.byWorkspace].map(([id, list]) => [id, ids(list)]),
     headers: [...groups.byHeader].map(([key, list]) => [key, ids(list)]),
-    brought: groups.sessionHeaders.map(({ key, name }) => [key, name]),
-    unknown: groups.unknownProjects.map(({ project }) => project.name)
+    brought: groups.sessionHeaders.map(({ key, name }) => [key, name])
   }
 }
 
-it("lists a session under its folder's project, else with no project until that project is made", () => {
+it("lists a session under its folder's project, else with no project", () => {
   expect(
     group(
       [
@@ -67,8 +66,7 @@ it("lists a session under its folder's project, else with no project until that 
       [HEADER, ['same-name', 'in-repo']],
       ['active-agents:unassigned', ['fitness', 'no-folder']]
     ],
-    brought: [['active-agents:unassigned', null]],
-    unknown: ['fitness']
+    brought: [['active-agents:unassigned', null]]
   })
 })
 
@@ -98,8 +96,7 @@ it('lists a session under the project the user moved it to, whatever its folder 
       ['active-agents:unassigned', ['off-card', 'named']],
       [HEADER, ['to-listed']]
     ],
-    brought: [['active-agents:unassigned', null]],
-    unknown: ['fitness', 'Ops']
+    brought: [['active-agents:unassigned', null]]
   })
 })
 
@@ -113,28 +110,6 @@ it('lists a session with no project while the list draws no header for its proje
   ).toEqual({
     cards: [],
     headers: [['active-agents:unassigned', ['same-name']]],
-    brought: [['active-agents:unassigned', null]],
-    unknown: []
+    brought: [['active-agents:unassigned', null]]
   })
-})
-
-it("names each project's newest running agent, whether or not the list has its header", () => {
-  const groups = groupSidebarSessions(
-    [
-      sampleLiveSession('older', { startedAt: 1_000 }),
-      sampleLiveSession('newer', { startedAt: 2_000 }),
-      sampleLiveSession('ended', { startedAt: 3_000, alive: false, status: 'done' }),
-      sampleLiveSession('elsewhere', { cwd: '/home/brian/fitness', project: 'fitness' })
-    ],
-    new Map([
-      ['older', LINK],
-      ['newer', LINK],
-      ['ended', LINK]
-    ]),
-    CATALOG,
-    new Set()
-  )
-  expect([...groups.runningByHeader].map(([key, session]) => [key, session.id])).toEqual([
-    [HEADER, 'newer']
-  ])
 })
