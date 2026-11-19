@@ -105,6 +105,17 @@ export class WorkspaceCreation {
     )
   }
 
+  /** Lists the project again that the user hid: hiding one Seal made lasts until an agent starts in it. */
+  async show(repo: Repo): Promise<void> {
+    await this.deps.runtime.updateRepo(
+      { selector: `id:${repo.id}`, hostId: getRepoExecutionHostId(repo) },
+      { hiddenAt: null }
+    )
+    this.deps.log?.(
+      `[live-sessions] showed auto-created project "${repo.displayName}": an agent started in it`
+    )
+  }
+
   /** Forgets the project in Seal; its folder stays. */
   async remove(repo: Repo, reason: string): Promise<void> {
     await this.deps.runtime.removeProject(repo)

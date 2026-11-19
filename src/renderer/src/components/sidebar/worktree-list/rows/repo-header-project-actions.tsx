@@ -34,6 +34,7 @@ import {
   getRepositoryAccountsSectionId,
   getRepositoryIconSectionId
 } from '@/components/settings/repository/repository-settings-targets'
+import { MakePermanentMenuItem, makeReposPermanent } from './make-project-permanent'
 import {
   closeRepoHeaderContextMenu,
   useRepoHeaderContextMenuRequested
@@ -117,6 +118,7 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
   // Memoized: subscribe so a language change still repaints its labels.
   useTranslation()
   const [opened, setOpened] = React.useState(false)
+  const copies = hostRepos ? [...hostRepos.values()] : [repo]
   const contextRequested = useRepoHeaderContextMenuRequested(headerKey)
   const onOpenChange = (open: boolean): void => {
     setOpened(open)
@@ -230,11 +232,10 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
         <WslMoveProjectMenuItem repo={repo} />
         <ProjectMergeMenuItem repo={repo} label={label} />
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onSelect={() =>
-            void setProjectHidden(hostRepos ? [...hostRepos.values()] : [repo], true, label)
-          }
-        >
+        {copies.some((copy) => copy.autoCreated) ? (
+          <MakePermanentMenuItem onSelect={() => void makeReposPermanent(copies, label)} />
+        ) : null}
+        <DropdownMenuItem onSelect={() => void setProjectHidden(copies, true, label)}>
           <EyeOff className="size-3.5" />
           {t('sidebar.hiddenProjects.hideFromSidebar', 'Hide from Sidebar')}
         </DropdownMenuItem>

@@ -24,8 +24,9 @@ export type AutoCreatedFacts = {
 }
 
 /**
- * `adopt` clears the mark for good: the user renamed it, pinned it, opened a tab in it or added a
- * workspace to it. `remove` takes it away once its last session has left.
+ * `adopt` clears the mark for good: the user renamed it, pinned it, commented on it or added a
+ * workspace to it. `remove` takes it away once its last session has left and nothing is open in it:
+ * a tab, terminal or chat keeps it for as long as it is open, without making it permanent.
  */
 export type AutoCreatedVerdict = 'keep' | 'adopt' | 'remove'
 
@@ -34,11 +35,7 @@ export function autoCreatedVerdict(facts: AutoCreatedFacts, now: number): AutoCr
     facts.displayName !== facts.givenName ||
     facts.workspaces.some(
       (workspace) =>
-        workspace.pinned ||
-        workspace.renamed ||
-        workspace.hasComment ||
-        workspace.createdInSeal ||
-        workspace.inUse
+        workspace.pinned || workspace.renamed || workspace.hasComment || workspace.createdInSeal
     )
   if (touched) {
     return 'adopt'
@@ -46,6 +43,7 @@ export function autoCreatedVerdict(facts: AutoCreatedFacts, now: number): AutoCr
   const left =
     facts.machineRead &&
     facts.runningSessions === 0 &&
+    !facts.workspaces.some((workspace) => workspace.inUse) &&
     facts.emptySince !== null &&
     now - facts.emptySince >= AUTO_CREATED_GRACE_MS
   return left ? 'remove' : 'keep'

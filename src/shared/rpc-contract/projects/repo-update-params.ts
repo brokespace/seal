@@ -92,6 +92,7 @@ export function createRepoUpdateSchema<T extends Readonly<Record<string, z.ZodTy
         .optional(),
       externalWorktreeDiscoverySuppressedAt: z.number().finite().nullable().optional(),
       hiddenAt: z.number().finite().nullable().optional(),
+      autoCreated: z.object({ displayName: z.string() }).nullable().optional(),
       projectGroupId: OptionalString.nullable().optional(),
       projectGroupOrder: OptionalFiniteNumber.nullable().optional(),
       sourceControlAi: RepoSourceControlAiOverrides,

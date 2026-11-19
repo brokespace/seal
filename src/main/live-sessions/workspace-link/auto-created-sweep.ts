@@ -26,7 +26,7 @@ type AutoCreatedRepo = Repo & { autoCreated: NonNullable<Repo['autoCreated']> }
 
 export type AutoCreatedSweepDeps = {
   store: Pick<Store, 'getRepos' | 'updateRepo' | 'getAllWorktreeMeta' | 'getAllWorktreeMetaForHost'>
-  creation: Pick<WorkspaceCreation, 'remove'>
+  creation: Pick<WorkspaceCreation, 'remove' | 'show'>
   /** Published sessions, each with the workspace it was linked to. */
   sessions: () => readonly LiveSession[]
   /** This machine's sessions and workspaces have both been listed, so a missing session has left. */
@@ -126,6 +126,7 @@ export class AutoCreatedSweep {
       let inUse = this.deps.inUse()
       let terminalsSeen = false
       for (const repo of repos) {
+        await this.showIfStartedSinceHidden(repo)
         let verdict = this.verdict(repo, inUse)
         if (verdict === 'remove' && !terminalsSeen) {
           // Removal stops the project's terminals, so one no tab shows must be seen first.
@@ -161,7 +162,7 @@ export class AutoCreatedSweep {
     }
   }
 
-  private runningSessions(repo: AutoCreatedRepo): number {
+  private runningSessions(repo: AutoCreatedRepo): LiveSession[] {
     return this.deps
       .sessions()
       .filter(
@@ -171,12 +172,26 @@ export class AutoCreatedSweep {
           session.machine.kind === 'local' &&
           !isPairedServerLiveSession(session) &&
           isActiveLiveSession(session)
-      ).length
+      )
+  }
+
+  private async showIfStartedSinceHidden(repo: AutoCreatedRepo): Promise<void> {
+    const { hiddenAt } = repo
+    if (
+      hiddenAt !== undefined &&
+      this.runningSessions(repo).some((session) => (session.startedAt ?? 0) > hiddenAt)
+    ) {
+      try {
+        await this.deps.creation.show(repo)
+      } catch (error) {
+        this.deps.log?.(`[live-sessions] showing auto-created project ${repo.path} failed`, error)
+      }
+    }
   }
 
   private verdict(repo: AutoCreatedRepo, inUse: ReadonlySet<string>): AutoCreatedVerdict {
     const now = (this.deps.now ?? Date.now)()
-    const runningSessions = this.runningSessions(repo)
+    const runningSessions = this.runningSessions(repo).length
     if (runningSessions > 0) {
       this.emptySince.delete(repo.id)
     } else if (!this.emptySince.has(repo.id)) {

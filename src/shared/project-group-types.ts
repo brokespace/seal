@@ -21,13 +21,15 @@ export type ProjectGroup = {
   hiddenAt?: number
   /** The project its sessions' folder named when Seal made it for them; renaming keeps it theirs. */
   sessionProject?: LiveSessionProject
+  /** Epoch ms the user made a project Seal made for sessions permanent; absent while it lists only while an agent runs in it. */
+  keptAt?: number
   createdAt: number
   updatedAt: number
 }
 
 export type ProjectGroupUpdate = Partial<
   Pick<ProjectGroup, 'name' | 'isCollapsed' | 'tabOrder' | 'color' | 'hookSettings'>
-> & { rootProjectOrder?: number | null; hiddenAt?: number | null }
+> & { rootProjectOrder?: number | null; hiddenAt?: number | null; keptAt?: number }
 
 export type ProjectGroupMutation = { groupId: string; updates: ProjectGroupUpdate }
 

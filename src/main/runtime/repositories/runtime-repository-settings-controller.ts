@@ -60,6 +60,7 @@ type RepositoryUpdates = Partial<
   workspaceCleanupPolicy?: Repo['workspaceCleanupPolicy'] | null
   externalWorktreeDiscoverySuppressedAt?: Repo['externalWorktreeDiscoverySuppressedAt'] | null
   hiddenAt?: Repo['hiddenAt'] | null
+  autoCreated?: Repo['autoCreated'] | null
   /** Only `null` clears; `omitUndefined` drops a stripped (undefined) field so it never unbinds. */
   ghAccount?: GhAccountBinding | null
 }

@@ -114,7 +114,6 @@ export class RepoUpdatePersistenceOperations {
         | 'worktreeVisibilitySourcePreferences'
         | 'projectGroupId'
         | 'projectHostSetupMethod'
-        | 'autoCreated'
       >
     > & {
       projectGroupOrder?: number | null
@@ -124,6 +123,7 @@ export class RepoUpdatePersistenceOperations {
       workspaceCleanupPolicy?: Repo['workspaceCleanupPolicy'] | null
       externalWorktreeDiscoverySuppressedAt?: Repo['externalWorktreeDiscoverySuppressedAt'] | null
       hiddenAt?: Repo['hiddenAt'] | null
+      autoCreated?: Repo['autoCreated'] | null
       ghAccount?: GhAccountBinding | null
     }
   ): Repo | null {
@@ -234,6 +234,10 @@ export class RepoUpdatePersistenceOperations {
     ) {
       delete repo.externalWorktreeDiscoverySuppressedAt
       delete sanitizedUpdates.externalWorktreeDiscoverySuppressedAt
+    }
+    if ('autoCreated' in sanitizedUpdates && !sanitizedUpdates.autoCreated) {
+      delete repo.autoCreated
+      delete sanitizedUpdates.autoCreated
     }
     if (
       'hiddenAt' in sanitizedUpdates &&

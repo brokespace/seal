@@ -1,8 +1,13 @@
-import { expect, it } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
 import { getDefaultPersistedState } from '../../../shared/constants'
 import { ProjectGroupPersistenceOperations } from './project-group-operations'
 
-it('makes a project for sessions once, and not again after the user removes it unless asked by name', () => {
+afterEach(() => {
+  vi.useRealTimers()
+})
+
+it('makes a project for sessions once; one the user removes comes back for an agent started since, or by name', () => {
+  vi.useFakeTimers({ now: 5_000 })
   const state = getDefaultPersistedState('/workspace')
   state.repos = [
     { id: 'r', path: '/code/alpharidge-app', displayName: 'App', badgeColor: '', addedAt: 0 }
@@ -30,6 +35,18 @@ it('makes a project for sessions once, and not again after the user removes it u
 
   operations.deleteProjectGroup(made.id)
   operations.ensureSessionProjectGroups([fitness], false)
+  expect(names()).toEqual([])
+
+  operations.ensureSessionProjectGroups([{ ...fitness, startedAt: 4_000 }], false)
+  expect(names()).toEqual([])
+
+  operations.ensureSessionProjectGroups([{ ...fitness, startedAt: 6_000 }], false)
+  expect(names()).toEqual(['fitness'])
+
+  const [again] = state.projectGroups ?? []
+  operations.updateProjectGroup(again.id, { keptAt: 5_000 })
+  operations.deleteProjectGroup(again.id)
+  operations.ensureSessionProjectGroups([{ ...fitness, startedAt: 9_000 }], false)
   expect(names()).toEqual([])
 
   operations.ensureSessionProjectGroups([fitness], true)

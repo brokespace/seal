@@ -72,6 +72,8 @@ export type RepoUpdate = Partial<
   sourceControlAi?: Repo['sourceControlAi'] | null
   externalWorktreeDiscoverySuppressedAt?: Repo['externalWorktreeDiscoverySuppressedAt'] | null
   hiddenAt?: Repo['hiddenAt'] | null
+  /** Marks a project Seal made for agents, which goes once none is left; `null` makes it permanent. */
+  autoCreated?: Repo['autoCreated'] | null
   ghAccount?: GhAccountBinding | null
   workspaceCleanupPolicy?: Repo['workspaceCleanupPolicy'] | null
 }
