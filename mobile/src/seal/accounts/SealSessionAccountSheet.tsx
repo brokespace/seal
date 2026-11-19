@@ -38,7 +38,9 @@ export function SealSessionAccountSheet({
           id: `account:${candidate.key}`,
           label: candidate.label || candidate.email || candidate.key,
           hint:
-            candidate.email && candidate.email !== candidate.label ? candidate.email : undefined,
+            candidate.email && !candidate.label.includes(candidate.email)
+              ? candidate.email
+              : undefined,
           checked: candidate.key === assignment.accountKey,
           onPress: () => {
             if (candidate.key !== assignment.accountKey) {

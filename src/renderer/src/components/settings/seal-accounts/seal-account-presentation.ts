@@ -211,6 +211,7 @@ export function sealAccountIdentity(candidate: SealAccountCandidate, t: Translat
       ? t('seal.accounts.identity.anthropicKey', 'Anthropic API key')
       : t('seal.accounts.identity.openaiKey', 'OpenAI API key')
   }
-  const email = candidate.email && candidate.email !== candidate.label ? candidate.email : null
+  const email =
+    candidate.email && !candidate.label.includes(candidate.email) ? candidate.email : null
   return [email, candidate.orgName].filter(Boolean).join(' · ')
 }

@@ -66,10 +66,13 @@ function notifySwap(entry: SealSessionSwapEntry): void {
         value0: entry.toLabel
       }),
       {
-        description: translate(
-          'seal.session.notice.resumedDescription',
-          'It could not switch logins while running, so Seal restarted it on the new account with the same conversation.'
-        )
+        // A chat's note says it switches at its next message, not that it restarted.
+        description:
+          entry.note ??
+          translate(
+            'seal.session.notice.resumedDescription',
+            'It could not switch logins while running, so Seal restarted it on the new account with the same conversation.'
+          )
       }
     )
     return

@@ -46,6 +46,15 @@ function candidateBilling(seed: SealCandidateSeed): SealAccountCandidate['billin
   return seed.limits?.billing ?? null
 }
 
+/** An account's name always carries its email: "AR (user@example.com)", or the bare email. */
+export function sealAccountName(alias: string | undefined, email: string | null): string | null {
+  const name = alias?.trim()
+  if (!name) {
+    return email
+  }
+  return email && !name.includes(email) ? `${name} (${email})` : name
+}
+
 function toCandidate(seed: SealCandidateSeed, sources: SealCandidateSources): SealAccountCandidate {
   const profile = findSealProfile(sources.config, seed.key)
   const authFailure = isDeadLogin(seed.limits)
@@ -58,7 +67,7 @@ function toCandidate(seed: SealCandidateSeed, sources: SealCandidateSources): Se
     localId: seed.localId,
     email: seed.email,
     orgName: seed.orgName,
-    label: profile?.alias || seed.email || seed.fallbackLabel,
+    label: sealAccountName(profile?.alias, seed.email) || seed.fallbackLabel,
     plan: profile?.plan || seed.limits?.planType || null,
     billing: candidateBilling(seed),
     systemLogin: seed.systemLogin,

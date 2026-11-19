@@ -55,6 +55,12 @@ export function findCandidateByRef(
     candidates.find((candidate) => sealAccountKeysMatch(candidate.key, needle)) ??
     candidates.find((candidate) => candidate.localId === needle) ??
     candidates.find((candidate) => candidate.label.toLowerCase() === lower) ??
+    // The name a person gave it, without the email every label carries.
+    candidates.find(
+      (candidate) =>
+        candidate.email !== null &&
+        candidate.label.toLowerCase() === `${lower} (${candidate.email.toLowerCase()})`
+    ) ??
     candidates.find((candidate) => candidate.email?.toLowerCase() === lower) ??
     null
   )
