@@ -12,6 +12,7 @@ import {
   withRefreshedClaudeTokens
 } from '../../shared/seal-accounts/seal-credential-freshness'
 import type { SealAccountManager } from './seal-account-manager'
+import { keepMcpSignIns } from '../claude-accounts/profiles/setup/claude-profile-mcp-sign-ins'
 import { withClaudeConfigLocks } from './seal-claude-config-lock'
 import {
   readClaudeHomeCredentials,
@@ -157,11 +158,12 @@ export function reconcileClaudeLogin(
       let updated = 0
       const failures: unknown[] = []
       for (const copy of copies) {
-        if (copy.json === target) {
+        const login = keepMcpSignIns(target, copy.json)
+        if (copy.json === login) {
           continue
         }
         try {
-          await writeClaudeHomeCredentials(copy.home, target)
+          await writeClaudeHomeCredentials(copy.home, login)
           updated += 1
         } catch (error) {
           failures.push(error)

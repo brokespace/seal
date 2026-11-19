@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { planMcpSignIns } from './claude-profile-mcp-sign-ins'
+import { keepMcpSignIns, planMcpSignIns } from './claude-profile-mcp-sign-ins'
 
 const SLACK = 'plugin:slack:slack|38801a7d845718b3'
 const JIRA = 'plugin:atlassian:atlassian|65c63eb8da6de8b7'
@@ -51,5 +51,19 @@ describe('planMcpSignIns', () => {
     expect(plan.profile).toEqual({})
     expect(plan.defaults).toEqual({})
     expect(plan.synced).toEqual([])
+  })
+})
+
+describe('keepMcpSignIns', () => {
+  it('keeps a server sign-in only the overwritten home holds', () => {
+    const login = JSON.stringify({ claudeAiOauth: { accessToken: 'new' } })
+    const copy = JSON.stringify({
+      claudeAiOauth: { accessToken: 'old' },
+      mcpOAuth: { [SLACK]: signedIn('a', 100) }
+    })
+    expect(JSON.parse(keepMcpSignIns(login, copy))).toEqual({
+      claudeAiOauth: { accessToken: 'new' },
+      mcpOAuth: { [SLACK]: signedIn('a', 100) }
+    })
   })
 })

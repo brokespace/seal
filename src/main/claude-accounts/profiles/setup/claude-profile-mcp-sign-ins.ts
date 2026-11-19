@@ -195,3 +195,22 @@ export async function shareClaudeMcpSignIns(args: {
     return outcome
   })
 }
+
+/**
+ * `login` with the MCP sign-ins of both it and `copy`, the later expiry winning, so copying one
+ * home's account login over another never drops a server sign-in only the other holds.
+ */
+export function keepMcpSignIns(login: string, copy: string | null): string {
+  const into = parseCredentials(login)
+  const from = parseCredentials(copy)
+  if (!into || !from || !isRecord(from.mcpOAuth)) {
+    return login
+  }
+  const merged = planMcpSignIns({
+    defaults: isRecord(into.mcpOAuth) ? into.mcpOAuth : {},
+    profile: from.mcpOAuth,
+    synced: [],
+    writeDefaults: true
+  }).defaults
+  return changed(into.mcpOAuth, merged) ? JSON.stringify(withEntries(into, merged)) : login
+}
