@@ -88,6 +88,7 @@ import { cursorAccountsApi } from './api/agent-accounts/cursor-accounts-bridge'
 import { sshApi } from './api/ssh/ssh-bridge'
 import { plainSshTerminalApi } from './api/terminal/plain-ssh-terminal-bridge'
 import { agentConfigApi } from './api/agent-config/agent-config-bridge'
+import { agentConnectorsApi } from './api/agent-connectors/agent-connectors-bridge'
 import { machinesApi } from './api/machines/machines-bridge'
 import { homeChatApi } from './api/home-chat/home-chat-bridge'
 import { legacyRelayBridgeApi } from './api/mobile/legacy-relay-bridge-api'
@@ -202,6 +203,7 @@ const api = {
   plainSsh: plainSshTerminalApi,
   machines: machinesApi,
   agentConfig: agentConfigApi,
+  agentConnectors: agentConnectorsApi,
   homeChat: homeChatApi,
   legacyRelayBridge: legacyRelayBridgeApi,
   automations: automationsApi,

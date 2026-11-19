@@ -8,6 +8,7 @@ import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-t
 import { getProviderAccountsOwnerKey } from '@/runtime/provider-accounts/observations/runtime-provider-accounts-client'
 import { SessionSummariesSettingsPane } from '../session-summaries/SessionSummariesSettingsPane'
 import { AgentConfigSettingsPane } from '../agent-config/AgentConfigSettingsPane'
+import { AgentPluginsPane } from '../../agent-plugins/AgentPluginsPane'
 import { AgentsPane } from '../agents/AgentsPane'
 import { AgentDefaultSurfaceSection } from '../agents/surfaces/AgentDefaultSurfaceSection'
 import { ComputerUsePane } from '../computer-use/ComputerUsePane'
@@ -79,6 +80,26 @@ export function renderAgentConfigSettingsSection(
       searchEntries={navigation.getSectionSearchEntries('agent-config')}
     >
       {view.isSectionMounted('agent-config') ? <AgentConfigSettingsPane /> : null}
+    </SettingsSection>
+  ) : null
+}
+
+export function renderAgentPluginsSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element | null {
+  const { model, navigation, view } = context
+  return model.showDesktopOnlySettings ? (
+    <SettingsSection
+      id="agent-plugins"
+      title={t('seal.agentPlugins.title', 'Agent plugins')}
+      description={t(
+        'seal.agentPlugins.description',
+        'Install a plugin from Claude Code’s or Codex’s marketplaces once for every agent, account and machine.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('agent-plugins')}
+    >
+      {view.isSectionMounted('agent-plugins') ? <AgentPluginsPane /> : null}
     </SettingsSection>
   ) : null
 }

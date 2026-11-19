@@ -19,6 +19,7 @@ import {
   duplicateDocument,
   renameDocument
 } from './agent-config-documents'
+import { registerAgentPluginHandlers } from '../agent-plugins/agent-plugin-ipc'
 import {
   DOC_KINDS,
   draftOf,
@@ -260,6 +261,7 @@ export function registerAgentConfigHandlers(
     const { connection, target } = await forTarget(args.target)
     return runPluginCommand(connection, { target, command: pluginCommandOf(args.command) })
   })
+  registerAgentPluginHandlers(handle, connected)
   handle(AGENT_CONFIG_IPC.listBackups, async (args) =>
     listMachineBackups(await connected(args.machineId))
   )

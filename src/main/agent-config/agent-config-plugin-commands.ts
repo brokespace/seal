@@ -85,6 +85,45 @@ function powerShellLiteral(value: string): string {
   return `'${value.replaceAll("'", "''")}'`
 }
 
+/** The agents whose CLI installs plugins from their own marketplaces. */
+export type AgentPluginCli = 'claude' | 'codex'
+
+const CLI_LABELS: Record<AgentPluginCli, string> = { claude: 'Claude Code', codex: 'Codex' }
+
+export type AgentCliRun = AgentConfigCommandResult & { stdout: string }
+
+/** Runs an agent's own CLI on the machine with no terminal attached. */
+export async function runAgentCli(
+  connection: MachineConnection,
+  cli: AgentPluginCli,
+  argv: readonly string[],
+  options: { cwd?: string; timeoutMs?: number } = {}
+): Promise<AgentCliRun> {
+  const timeoutMs = options.timeoutMs ?? COMMAND_TIMEOUT_MS
+  const powershell = (await connection.dialect()) === 'powershell'
+  const script = powershell
+    ? `& ${cli} ${argv.map(powerShellLiteral).join(' ')}; exit $LASTEXITCODE`
+    : `command -v ${cli} >/dev/null 2>&1 || { echo '${CLI_LABELS[cli]} is not installed on this machine (${cli} is not on the PATH).' >&2; exit 127; }\n${cli} ${argv.map(quotePosixShell).join(' ')} </dev/null`
+  const result = await connection.exec(script, {
+    timeoutMs,
+    ...(options.cwd ? { cwd: options.cwd } : {})
+  })
+  const output = `${result.stdout}\n${result.stderr}`.replace(ANSI, '').trim()
+  return {
+    ok: result.exitCode === 0 && !result.timedOut,
+    command: `${cli} ${argv.join(' ')}`,
+    stdout: result.stdout,
+    output: result.timedOut
+      ? `${output}\nTimed out after ${Math.round(timeoutMs / 1000)} seconds`.trim()
+      : output.slice(-MAX_OUTPUT_CHARS)
+  }
+}
+
+/** Codex's spelling of an install or removal; it keeps plugins for the account only. */
+export function codexPluginArgs(kind: 'install' | 'uninstall', plugin: string): string[] {
+  return ['plugin', kind === 'install' ? 'add' : 'remove', requirePlugin(plugin)]
+}
+
 /**
  * Installs, updates and removes go through Claude Code's own CLI on the machine: it clones the
  * repositories, resolves versions and writes its registry, which Seal should not imitate.
@@ -93,24 +132,14 @@ export async function runPluginCommand(
   connection: MachineConnection,
   args: { target: AgentConfigTarget; command: AgentConfigPluginCommand }
 ): Promise<AgentConfigCommandResult> {
-  const argv = pluginCommandArgs(args.command)
-  const powershell = (await connection.dialect()) === 'powershell'
-  const script = powershell
-    ? `& claude ${argv.map(powerShellLiteral).join(' ')}; exit $LASTEXITCODE`
-    : `command -v claude >/dev/null 2>&1 || { echo 'Claude Code is not installed on this machine (claude is not on the PATH).' >&2; exit 127; }\nclaude ${argv.map(quotePosixShell).join(' ')} </dev/null`
-  const result = await connection.exec(script, {
-    timeoutMs: COMMAND_TIMEOUT_MS,
+  const { ok, command, output } = await runAgentCli(
+    connection,
+    'claude',
+    pluginCommandArgs(args.command),
     // Project and local installs are recorded against the folder the CLI runs in.
-    ...(args.target.projectPath ? { cwd: args.target.projectPath } : {})
-  })
-  const output = `${result.stdout}\n${result.stderr}`.replace(ANSI, '').trim()
-  return {
-    ok: result.exitCode === 0 && !result.timedOut,
-    command: `claude ${argv.join(' ')}`,
-    output: result.timedOut
-      ? `${output}\nTimed out after ${COMMAND_TIMEOUT_MS / 60_000} minutes`.trim()
-      : output.slice(-MAX_OUTPUT_CHARS)
-  }
+    args.target.projectPath ? { cwd: args.target.projectPath } : {}
+  )
+  return { ok, command, output }
 }
 
 /** Switching a plugin on or off is one key in a settings file; no CLI needed. */

@@ -5,6 +5,8 @@ import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-accou
 import { SEAL_CODEX_SESSION_HOME_ENV } from '../../shared/seal-accounts/seal-launch-env'
 import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth/runtime-auth-types'
 import type { SealAccountManager } from './seal-account-manager'
+import { applyClaudeAccountPluginTargets } from '../agent-plugins/claude-account-plugin-targets'
+import { claudeStateFileAsync } from '../claude-accounts/sign-in/claude-account-folder'
 import { withClaudeConfigLocks } from './seal-claude-config-lock'
 import {
   readClaudeHomeCredentials,
@@ -66,6 +68,13 @@ export async function copyClaudeLoginInto(
     }
     await writeClaudeHomeCredentials(sessionHome, credentials)
     await writeClaudeOAuthAccount(sessionHome, oauthAccount)
+    // Session setup copied the default home's plugin switches; this account's targets go on top.
+    await applyClaudeAccountPluginTargets({
+      userHome: router.userHome,
+      profileHome: sessionHome,
+      stateFile: await claudeStateFileAsync(sessionHome, router.userHome),
+      email: typeof oauthAccount.emailAddress === 'string' ? oauthAccount.emailAddress : undefined
+    })
   })
 }
 

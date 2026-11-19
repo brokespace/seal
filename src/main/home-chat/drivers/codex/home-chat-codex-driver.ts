@@ -13,6 +13,7 @@ import { activeItems } from '../../thread/home-chat-thread-history'
 import type { HomeChatDriver, HomeChatDriverTurn } from '../home-chat-driver'
 import { missedItems, resumableSession } from '../home-chat-provider-session'
 import { claimToolCall } from '../home-chat-tool-call-claims'
+import { codexHomePluginArgs } from '../../../agent-plugins/codex-account-plugin-overrides'
 import { CodexExecEvents, SEAL_MCP_SERVER_NAME } from './codex-exec-events'
 import {
   openSealMcpEndpoint,
@@ -53,7 +54,8 @@ function config(key: string, value: string | number): string[] {
 function execArgs(
   options: HomeChatCodexDriverOptions,
   run: CodexRun,
-  instructions: boolean
+  instructions: boolean,
+  pluginArgs: readonly string[]
 ): string[] {
   const server = `mcp_servers.${SEAL_MCP_SERVER_NAME}`
   return [
@@ -64,6 +66,7 @@ function execArgs(
     ...(run.ephemeral ? ['--ephemeral'] : []),
     // Seal's tools act on machines; Codex's own shell stays read-only on this computer.
     ...config('sandbox_mode', 'read-only'),
+    ...pluginArgs,
     ...(instructions ? config('developer_instructions', run.systemPrompt) : []),
     ...(run.endpoint
       ? [
@@ -92,7 +95,7 @@ async function runCodex(options: HomeChatCodexDriverOptions, run: CodexRun): Pro
       : `${systemNote(`Standing instructions for this conversation:\n\n${run.systemPrompt}`)}\n\n${run.prompt}`
   const child = spawnSourceControlAgent({
     binary: 'codex',
-    args: execArgs(options, run, instructionsInArgs),
+    args: execArgs(options, run, instructionsInArgs, await codexHomePluginArgs(options.codexHome)),
     cwd: options.cwd,
     env: {
       ...processEnvWithoutAgentSession(),

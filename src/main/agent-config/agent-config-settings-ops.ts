@@ -36,7 +36,7 @@ import {
   type ResolvedTarget
 } from './agent-config-locations'
 
-async function resolve(
+export async function resolveOnMachine(
   connection: MachineConnection,
   target: AgentConfigTarget
 ): Promise<ResolvedTarget> {
@@ -54,7 +54,7 @@ function parse(format: 'json' | 'toml', path: string, content: string): Record<s
 }
 
 /** Reads the file fresh, applies edits to just those keys, and writes it back with a backup. */
-async function editFile(
+export async function editFile(
   connection: MachineConnection,
   path: string,
   format: 'json' | 'toml',
@@ -63,6 +63,9 @@ async function editFile(
 ): Promise<AgentConfigWriteResult> {
   const file = await readConfigFile(connection, path)
   const changes = edits(parse(format, path, file.content))
+  if (changes.length === 0) {
+    return { path, hash: file.hash, backupPath: null }
+  }
   const next =
     format === 'toml'
       ? editTomlText(
@@ -77,7 +80,7 @@ async function editFile(
   })
 }
 
-function requireMcpFile(resolved: ResolvedTarget, scope: AgentConfigScope): McpFile {
+export function requireMcpFile(resolved: ResolvedTarget, scope: AgentConfigScope): McpFile {
   const file = mcpFile(resolved, scope)
   if (!file) {
     throw new Error(`${resolved.layout.label} keeps no MCP servers in the ${scope} scope`)
@@ -95,7 +98,10 @@ export async function saveMcpServer(
     draft: AgentConfigMcpDraft
   }
 ): Promise<AgentConfigWriteResult> {
-  const { location, format } = requireMcpFile(await resolve(connection, args.target), args.scope)
+  const { location, format } = requireMcpFile(
+    await resolveOnMachine(connection, args.target),
+    args.scope
+  )
   return editFile(
     connection,
     location.sourcePath,
@@ -110,7 +116,10 @@ export async function removeMcpServer(
   connection: MachineConnection,
   args: { target: AgentConfigTarget; scope: AgentConfigScope; name: string }
 ): Promise<AgentConfigWriteResult> {
-  const { location, format } = requireMcpFile(await resolve(connection, args.target), args.scope)
+  const { location, format } = requireMcpFile(
+    await resolveOnMachine(connection, args.target),
+    args.scope
+  )
   return editFile(
     connection,
     location.sourcePath,
@@ -145,7 +154,7 @@ export async function revealMcpServer(
   connection: MachineConnection,
   args: { target: AgentConfigTarget; scope: AgentConfigScope; name: string }
 ): Promise<AgentConfigMcpServer> {
-  const file = requireMcpFile(await resolve(connection, args.target), args.scope)
+  const file = requireMcpFile(await resolveOnMachine(connection, args.target), args.scope)
   const { config } = await storedEntry(connection, file, args.name)
   const server = listMcpServers(config, file.location, { reveal: true }).find(
     (candidate) => candidate.name === args.name
@@ -169,8 +178,8 @@ export async function copyMcpServer(
     overwrite?: boolean
   }
 ): Promise<AgentConfigWriteResult> {
-  const from = requireMcpFile(await resolve(source, args.target), args.scope)
-  const to = requireMcpFile(await resolve(destination, args.to), args.toScope)
+  const from = requireMcpFile(await resolveOnMachine(source, args.target), args.scope)
+  const to = requireMcpFile(await resolveOnMachine(destination, args.to), args.toScope)
   const { entry } = await storedEntry(source, from, args.name)
   const converted = convertMcpEntry(entry, from.location.codec, to.location.codec)
   return editFile(
@@ -206,7 +215,7 @@ export async function patchSettings(
   if (args.edits.some((edit) => 'value' in edit && hasMask(edit.value))) {
     throw new Error('A hidden value was sent back unchanged; enter the real value to change it')
   }
-  const primary = requirePrimary(await resolve(connection, args.target), args.scope)
+  const primary = requirePrimary(await resolveOnMachine(connection, args.target), args.scope)
   return editFile(
     connection,
     primary.path,
@@ -243,7 +252,7 @@ export async function setSkillEnabled(
     enabled: boolean
   }
 ): Promise<AgentConfigWriteResult> {
-  const resolved = await resolve(connection, args.target)
+  const resolved = await resolveOnMachine(connection, args.target)
   const kind = resolved.layout.skills.switch
   if (!kind || machinePathBasename(args.path) !== 'SKILL.md') {
     throw new Error(`${resolved.layout.label} has no switch for single skills`)
@@ -283,7 +292,7 @@ export async function setMcpActivation(
   connection: MachineConnection,
   args: { target: AgentConfigTarget; name: string; activation: AgentConfigMcpActivation }
 ): Promise<AgentConfigWriteResult> {
-  const resolved = await resolve(connection, args.target)
+  const resolved = await resolveOnMachine(connection, args.target)
   if (resolved.layout.id !== 'claude') {
     throw new Error(`${resolved.layout.label} does not ask before using project servers`)
   }

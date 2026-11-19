@@ -18,6 +18,7 @@ import {
   type ClaudeProfileReport,
   type ClaudeProfileSurfaceOutcome
 } from '../claude-profile-report'
+import { shareClaudeMcpSignIns } from './claude-profile-mcp-sign-ins'
 import { syncClaudeProfileSettings } from './claude-profile-settings'
 import { mergeClaudeProfileState, selectSharedClaudeProfileState } from './claude-profile-state'
 import { copyClaudeProfileFile, linkClaudeProfileDirectory } from './claude-profile-sharing'
@@ -213,6 +214,15 @@ export async function provisionClaudeProfile(args: {
     })
   await runClaudeProfileSurface(report, '.claude.json', () =>
     copyState(statePath(args.userConfigDir), statePath(args.profileHome))
+  )
+  await runClaudeProfileSurface(report, 'mcpOAuth', () =>
+    shareClaudeMcpSignIns({
+      defaultHome,
+      profileHome: args.profileHome,
+      systemDefault: !args.userConfigDir,
+      record: join(dirname(args.profileHome), 'mcp-sign-ins-sync.json'),
+      platform
+    })
   )
   return report
 }

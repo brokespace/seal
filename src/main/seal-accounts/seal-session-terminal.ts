@@ -70,6 +70,8 @@ export function resumeCommandLine(args: {
   platform: NodeJS.Platform
   claudePointer?: string
   codexHome?: string
+  /** The new account's `-c` plugin overrides. */
+  codexArgs?: readonly string[]
 }): string {
   if (!SAFE_SESSION_ID.test(args.providerSessionId)) {
     throw new Error('This session has an id Seal cannot resume safely.')
@@ -84,7 +86,10 @@ export function resumeCommandLine(args: {
   const command =
     args.provider === 'claude'
       ? `claude --resume ${args.providerSessionId}`
-      : `codex resume ${args.providerSessionId}`
+      : [
+          `codex resume ${args.providerSessionId}`,
+          ...(args.codexArgs ?? []).map((arg) => quote(arg, args.platform))
+        ].join(' ')
   if (args.platform === 'win32') {
     const assignments = env.map(([name, value]) => `$env:${name}=${quote(value, 'win32')}; `)
     return `${assignments.join('')}${command}`

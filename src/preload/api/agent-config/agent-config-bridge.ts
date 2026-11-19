@@ -19,6 +19,12 @@ import {
   type AgentConfigValidationKind,
   type AgentConfigWriteResult
 } from '../../../shared/agent-config/agent-config-types'
+import type {
+  AgentPluginCatalog,
+  AgentPluginInstallRequest,
+  AgentPluginInventory,
+  AgentPluginMachineResult
+} from '../../../shared/agent-plugins/agent-plugin-types'
 import type { MachineId } from '../../../shared/machines/machine-types'
 
 type DocRef = { kind: AgentConfigDocKind; scope: AgentConfigScope; path: string }
@@ -124,6 +130,23 @@ export type AgentConfigApi = {
     target: AgentConfigTarget
     command: AgentConfigPluginCommand
   }) => Promise<AgentConfigCommandResult>
+  /** Every plugin the machine's Claude Code and Codex marketplaces offer, merged by name. */
+  agentPluginCatalog: (args: { machineId: MachineId }) => Promise<AgentPluginCatalog>
+  agentPluginInventory: (args: { machineId: MachineId }) => Promise<AgentPluginInventory>
+  /** Native install where offered, MCP servers and skills for every other targeted agent. */
+  installAgentPlugin: (args: {
+    machineId: MachineId
+    request: AgentPluginInstallRequest
+  }) => Promise<AgentPluginMachineResult>
+  setAgentPluginEnabled: (args: {
+    machineId: MachineId
+    name: string
+    enabled: boolean
+  }) => Promise<AgentPluginMachineResult>
+  removeAgentPlugin: (args: {
+    machineId: MachineId
+    name: string
+  }) => Promise<AgentPluginMachineResult>
   listBackups: (args: { machineId: MachineId }) => Promise<AgentConfigBackup[]>
   restoreBackup: (args: {
     machineId: MachineId
