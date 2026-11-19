@@ -1,6 +1,8 @@
 import type { ClaudeAccountRecipe } from '../../../../shared/agent-session/lifecycle/agent-session-acquired-account'
 import { prepareClaudeLaunchAccount } from './claude-launch-account'
 import { prepareSealChatLaunch } from '../../../seal-accounts/seal-chat-launch'
+import { claudeStructuredConnectorLaunch } from './claude-structured-connectors'
+import type { ClaudeStructuredConnectorOptions } from './claude-structured-connectors'
 import { assertStructuredAgentResolutionCurrent } from '../../../native-chat/agent-launch/structured-agent-command-resolution'
 import { activeProviderContext } from '../../../../shared/agent-session/agent-session-provider-context'
 import { getClaudeProfileRouter } from '../../../claude-accounts/profiles/routing/claude-profile-installed-router'
@@ -68,7 +70,6 @@ export type ClaudeStructuredSdkOptions = Pick<
   | 'settingSources'
   | 'supportedDialogKinds'
   | 'additionalDirectories'
-  | 'plugins'
   | 'model'
   | 'effort'
   | 'allowDangerouslySkipPermissions'
@@ -78,7 +79,8 @@ export type ClaudeStructuredSdkOptions = Pick<
   | 'resumeSessionAt'
   | 'forkSession'
 > &
-  ClaudePermissionOptions
+  ClaudePermissionOptions &
+  ClaudeStructuredConnectorOptions
 
 /** Replay acknowledgements require an explicit flag; the SDK supplies the other transport flags. */
 export const CLAUDE_STRUCTURED_BASE_OPTIONS: ClaudeStructuredSdkOptions = {
@@ -268,6 +270,7 @@ export function claudeStructuredLaunchPart(
       { runtimeOnPath: false }
     )
     const sealRoute = router ? await prepareSealChatLaunch(record, env) : null
+    const connectors = await claudeStructuredConnectorLaunch(record, visuals?.pluginDir ?? null)
     const accountRecipe = await prepareClaudeLaunchAccount(
       router,
       env,
@@ -298,7 +301,7 @@ export function claudeStructuredLaunchPart(
           ...CLAUDE_STRUCTURED_BASE_OPTIONS,
           ...permission,
           ...(additionalDirectories.length ? { additionalDirectories } : {}),
-          ...(visuals?.pluginDir ? { plugins: [{ type: 'local', path: visuals.pluginDir }] } : {}),
+          ...connectors.options,
           extraArgs: {
             ...configured.extraArgs,
             ...CLAUDE_STRUCTURED_BASE_OPTIONS.extraArgs,
@@ -321,7 +324,7 @@ export function claudeStructuredLaunchPart(
           ? { forkedFromKey: agentSessionProviderHandleKey(head) }
           : {})
       },
-      env,
+      env: { ...env, ...connectors.env },
       inheritedEnvToDelete: [],
       // The agent runtime follows Orca's CLI directory on PATH so another orca cannot shadow it.
       cliRuntimeCommand: command

@@ -2,6 +2,10 @@ import { LinearIcon } from '@/components/icons/LinearIcon'
 import { getAccountsPaneSearchEntries } from '@/components/settings/accounts/accounts-search'
 import { getAgentConfigSearchEntries } from '@/components/settings/agent-config/agent-config-search'
 import { getAgentPluginsSearchEntries } from '@/components/settings/agent-plugins/agent-plugins-search'
+import {
+  getSealConnectorsSearchEntries,
+  getSealSkillsSearchEntries
+} from '@/components/settings/seal-connectors/seal-connectors-search'
 import { getAgentsPaneSearchEntries } from '@/components/settings/agents/agents-search'
 import { getComputerUsePaneSearchEntries } from '@/components/settings/computer-use/computer-use-search'
 import { getGeneralPaneSearchEntries } from '@/components/settings/general/general-search'
@@ -66,22 +70,44 @@ export function buildCapabilitySettingsSections(
             id: 'agent-config',
             title: t('auto.components.agentConfig.search.title', 'Agent configuration'),
             description: t(
-              'auto.components.agentConfig.search.description',
-              'Instructions, skills, MCP servers, plugins and settings for Claude Code, Codex and other agents.'
+              'seal.agentConfig.search.description',
+              'Instructions, skills and settings for Claude Code, Codex and other agents, machine by machine.'
             ),
             icon: FileCog,
             searchEntries: getAgentConfigSearchEntries(undefined, t),
             group: 'capabilities'
           },
           {
-            id: 'agent-plugins',
-            title: t('seal.agentPlugins.title', 'Agent plugins'),
+            id: 'connectors',
+            title: t('seal.connectors.title', 'Connectors'),
             description: t(
-              'seal.agentPlugins.description',
+              'seal.connectors.description',
+              'MCP servers every agent session gets, with one sign-in per service shared across machines and accounts.'
+            ),
+            icon: Plug,
+            searchEntries: getSealConnectorsSearchEntries(t),
+            group: 'capabilities'
+          },
+          {
+            id: 'agent-plugins',
+            title: t('seal.plugins.title', 'Plugins'),
+            description: t(
+              'seal.plugins.description',
               'Install a plugin from Claude Code’s or Codex’s marketplaces once for every agent, account and machine.'
             ),
             icon: Puzzle,
             searchEntries: getAgentPluginsSearchEntries(t),
+            group: 'capabilities'
+          },
+          {
+            id: 'skills',
+            title: t('seal.skills.title', 'Skills'),
+            description: t(
+              'seal.skills.navDescription',
+              'Skills from plugins and the Seal library, and which agents get each.'
+            ),
+            icon: Sparkles,
+            searchEntries: getSealSkillsSearchEntries(t),
             group: 'capabilities'
           }
         ]

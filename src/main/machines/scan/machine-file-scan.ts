@@ -235,12 +235,16 @@ export function parseMachineFileScan(stdout: string): MachineFileScanResult {
   return result
 }
 
+type MachineFileScanExec = (
+  script: string,
+  options: { timeoutMs: number }
+) => Promise<{ exitCode: number | null; stdout: string; stderr: string }>
+
 export type MachineFileScanRunner = {
   dialect: MachineShellDialect
-  exec: (
-    script: string,
-    options: { timeoutMs: number }
-  ) => Promise<{ exitCode: number | null; stdout: string; stderr: string }>
+  exec: MachineFileScanExec
+  /** Used when the scan looks for commands, so the login shell's PATH is searched. */
+  execLogin?: MachineFileScanExec
 }
 
 /** Runs a scan and fails loudly when the machine did not answer, so "nothing there" is trustworthy. */
@@ -249,7 +253,8 @@ export async function scanMachineFiles(
   request: MachineFileScanRequest,
   timeoutMs = 30_000
 ): Promise<MachineFileScanResult & { home: string }> {
-  const output = await machine.exec(machineFileScanScript(machine.dialect, request), { timeoutMs })
+  const run = request.commands?.length && machine.execLogin ? machine.execLogin : machine.exec
+  const output = await run(machineFileScanScript(machine.dialect, request), { timeoutMs })
   const result = parseMachineFileScan(output.stdout)
   if (result.home === null) {
     throw new Error(output.stderr.trim() || 'The machine did not answer the file scan')

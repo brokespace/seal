@@ -31,6 +31,9 @@ import { codexStructuredPermissionPolicy } from '../../../../shared/codex-permis
 import { codexStructuredLaunchArgs } from './codex-structured-launch-args'
 import { codexOrcaHooksOffArgs } from './codex-structured-orca-hooks-off'
 import { getSystemCodexHomePath } from '../../configuration/homes/codex-home-paths'
+import { codexConfigServerNames } from '../../../seal-connectors/codex-config-server-names'
+import { resolveChatConnectors } from '../../../seal-connectors/seal-connectors-session-plan'
+import { codexConnectorArgs } from '../../../../shared/seal-connectors/session-connector-args'
 import {
   LEGACY_NATIVE_CHAT_VISUALS_DIR_ENV,
   NATIVE_CHAT_SCRATCH_DIR_ENV,
@@ -159,6 +162,7 @@ export function codexStructuredLaunchPart(
       })
     }
     const launchHome = accountHome.path || environment?.CODEX_HOME || null
+    const connectors = await resolveChatConnectors(record, 'codex')
     return {
       launch: {
         command,
@@ -167,6 +171,9 @@ export function codexStructuredLaunchPart(
         args: [
           ...prefixArgs,
           ...codexOrcaHooksOffArgs(launchHome ?? getSystemCodexHomePath()),
+          ...(connectors
+            ? codexConnectorArgs(connectors, await codexConfigServerNames(launchHome))
+            : []),
           ...args,
           'app-server'
         ],
@@ -182,7 +189,11 @@ export function codexStructuredLaunchPart(
         ...(visuals ? { visuals } : {})
       },
       env: withNativeChatVisualsEnv(
-        { ...environment, ...(accountHome.path ? { CODEX_HOME: accountHome.path } : {}) },
+        {
+          ...environment,
+          ...(accountHome.path ? { CODEX_HOME: accountHome.path } : {}),
+          ...connectors?.env
+        },
         visuals
       ),
       // Clear inherited scratch paths that may belong to another chat.

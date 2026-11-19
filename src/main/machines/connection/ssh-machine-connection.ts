@@ -8,6 +8,7 @@ import {
   isSshCommandExitError,
   isSshExecTimeout
 } from '../../ssh/remote-exec/remote-exec-command'
+import { runInSshLoginShell } from '../../ssh/remote-exec/ssh-login-shell-exec'
 import { powerShellCommand } from '../../ssh/remote-exec/ssh-remote-powershell'
 import { scriptWithCwd } from '../../home-chat/machines/home-chat-machine-scripts'
 import type { MachineFileSystem } from '../filesystem/machine-filesystem'
@@ -122,6 +123,20 @@ export class SshMachineConnection implements MachineConnection {
   async exec(script: string, options: MachineExecOptions): Promise<MachineExecResult> {
     const link = this.requireLink()
     return execOverSsh(link, await this.dialect(), script, options)
+  }
+
+  async execLogin(script: string, options: MachineExecOptions): Promise<MachineExecResult> {
+    const link = this.requireLink()
+    const dialect = await this.dialect()
+    // PowerShell has no login profile to pick up, and the login fence takes no stdin.
+    if (dialect === 'powershell' || options.stdin !== undefined) {
+      return execOverSsh(link, dialect, script, options)
+    }
+    const result = await runInSshLoginShell(link, scriptWithCwd(dialect, script, options.cwd), {
+      timeoutMs: options.timeoutMs,
+      signal: options.signal
+    })
+    return result ?? execOverSsh(link, dialect, script, options)
   }
 
   metrics(): Promise<MachineMetrics> {

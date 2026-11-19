@@ -1,4 +1,5 @@
 import type {
+  RefresherLease,
   SealConnectorsConfig,
   SignInSecret
 } from '../../shared/seal-connectors/seal-connectors-types'
@@ -37,4 +38,34 @@ export function setSealConnectorsHost(host: SealConnectorsHost | null): void {
 
 export function getSealConnectorsHost(): SealConnectorsHost | null {
   return installed
+}
+
+/** This host's Seal plugin library: plugins fetched once from marketplaces, never into agent configs. */
+export type SealPluginLibrary = {
+  /** Resolves once the installs already on disk are known. */
+  loaded: Promise<void>
+  pluginDir(pluginId: string): string | null
+  librarySkillsDir(): string | null
+  /** Fetches plugins the list gained, deletes ones it lost, rewrites the library-skills plugin. */
+  reconcile(config: SealConnectorsConfig): Promise<void>
+  /** Plugins with an install under way: a reconcile of another list must not uninstall them. */
+  markPending(pluginId: string): void
+  clearPending(pluginId: string): void
+  state(): { id: string; installed: boolean; path: string | null; error: string | null }[]
+}
+
+export type SealConnectorsApplied = {
+  applied: boolean
+  config: SealConnectorsConfig
+  hostKey: string | null
+}
+
+export type SealSignInVersions = {
+  hostKey: string | null
+  /** This host's clock, so the hub can age the heartbeat without trusting both clocks to agree. */
+  now: number
+  versions: Record<string, number>
+  lease: RefresherLease
+  /** When this host last said, as lease owner, that it is alive; 0 when it is not the owner. */
+  heartbeatAt: number
 }

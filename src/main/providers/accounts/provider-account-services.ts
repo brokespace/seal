@@ -28,6 +28,7 @@ import { normalizeCodexRuntimeSelection } from '../../codex-accounts/account-man
 import { normalizeClaudeRuntimeSelection } from '../../claude-accounts/selection/runtime-selection'
 import type { ClaudeStatusLineRateLimits } from '../../../shared/claude-statusline-rate-limits'
 import { installSealAccountManager } from '../../seal-accounts/seal-account-manager'
+import { installSealConnectors } from '../../seal-connectors/seal-connectors-install'
 
 export type ProviderAccountServices = {
   rateLimits: RateLimitService
@@ -219,6 +220,6 @@ export function createProviderAccountServices(
     claudeRuntimeAuth,
     claudeAccounts
   }
-  installSealAccountManager({ store, services })
+  installSealConnectors({ manager: installSealAccountManager({ store, services }) })
   return services
 }

@@ -12,9 +12,9 @@ const HostKey = z.string().trim().min(1).max(512)
 
 export const SealConnectorsStatusParams = z.object({}).strict().nullish()
 
-/** A desktop UI edit; dated by the host. */
+/** A UI edit: `base` is the copy the UI started from, so only what it changed is applied. */
 export const SealConnectorsSetConfigParams = z
-  .object({ config: SealConnectorsConfigSchema })
+  .object({ base: SealConnectorsConfigSchema, config: SealConnectorsConfigSchema })
   .strict()
 
 /** A desktop carries the fleet's list to a host; the newer of the two is kept and returned. */
@@ -59,6 +59,11 @@ export const SealConnectorsSetStaticSecretParams = z
 export const SealConnectorsRemoveSignInParams = z.object({ connectorId: Id, signInId: Id }).strict()
 
 export const SealConnectorsSetRefresherParams = z.object({ hostKey: HostKey.nullable() }).strict()
+
+/** Makes the confirmed refresher renew every OAuth sign-in now. */
+export const SealConnectorsRefreshNowParams = z.object({}).strict().nullish()
+
+export const SealConnectorsFleetStatusParams = z.object({}).strict().nullish()
 
 export const SealConnectorsCatalogParams = z
   .object({ refresh: z.boolean().optional() })

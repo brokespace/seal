@@ -13,6 +13,7 @@ import { sealPinnedPointerPath, pinClaudeLaunchToHome } from './seal-claude-laun
 import { codexLoginJson, copyClaudeLoginInto, sealSessionPointerName } from './seal-session-launch'
 import { provisionClaudeSessionHome, provisionCodexSessionHome } from './seal-session-homes'
 import { reconcileCodexLogin } from './seal-login-copies'
+import { sealConnectorsResumeArgs } from '../seal-connectors/seal-connectors-terminal-launch'
 import { resumeCommandLine, sealSessionTerminal, stopAgentInPane } from './seal-session-terminal'
 
 const MAX_SESSION_HISTORY = 20
@@ -138,13 +139,21 @@ async function deliver(
   if (!(await stopAgentInPane(pane, handle))) {
     return { delivery: 'failed', home: prepared.home, note: 'The agent did not exit to resume.' }
   }
+  const connectorArgs = await sealConnectorsResumeArgs({
+    provider: session.provider,
+    sessionId: session.id,
+    accountKey: request.to.key,
+    worktreeId: session.worktreeId,
+    codexHome: prepared.codexHome ?? session.profileHome ?? null
+  }).catch(() => [])
   await pane.send(handle, {
     text: resumeCommandLine({
       provider: session.provider,
       providerSessionId: request.providerSessionId,
       platform: process.platform,
       claudePointer: prepared.claudePointer,
-      codexHome: prepared.codexHome
+      codexHome: prepared.codexHome,
+      connectorArgs
     }),
     enter: true
   })

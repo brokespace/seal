@@ -54,7 +54,10 @@ async function readsRewakeSessionStartHook(
  *  `alwaysLoad` servers are restated without it; `rewakeHookMayHold` says the race can still
  *  be lost. */
 export async function prepareClaudeFreshStart<
-  TOptions extends Pick<Options, 'resume' | 'continue' | 'settingSources' | 'mcpServers'>
+  TOptions extends Pick<
+    Options,
+    'resume' | 'continue' | 'settingSources' | 'mcpServers' | 'strictMcpConfig'
+  >
 >(
   options: TOptions,
   env: Record<string, string>,
@@ -65,7 +68,10 @@ export async function prepareClaudeFreshStart<
     return { options, rewakeHookMayHold: false }
   }
   const [restated, rewakeHookMayHold] = await Promise.all([
-    sources.includes('user') ? readClaudeAlwaysLoadMcpServers(env, cwd) : {},
+    // Seal's list is the whole MCP config of a strict session; the user's servers stay out.
+    sources.includes('user') && options.strictMcpConfig !== true
+      ? readClaudeAlwaysLoadMcpServers(env, cwd)
+      : {},
     readsRewakeSessionStartHook(sources, env, cwd)
   ])
   return {

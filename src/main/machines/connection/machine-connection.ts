@@ -41,9 +41,25 @@ export type MachineConnection = {
   connect(): Promise<void>
   dialect(): Promise<MachineShellDialect>
   exec(script: string, options: MachineExecOptions): Promise<MachineExecResult>
+  /**
+   * Like `exec`, but with the PATH the account's login shell sets (`~/.local/bin`...). Hosts whose
+   * `exec` already runs there leave it out.
+   */
+  execLogin?(script: string, options: MachineExecOptions): Promise<MachineExecResult>
   /** `watch` always delivers changes here; hosts without a native feed are polled. */
   readonly files: MachineFileSystem
   metrics(): Promise<MachineMetrics>
   identity(): Promise<MachineIdentity>
   openShell(options: MachineShellOptions, handlers: MachineShellHandlers): Promise<MachineShell>
+}
+
+/** Runs a script where agent CLIs are on the PATH: the login shell when the machine has one. */
+export function execWithAgentPath(
+  connection: MachineConnection,
+  script: string,
+  options: MachineExecOptions
+): Promise<MachineExecResult> {
+  return connection.execLogin
+    ? connection.execLogin(script, options)
+    : connection.exec(script, options)
 }

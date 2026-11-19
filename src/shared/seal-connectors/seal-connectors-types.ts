@@ -35,6 +35,8 @@ export const ProjectOverrideSchema = z
 export type ProjectOverride = z.infer<typeof ProjectOverrideSchema>
 
 const ScopedShape = {
+  /** When this item last changed; machines merge their copies item by item on it. */
+  updatedAt: z.number().optional(),
   enabled: z.boolean(),
   appliesTo: AppliesToSchema,
   projectOverrides: z.array(ProjectOverrideSchema).max(200)
@@ -148,9 +150,13 @@ export const SealConnectorsConfigSchema = z
     connectors: z.array(ConnectorSchema).max(500),
     plugins: z.array(PluginEntrySchema).max(500),
     skills: z.array(SkillEntrySchema).max(2000),
-    refresher: z.object({ designatedHostKey: Key.nullable() }).strict(),
+    refresher: z
+      .object({ designatedHostKey: Key.nullable(), updatedAt: z.number().optional() })
+      .strict(),
     /** Hosts whose own user-level MCP servers (codegraph...) were adopted into this list. */
-    importedHosts: z.array(Key).max(500)
+    importedHosts: z.array(Key).max(500),
+    /** `<kind>:<id>` → when it was removed, so an older copy elsewhere cannot bring it back. */
+    removed: z.record(z.string().max(300), z.number()).optional()
   })
   .strict()
 export type SealConnectorsConfig = z.infer<typeof SealConnectorsConfigSchema>
@@ -245,3 +251,15 @@ export type SealConnectorsHostStatus = {
   relayPort: number | null
   plugins: { id: string; installed: boolean; path: string | null; error: string | null }[]
 }
+
+/** One machine as the desktop sees it, for "Connectors here" and the refresher card. */
+export type SealConnectorsFleetHost = {
+  /** `local` for this desktop's own host, else the machine id. */
+  target: string
+  label: string
+  online: boolean
+  status: SealConnectorsHostStatus | null
+  error: string | null
+}
+
+export type SealConnectorsFleetStatus = { hosts: SealConnectorsFleetHost[] }

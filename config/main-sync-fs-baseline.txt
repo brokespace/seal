@@ -493,6 +493,8 @@
 1 src/main/runtime/workspaces/persisted-surfaces/crew-operations.ts
 1 src/main/seal-accounts/seal-accounts-store.ts
 1 src/main/seal-accounts/seal-api-key-vault.ts
+1 src/main/seal-connectors/seal-connector-relay-keys.ts # One-shot startup load of the small relay key file into memory; later writes go through writeSecureJsonFile.
+1 src/main/seal-connectors/seal-connectors-store.ts # One-shot startup load of the connector list, sign-ins and lease; memory stays authoritative afterwards.
 1 src/main/server/serve-pairing-output.ts
 2 src/main/speech/model-cache-path.ts
 7 src/main/speech/model-manager.ts

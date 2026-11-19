@@ -10,6 +10,18 @@ export function withClaudeAgentViewPlugin(
   root: string,
   shell: AgentStartupShell
 ): string {
+  return withClaudeCommandArgs(command, ['--plugin-dir', root], shell)
+}
+
+/** Inserts args right after a lone `claude` executable; anything unusual leaves the command alone. */
+export function withClaudeCommandArgs(
+  command: string,
+  args: readonly string[],
+  shell: AgentStartupShell
+): string {
+  if (args.length === 0) {
+    return command
+  }
   const parsed = tokenizeStartupCommand(command, shell)
   if (!parsed.ok) {
     return command
@@ -44,5 +56,6 @@ export function withClaudeAgentViewPlugin(
     }
   }
   const end = parsed.spans[index].end
-  return `${command.slice(0, end)} --plugin-dir ${quoteStartupArg(root, shell)}${command.slice(end)}`
+  const inserted = args.map((arg) => quoteStartupArg(arg, shell)).join(' ')
+  return `${command.slice(0, end)} ${inserted}${command.slice(end)}`
 }

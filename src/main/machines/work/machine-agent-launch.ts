@@ -1,6 +1,10 @@
 import { isTuiAgent } from '../../../shared/agent-launch/catalog/tui-agent-config'
 import { buildAgentStartupPlan } from '../../../shared/agent-launch/startup/tui-agent-startup'
-import type { MachineConnection, MachineShellDialect } from '../connection/machine-connection'
+import {
+  execWithAgentPath,
+  type MachineConnection,
+  type MachineShellDialect
+} from '../connection/machine-connection'
 import { quoteForMachineShell } from './machine-worktrees'
 
 export type MachineAgentCommand = { command: string; followupPrompt: string | null }
@@ -53,7 +57,7 @@ export async function detectMachineCommands(
     dialect === 'powershell'
       ? `foreach ($c in @(${names.map((name) => `'${name}'`).join(',')})) { if (Get-Command $c -ErrorAction SilentlyContinue) { $c } }`
       : `for c in ${names.join(' ')}; do command -v "$c" >/dev/null 2>&1 && echo "$c"; done; true`
-  const result = await connection.exec(script, { timeoutMs: 20_000 })
+  const result = await execWithAgentPath(connection, script, { timeoutMs: 20_000 })
   const found = new Set(result.stdout.split(/\r?\n/).map((line) => line.trim()))
   return names.filter((name) => found.has(name))
 }

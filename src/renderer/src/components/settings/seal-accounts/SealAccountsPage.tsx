@@ -11,6 +11,7 @@ import {
 import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { useMachinesInventory } from '../../machines/model/use-machines-inventory'
+import { AccountConnectorsSection } from '../seal-connectors/ConnectorsHere'
 import { SealAccountsPageView, type SealAccountsPageActions } from './SealAccountsPageView'
 import { useSealFleet, type SealFleet, type SealRemoteMachine } from './use-seal-fleet'
 import { useSealSignIn, type SealSignInController } from './use-seal-sign-in'
@@ -364,6 +365,9 @@ export function SealAccountsPage({
           signIn={signIn}
           actions={actions}
           claudeOptions={claudeOptions}
+          connectorsSection={(accounts) =>
+            target.kind === 'local' ? <AccountConnectorsSection accounts={accounts} /> : null
+          }
           machineId={machineId}
         />
       )}

@@ -2,6 +2,7 @@ import { joinMachinePath } from '../../shared/machines/machine-paths'
 import type { SealAccountsImportCredential } from '../../shared/rpc-contract/seal-accounts-params'
 import { credentialFreshness } from '../../shared/seal-accounts/seal-credential-freshness'
 import type { MachineConnection } from '../machines/connection/machine-connection'
+import { withLoginOnly } from '../seal-connectors/claude-mcp-oauth-entries'
 import { quoteForMachineShell } from '../machines/work/machine-worktrees'
 
 const MAX_LOGIN_FILE_BYTES = 4 * 1024 * 1024
@@ -75,14 +76,16 @@ export async function installLoginOnMachine(
   }
   const metrics = await connection.metrics()
   if (metrics.os === 'darwin') {
+    // The keychain item is written whole with no read-back, so a Mac keeps its own sign-ins only when it is pushed a login without them.
     await installClaudeOnMac(connection, credential.credentialsJson)
   } else {
     const dir = joinMachinePath(home, '.claude')
     const path = joinMachinePath(dir, '.credentials.json')
-    if (!isNewer('claude', credential.credentialsJson, await readOptional(connection, path))) {
+    const existing = await readOptional(connection, path)
+    if (!isNewer('claude', credential.credentialsJson, existing)) {
       return
     }
-    await writePrivate(connection, dir, path, credential.credentialsJson)
+    await writePrivate(connection, dir, path, withLoginOnly(existing, credential.credentialsJson))
   }
   const statePath = joinMachinePath(home, '.claude.json')
   const raw = await readOptional(connection, statePath)

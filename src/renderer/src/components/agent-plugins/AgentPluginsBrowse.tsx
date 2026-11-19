@@ -1,16 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Loader2, RefreshCw } from 'lucide-react'
+import { ChevronDown, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import type {
   AgentPluginCatalog,
   AgentPluginCatalogEntry,
   AgentPluginComponents,
-  AgentPluginHarness
+  AgentPluginHarness,
+  AgentPluginListing
 } from '../../../../shared/agent-plugins/agent-plugin-types'
-import type { MachineId } from '../../../../shared/machines/machine-types'
-import { agentConfigApi, agentConfigErrorText } from '../agent-config/model/agent-config-client'
+import { isChatGptAppListing } from '../../../../shared/seal-connectors/seal-connectors-catalog'
+import { connectorsCall } from '../settings/seal-connectors/use-seal-connectors'
 import { SettingsBadge } from '../settings/form-controls/SettingsFormControls'
 import { SettingsGroup } from '../settings/section-layout/SettingsGroup'
 
@@ -51,17 +58,87 @@ function contents(components: AgentPluginComponents | null, t: Translate): strin
     .join(' · ')
 }
 
-/** Every plugin the machine's agents offer in their own marketplaces, one row per name. */
-export function AgentPluginsBrowse({
-  machineId,
-  installed,
+/** The catalog as agents can use it: no ChatGPT apps, and with `onlyMcp` just plugins that bring MCP servers. */
+function usableEntries(
+  catalog: AgentPluginCatalog | null,
+  onlyMcp: boolean
+): AgentPluginCatalogEntry[] {
+  return (catalog?.entries ?? []).flatMap((entry) => {
+    const listings = entry.listings.filter(
+      (listing) => !isChatGptAppListing(listing, entry.components)
+    )
+    if (listings.length === 0 || (onlyMcp && !entry.components?.mcpServers.length)) {
+      return []
+    }
+    return [{ ...entry, listings }]
+  })
+}
+
+function InstallButton({
+  entry,
+  busy,
   onInstall
 }: {
-  machineId: MachineId
+  entry: AgentPluginCatalogEntry
+  busy: boolean
+  onInstall: (entry: AgentPluginCatalogEntry, listing: AgentPluginListing) => void
+}): React.JSX.Element {
+  const t = useTranslate()
+  const label = busy
+    ? t('seal.agentPlugins.browse.installing', 'Installing…')
+    : t('seal.agentPlugins.browse.install', 'Install')
+  if (entry.listings.length === 1) {
+    return (
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={busy}
+        onClick={() => onInstall(entry, entry.listings[0])}
+      >
+        {busy ? <Loader2 className="animate-spin" /> : null}
+        {label}
+      </Button>
+    )
+  }
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="outline" size="sm" disabled={busy}>
+          {busy ? <Loader2 className="animate-spin" /> : null}
+          {label}
+          <ChevronDown />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {entry.listings.map((listing) => (
+          <DropdownMenuItem
+            key={`${listing.harness}:${listing.id}`}
+            onSelect={() => onInstall(entry, listing)}
+          >
+            {HARNESS_LABELS[listing.harness]} · {listing.marketplace}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/** Every plugin Claude Code's and Codex's marketplaces offer, one row per name. */
+export function AgentPluginsBrowse({
+  installed,
+  installing,
+  onlyMcp = false,
+  onInstall
+}: {
   /** Plugin names that are already installed. */
   installed?: ReadonlySet<string>
+  /** Plugin names being installed right now. */
+  installing?: ReadonlySet<string>
+  /** Only plugins that bring MCP servers. */
+  onlyMcp?: boolean
   /** Without it the list is browse-only. */
-  onInstall?: (entry: AgentPluginCatalogEntry) => void
+  onInstall?: (entry: AgentPluginCatalogEntry, listing: AgentPluginListing) => void
 }): React.JSX.Element {
   const t = useTranslate()
   const [catalog, setCatalog] = useState<AgentPluginCatalog | null>(null)
@@ -74,26 +151,30 @@ export function AgentPluginsBrowse({
     let current = true
     setLoading(true)
     setError(null)
-    agentConfigApi()
-      .agentPluginCatalog({ machineId })
+    connectorsCall<AgentPluginCatalog>(
+      'seal.connectors.catalog',
+      generation > 0 ? { refresh: true } : {},
+      { timeoutMs: 120_000 }
+    )
       .then(
         (value) => current && setCatalog(value),
-        (failure: unknown) => current && setError(agentConfigErrorText(failure))
+        (failure: unknown) =>
+          current && setError(failure instanceof Error ? failure.message : String(failure))
       )
       .finally(() => current && setLoading(false))
     return () => {
       current = false
     }
-  }, [machineId, generation])
+  }, [generation])
 
   const matches = useMemo(() => {
     const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
-    return (catalog?.entries ?? []).filter((entry) => {
+    return usableEntries(catalog, onlyMcp).filter((entry) => {
       const text =
         `${entry.name} ${entry.description} ${entry.listings.map((l) => l.marketplace).join(' ')}`.toLowerCase()
       return words.every((word) => text.includes(word))
     })
-  }, [catalog, query])
+  }, [catalog, onlyMcp, query])
 
   return (
     <div className="space-y-4" data-agent-plugins-browse="">
@@ -183,9 +264,11 @@ export function AgentPluginsBrowse({
                   {t('seal.agentPlugins.browse.installed', 'Installed')}
                 </SettingsBadge>
               ) : onInstall ? (
-                <Button type="button" variant="outline" size="sm" onClick={() => onInstall(entry)}>
-                  {t('seal.agentPlugins.browse.install', 'Install…')}
-                </Button>
+                <InstallButton
+                  entry={entry}
+                  busy={installing?.has(entry.name) ?? false}
+                  onInstall={onInstall}
+                />
               ) : null}
             </div>
           ))

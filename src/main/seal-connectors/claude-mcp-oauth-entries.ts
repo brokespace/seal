@@ -38,7 +38,13 @@ export function parseCredentials(json: string | null): Record<string, unknown> |
 }
 
 export function mcpOAuthEntriesOf(credentials: Record<string, unknown>): McpOAuthEntries {
-  return isRecord(credentials.mcpOAuth) ? (credentials.mcpOAuth as McpOAuthEntries) : {}
+  const table = credentials.mcpOAuth
+  if (!isRecord(table)) {
+    return {}
+  }
+  return Object.fromEntries(
+    Object.entries(table).flatMap(([key, entry]) => (isRecord(entry) ? [[key, entry]] : []))
+  )
 }
 
 export function withEntries(
@@ -110,6 +116,14 @@ export function withLoginOnly(
   return sameEntries(source.mcpOAuth, own)
     ? sourceCredentialsJson
     : JSON.stringify(withEntries(source, own))
+}
+
+/** A login that carries no MCP sign-ins: Seal's store moves those, never a login transfer. */
+export function withoutMcpOAuth(credentialsJson: string): string {
+  const credentials = parseCredentials(credentialsJson)
+  return credentials && 'mcpOAuth' in credentials
+    ? JSON.stringify(withEntries(credentials, {}))
+    : credentialsJson
 }
 
 export async function readMcpOAuthEntries(

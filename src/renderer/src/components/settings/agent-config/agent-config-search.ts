@@ -12,9 +12,6 @@ const KEYWORDS = [
   'slash commands',
   'hooks',
   'permissions',
-  'mcp',
-  'plugins',
-  'marketplace',
   'settings.json',
   'config.toml'
 ]
@@ -28,8 +25,8 @@ export function getAgentConfigSearchEntries(
     {
       title: t('auto.components.agentConfig.search.title', 'Agent configuration'),
       description: t(
-        'auto.components.agentConfig.search.description',
-        'Instructions, skills, MCP servers, plugins and settings for Claude Code, Codex and other agents.'
+        'seal.agentConfig.search.description',
+        'Instructions, skills and settings for Claude Code, Codex and other agents, machine by machine.'
       ),
       // File and product names are typed as they are written, in any language.
       keywords: [...(scope ? [scope] : []), ...KEYWORDS]

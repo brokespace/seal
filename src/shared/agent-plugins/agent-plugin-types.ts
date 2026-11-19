@@ -1,6 +1,3 @@
-import type { AgentConfigAgentId } from '../agent-config/agent-config-types'
-import type { MachineId } from '../machines/machine-types'
-
 /** Agents with a plugin marketplace and an installer of their own. */
 export type AgentPluginHarness = 'claude' | 'codex'
 
@@ -42,6 +39,8 @@ export type AgentPluginListing = {
   installPolicy?: string
   /** Codex's `authPolicy`, e.g. `ON_INSTALL`. */
   authPolicy?: string
+  /** A Codex listing served from ChatGPT's remote catalog: an app that only runs inside ChatGPT. */
+  chatgptApp?: boolean
 }
 
 /** A plugin by name, with every harness marketplace that offers it. */
@@ -56,29 +55,6 @@ export type AgentPluginCatalogEntry = {
 export type AgentPluginCatalog = {
   entries: AgentPluginCatalogEntry[]
   harnesses: { harness: AgentPluginHarness; available: boolean; error?: string }[]
-}
-
-/** `all` keeps reaching machines, accounts and agents that appear later. */
-export type AgentPluginTargetList<T extends string> = 'all' | T[]
-
-/**
- * Where a plugin applies. Accounts are Seal account keys (`claude:<email>`); each agent's own
- * login on a machine is `<provider>:system`.
- */
-export type AgentPluginTargets = {
-  machines: AgentPluginTargetList<MachineId>
-  accounts: AgentPluginTargetList<string>
-  agents: AgentPluginTargetList<AgentConfigAgentId>
-}
-
-export const AGENT_PLUGIN_ALL_TARGETS: AgentPluginTargets = {
-  machines: 'all',
-  accounts: 'all',
-  agents: 'all'
-}
-
-export function agentPluginSystemAccount(provider: AgentPluginHarness): string {
-  return `${provider}:system`
 }
 
 /** What a plugin's folder provides; MCP entries are kept as the plugin wrote them. */

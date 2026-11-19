@@ -35,6 +35,12 @@ export async function readClaudeInstallRoots(
     joinRelative(claudeConfigDir, 'plugins/installed_plugins.json'),
     'json'
   )
+  return parseClaudeInstallRoots(registry)
+}
+
+export function parseClaudeInstallRoots(
+  registry: Record<string, unknown>
+): Map<string, AgentPluginInstallRoot> {
   const plugins = isPlainObject(registry.plugins) ? registry.plugins : {}
   const installs = new Map<string, AgentPluginInstallRoot>()
   for (const [id, value] of Object.entries(plugins)) {

@@ -13,7 +13,7 @@ import {
   writeClaudeHomeCredentials,
   writeClaudeOAuthAccount
 } from './seal-claude-home-credentials'
-import { withLoginOnly } from '../seal-connectors/claude-mcp-oauth-entries'
+import { withLoginOnly, withoutMcpOAuth } from '../seal-connectors/claude-mcp-oauth-entries'
 import { reconcileClaudeLogin, reconcileCodexLogin } from './seal-login-copies'
 import { getSystemCodexHomePath } from '../codex/configuration/homes/codex-home-paths'
 import type { ProviderAccountServices } from '../providers/accounts/provider-account-services'
@@ -61,7 +61,7 @@ export async function exportClaudeCredential(
       typeof account.organizationUuid === 'string' ? account.organizationUuid : null,
     organizationName:
       typeof account.organizationName === 'string' ? account.organizationName : null,
-    credentialsJson: await requireClaudeCredentials(configDir, isSystem),
+    credentialsJson: withoutMcpOAuth(await requireClaudeCredentials(configDir, isSystem)),
     oauthAccountJson: JSON.stringify(account)
   }
 }

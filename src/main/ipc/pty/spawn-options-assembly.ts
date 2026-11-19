@@ -1,4 +1,5 @@
 import { withClaudeAgentViewPlugin } from '../../../shared/claude-agent-view-launch'
+import { withSealConnectorsTerminalLaunch } from '../../seal-connectors/seal-connectors-terminal-launch'
 import { resolveStartupShell } from '../../../shared/agent-launch/startup/tui-agent-startup-shell'
 import { resolveLocalWindowsAgentStartupShell } from '../../../shared/windows-terminal-shell'
 import { getAppEnvironment } from '../../../shared/app-environment'
@@ -149,12 +150,28 @@ export async function assemblePtySpawnLaunchOptions(input: PtySpawnLaunchOptions
       ? { wsl: { distro: input.expectedWslDistro ?? undefined } }
       : {})
   })
-  const env = openCodeLaunch.env
-  const pluginDir = !connectionId ? env?.ORCA_CLAUDE_AGENT_VIEW_PLUGIN_DIR : undefined
-  const launchCommand =
+  const pluginDir = !connectionId
+    ? openCodeLaunch.env?.ORCA_CLAUDE_AGENT_VIEW_PLUGIN_DIR
+    : undefined
+  const pluginCommand =
     pluginDir && openCodeLaunch.command
       ? withClaudeAgentViewPlugin(openCodeLaunch.command, pluginDir, shell)
       : openCodeLaunch.command
+  // Remote and WSL launches keep the agent's own MCP config: Seal's relay is this host's loopback.
+  const connectors =
+    connectionId || input.codexRuntime === 'wsl'
+      ? { command: pluginCommand, env: openCodeLaunch.env }
+      : await withSealConnectorsTerminalLaunch({
+          agent: launchAgent,
+          command: pluginCommand,
+          env: openCodeLaunch.env,
+          sessionId: input.sessionId,
+          worktreeId: args.worktreeId,
+          shell,
+          codexHome: input.selectedCodexHomePath
+        })
+  const env = connectors.env
+  const launchCommand = connectors.command
   promoteAgentTeamsShimPath(env, input.requestedAgentTeamsPath)
   const spawnOptions: PtySpawnOptions = {
     cols: args.cols,

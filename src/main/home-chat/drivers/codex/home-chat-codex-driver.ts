@@ -14,6 +14,12 @@ import type { HomeChatDriver, HomeChatDriverTurn } from '../home-chat-driver'
 import { missedItems, resumableSession } from '../home-chat-provider-session'
 import { claimToolCall } from '../home-chat-tool-call-claims'
 import { CodexExecEvents, SEAL_MCP_SERVER_NAME } from './codex-exec-events'
+import { codexConfigServerNames } from '../../../seal-connectors/codex-config-server-names'
+import { resolveSessionConnectors } from '../../../seal-connectors/seal-connectors-session-plan'
+import {
+  codexConnectorArgs,
+  type SessionConnectorPlan
+} from '../../../../shared/seal-connectors/session-connector-args'
 import {
   openSealMcpEndpoint,
   SEAL_MCP_TOKEN_ENV,
@@ -43,6 +49,8 @@ type CodexRun = {
   signal: AbortSignal
   events: CodexExecEvents
   endpoint?: SealMcpEndpoint
+  /** Seal's central connectors, which ride alongside the assistant's own `seal` server. */
+  connectors?: SessionConnectorPlan | null
 }
 
 /** `-c key=value` takes TOML; a JSON string is a valid TOML basic string. */
@@ -50,11 +58,11 @@ function config(key: string, value: string | number): string[] {
   return ['-c', `${key}=${typeof value === 'number' ? value : JSON.stringify(value)}`]
 }
 
-function execArgs(
+async function execArgs(
   options: HomeChatCodexDriverOptions,
   run: CodexRun,
   instructions: boolean
-): string[] {
+): Promise<string[]> {
   const server = `mcp_servers.${SEAL_MCP_SERVER_NAME}`
   return [
     'exec',
@@ -74,6 +82,15 @@ function execArgs(
           ...config(`${server}.default_tools_approval_mode`, 'approve')
         ]
       : []),
+    ...(run.connectors
+      ? codexConnectorArgs(
+          run.connectors,
+          // The assistant's own server stays on even when the account's config also names `seal`.
+          (await codexConfigServerNames(options.codexHome)).filter(
+            (name) => name !== SEAL_MCP_SERVER_NAME
+          )
+        )
+      : []),
     ...(options.model ? ['-m', options.model] : []),
     ...(run.resume ? [run.resume] : []),
     // The prompt arrives on stdin: no argument size limit, no shell quoting.
@@ -92,12 +109,13 @@ async function runCodex(options: HomeChatCodexDriverOptions, run: CodexRun): Pro
       : `${systemNote(`Standing instructions for this conversation:\n\n${run.systemPrompt}`)}\n\n${run.prompt}`
   const child = spawnSourceControlAgent({
     binary: 'codex',
-    args: execArgs(options, run, instructionsInArgs),
+    args: await execArgs(options, run, instructionsInArgs),
     cwd: options.cwd,
     env: {
       ...processEnvWithoutAgentSession(),
       ...(options.codexHome ? { CODEX_HOME: options.codexHome } : {}),
-      ...(run.endpoint ? { [SEAL_MCP_TOKEN_ENV]: run.endpoint.token } : {})
+      ...(run.endpoint ? { [SEAL_MCP_TOKEN_ENV]: run.endpoint.token } : {}),
+      ...run.connectors?.env
     },
     stdinMode: 'pipe',
     useCwdForNative: true
@@ -155,6 +173,17 @@ async function runTurn(
     return { text: reply.text, isError: reply.outcome !== 'ok' }
   })
   const message = modelTextForUserItem(input)
+  const plan = await resolveSessionConnectors({
+    sessionId: thread.meta.id,
+    harness: 'codex',
+    accountKey: null,
+    project: null
+  })
+  // The assistant's own server owns the name `seal`.
+  const connectors = plan && {
+    ...plan,
+    servers: plan.servers.filter((server) => server.name !== SEAL_MCP_SERVER_NAME)
+  }
   const attempt = async (resume: string | null): Promise<void> => {
     const events = new CodexExecEvents(recorder, randomUUID().slice(0, 8))
     try {
@@ -164,7 +193,8 @@ async function runTurn(
         resume,
         signal,
         events,
-        endpoint
+        endpoint,
+        connectors
       })
     } finally {
       if (events.sessionId && events.sawOutput) {

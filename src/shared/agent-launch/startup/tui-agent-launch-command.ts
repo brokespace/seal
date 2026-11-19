@@ -62,7 +62,8 @@ function isCodexExecutable(token: string | undefined): boolean {
 export function withCodexCommandArgs(
   command: string,
   args: readonly string[],
-  shell: AgentStartupShell
+  shell: AgentStartupShell,
+  quoteArg: (arg: string, shell: AgentStartupShell) => string = quoteStartupArg
 ): string {
   const tokens = tokenizeStartupCommand(command, shell)
   // Why: a wrapper may not forward -c, a compound line would hand it to another command, and
@@ -72,7 +73,7 @@ export function withCodexCommandArgs(
     tokens.ok &&
     isCodexExecutable(tokens.tokens[0]) &&
     !tokens.tokens.includes('--')
-    ? `${command} ${args.map((arg) => quoteStartupArg(arg, shell)).join(' ')}`
+    ? `${command} ${args.map((arg) => quoteArg(arg, shell)).join(' ')}`
     : command
 }
 

@@ -60,6 +60,8 @@
 1 src/main/runtime/terminal/input/agent-prompt-permission-hold.ts
 1 src/main/runtime/terminal/output/terminal-derived-agent-facts.ts
 1 src/main/runtime/terminal/wait/terminal-idle-polls.ts
+1 src/main/seal-accounts/newest-wins-replication.ts # Fleet replication heartbeat: the cadence bounds how stale a machine's copy gets when no push signal arrives; stop() clears it.
+1 src/main/seal-connectors/seal-connectors-refresher.ts # Token-refresh and lease heartbeat: the cadence is the feature (refresh ahead of expiry, sleep detection); stop() clears it.
 1 src/main/seal-mcp/http/seal-mcp-http-exchange.ts
 1 src/main/seal-mcp/relay/seal-mcp-relay-tunnel.ts
 1 src/main/ssh/legacy-relay/bridge/legacy-relay-daily-activity.ts
