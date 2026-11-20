@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus, RefreshCw } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
@@ -17,18 +17,20 @@ import {
   type SealFleetAccount,
   type SealFleetOverview
 } from '../../../../../shared/seal-accounts/seal-fleet-overview'
+import { sealAccountKeysMatch } from '../../../../../shared/seal-accounts/seal-account-key'
 import { findSealProfile } from '../../../../../shared/seal-accounts/seal-account-candidate-builder'
 import { Button } from '../../ui/button'
 import { SealAccountGroupSection } from './SealAccountGroupSection'
 import { SealAccountsNotices } from './SealAccountsNotices'
 import { SealAccountsOnboarding } from './SealAccountsOnboarding'
 import { SealSessionsSection, SealSwapHistorySection } from './SealActivitySections'
-import { SealAddAccountDialog } from './SealAddAccountDialog'
+import { SealAddAccountDialog, startSealRelogin } from './SealAddAccountDialog'
 import { SealAutoSwapSection } from './SealAutoSwapSection'
 import { SealEditAccountDialog } from './SealEditAccountDialog'
 import { SealRemoveAccountDialog, type SealRemoveAccountChoice } from './SealRemoveAccountDialog'
 import { SealRulesSection } from './SealRulesSection'
 import type { SealSecretInput } from './SealSecretForm'
+import { clearSealReloginRequest, useSealReloginRequest } from './seal-accounts-navigation'
 import type { SealRuleDraft, SealRuleRef } from './seal-rule-rows'
 import type { SealSignInController } from './use-seal-sign-in'
 
@@ -115,6 +117,21 @@ export function SealAccountsPageView({
       setDialog(null)
     }
   }
+  const reloginKey = useSealReloginRequest((state) => state.accountKey)
+  useEffect(() => {
+    // Only the full page answers; a machine's slice leaves the request for it.
+    if (!reloginKey || machineId || !overview) {
+      return
+    }
+    clearSealReloginRequest()
+    const account = SEAL_ACCOUNT_GROUPS.flatMap((group) => overview.groups[group]).find((entry) =>
+      sealAccountKeysMatch(entry.key, reloginKey)
+    )
+    if (account) {
+      startSealRelogin(signIn, account)
+      setDialog({ kind: 'relogin', account })
+    }
+  }, [reloginKey, machineId, overview, signIn])
 
   if (!overview || !status) {
     return (
@@ -141,7 +158,10 @@ export function SealAccountsPageView({
   const shown = scopedMachine ? overviewForMachine(overview, scopedMachine.id) : overview
   const actionsFor = (account: SealFleetAccount) => ({
     onUse: () => actions.use(account),
-    onRelogin: () => setDialog({ kind: 'relogin', account }),
+    onRelogin: () => {
+      startSealRelogin(signIn, account)
+      setDialog({ kind: 'relogin', account })
+    },
     onEdit: () => setDialog({ kind: 'edit', account }),
     onRemove: () => setDialog({ kind: 'remove', account }),
     onPush: (machineId: string) => actions.push(account, machineId)

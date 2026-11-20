@@ -10,6 +10,19 @@ const CONFIRMED_SIGN_OUT_PATTERNS = [
   /\bplease reauthenticate\b/i
 ]
 
+// Claude's wording once its stored refresh token was refused, e.g. "OAuth session expired and could not be refreshed".
+const REFRESH_REJECTED_PATTERNS = [
+  /\boauth session expired\b/i,
+  /\bcould not be refreshed\b/i,
+  /\binvalid_grant\b/i,
+  /\brefresh token\b[^.]*\b(?:invalid|revoked|expired)\b/i
+]
+
+/** Whether provider text says the saved login could not be renewed and needs a new sign-in. */
+export function isLoginRefreshRejectedText(text: string | null | undefined): boolean {
+  return Boolean(text && REFRESH_REJECTED_PATTERNS.some((pattern) => pattern.test(text)))
+}
+
 /**
  * Whether a usage reading proves the login needs a new sign-in. A lapsed token, a throttled or
  * failed usage check and a network error are not that: the login still works.
@@ -17,7 +30,10 @@ const CONFIRMED_SIGN_OUT_PATTERNS = [
 export function isUsageSignInRequired(
   limits: Pick<ProviderRateLimits, 'error' | 'usageMetadata'>
 ): boolean {
-  if (limits.usageMetadata?.failureKind === 'missing-credentials') {
+  if (
+    limits.usageMetadata?.failureKind === 'missing-credentials' ||
+    isLoginRefreshRejectedText(limits.error)
+  ) {
     return true
   }
   // Auth wording may describe a refresh/network failure; only proven sign-out warrants a sign-in CTA.

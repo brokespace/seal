@@ -29,6 +29,10 @@ export type HomeAccount = {
   fetching: boolean
   /** The login stopped working; the row asks for a sign-in instead of showing usage. */
   needsSignIn?: boolean
+  /** Why it needs one: its session ran out, or it holds no login. */
+  signInReason?: 'expired' | 'signed-out'
+  /** The vault account to sign in again; absent for rows that are not vault accounts. */
+  accountKey?: string
 }
 
 export type HomeReviewState = 'open' | 'draft' | 'merged' | 'closed'

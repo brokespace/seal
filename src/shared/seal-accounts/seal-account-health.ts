@@ -14,6 +14,10 @@ export type SealLoginExpiry = {
   stranded?: boolean
   /** The stored login belongs to another plan than the account it sits under. */
   wrongLogin?: boolean
+  /** The account folder names a login but holds no token: Claude itself reports signed out. */
+  missing?: boolean
+  /** Claude refused the stored refresh token (or it ran out), so only a new sign-in renews it. */
+  refreshRejected?: boolean
 }
 
 const CLAUDE_PLAN_OF_ORG: Record<string, string> = {
@@ -55,8 +59,11 @@ export function sealAccountHealth(inputs: SealHealthInputs): SealAccountHealth {
   if (inputs.missingSecret) {
     return { state: 'dead', reason: 'missing-secret' }
   }
-  if (inputs.needsSignIn) {
+  if (inputs.needsSignIn || inputs.expiry?.missing) {
     return { state: 'dead', reason: 'signed-out' }
+  }
+  if (inputs.expiry?.refreshRejected) {
+    return { state: 'dead', reason: 'expired' }
   }
   if (inputs.authFailure) {
     return { state: 'dead', reason: 'rejected' }

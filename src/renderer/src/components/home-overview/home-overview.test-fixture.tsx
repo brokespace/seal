@@ -258,7 +258,7 @@ function limits(
   }
 }
 
-const ACCOUNTS: HomeAccount[] = [
+export const BUSY_HOME_ACCOUNTS: HomeAccount[] = [
   {
     id: 'claude:active',
     provider: 'claude',
@@ -276,6 +276,18 @@ const ACCOUNTS: HomeAccount[] = [
     active: false,
     limits: limits('claude', 8, null),
     fetching: false
+  },
+  {
+    id: 'claude:expired',
+    provider: 'claude',
+    providerLabel: 'Claude',
+    label: 'brian@old.example',
+    active: false,
+    limits: null,
+    fetching: false,
+    needsSignIn: true,
+    signInReason: 'expired',
+    accountKey: 'claude:brian@old.example'
   },
   {
     id: 'codex:active',
@@ -377,7 +389,7 @@ function staticProviders(data: {
 export const BUSY_HOME_PROVIDERS = staticProviders({
   sessions: BUSY_HOME_SESSIONS,
   machines: MACHINES,
-  accounts: ACCOUNTS,
+  accounts: BUSY_HOME_ACCOUNTS,
   workspaces: WORKSPACES,
   automations: AUTOMATIONS
 })

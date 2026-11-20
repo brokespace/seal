@@ -1502,7 +1502,7 @@
         "noUsage": "No usage reading yet."
       },
       "action": {
-        "relogin": "Sign in again",
+        "signIn": "Sign in",
         "use": "Use for new sessions",
         "more": "Actions for {{value0}}",
         "rename": "Rename and limits…",
@@ -1739,7 +1739,7 @@
         "rateLimited": "Rate limited",
         "rateLimitedUntil": "Rate limited · resets in {{value0}}",
         "signInNeeded": "Sign-in needed",
-        "loginExpired": "Login expired",
+        "loginExpired": "Session expired",
         "wrongLogin": "Wrong login stored"
       },
       "identity": {
@@ -1786,9 +1786,6 @@
           "title": "Project accounts",
           "description": "Which Claude and Codex accounts this project’s sessions use, on every machine or on one."
         }
-      },
-      "home": {
-        "signInAgain": "Sign in again in Settings > Accounts"
       },
       "project": {
         "title": "Accounts",

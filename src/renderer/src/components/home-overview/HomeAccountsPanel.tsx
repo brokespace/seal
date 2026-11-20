@@ -2,6 +2,9 @@ import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
 import { AccountUsageReading } from '../status-bar/AccountUsageReading'
 import type { HomeAccount } from './home-overview-model'
+import { cn } from '@/lib/class-names'
+import { SEAL_HEALTH_TEXT_CLASS } from '../settings/seal-accounts/seal-account-presentation'
+import { SealSignInButton } from '../settings/seal-accounts/SealSignInButton'
 import { PageCard } from '@/components/page-layout/PageCard'
 import { HomeOverviewEmpty, HomeOverviewRowButton } from './HomeOverviewRow'
 
@@ -14,8 +17,8 @@ function AccountRow({
 }): React.JSX.Element {
   const t = useTranslate()
   return (
-    <li className="p-1">
-      <HomeOverviewRowButton onClick={onOpen} className="block px-2 py-1">
+    <li className="flex items-center gap-1 p-1">
+      <HomeOverviewRowButton onClick={onOpen} className="block min-w-0 flex-1 px-2 py-1">
         <span className="flex items-baseline gap-2">
           <span className="min-w-0 flex-1 truncate text-xs text-foreground">{account.label}</span>
           <span className="shrink-0 text-2xs text-muted-foreground">
@@ -24,8 +27,10 @@ function AccountRow({
           </span>
         </span>
         {account.needsSignIn ? (
-          <span className="mt-1 block truncate text-2xs text-muted-foreground">
-            {t('seal.accounts.home.signInAgain', 'Sign in again in Settings > Accounts')}
+          <span className={cn('mt-1 block truncate text-2xs', SEAL_HEALTH_TEXT_CLASS.dead)}>
+            {account.signInReason === 'expired'
+              ? t('seal.accounts.health.loginExpired', 'Session expired')
+              : t('seal.accounts.health.signInNeeded', 'Sign-in needed')}
           </span>
         ) : (
           <span className="mt-1.5 block">
@@ -33,6 +38,9 @@ function AccountRow({
           </span>
         )}
       </HomeOverviewRowButton>
+      {account.needsSignIn && account.accountKey ? (
+        <SealSignInButton accountKey={account.accountKey} />
+      ) : null}
     </li>
   )
 }

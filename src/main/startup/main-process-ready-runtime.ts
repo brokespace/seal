@@ -55,6 +55,7 @@ import { installLiveSessions } from '../live-sessions/live-sessions-install'
 import { startMachineDiskIndexKeeper } from '../machines/resources/machine-disk-index-keeper'
 import { isOrcadSidecarLaunch } from '../window/activation/foreground-activation-policy'
 import { installSealMcp } from '../seal-mcp/seal-mcp-install'
+import { getSealAccountManager } from '../seal-accounts/seal-account-manager'
 import { installDesktopSessionSummaries } from '../session-summaries/desktop-session-summaries'
 import { registerLiveSessionIpc } from '../live-sessions/live-sessions-ipc'
 import { installLiveSessionDesktopNotifications } from '../live-sessions/live-session-desktop-notifications'
@@ -153,6 +154,8 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
   runAfterFirstWindowShown(() => {
     app.on('browser-window-focus', startSpeechModelWarmup(store))
   }, WORKTREE_TRASH_SWEEP_FALLBACK_MS)
+  // A login can lapse or be redone in a terminal while Seal is in the background.
+  app.on('browser-window-focus', () => getSealAccountManager()?.recheckLogins(60_000))
   runAfterFirstWindowShown(() => {
     startClaudeCodeThemeSync({
       getSettings: () => store.getSettings(),

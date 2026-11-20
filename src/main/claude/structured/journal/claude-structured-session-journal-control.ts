@@ -6,6 +6,9 @@ import type {
   StructuredAgentSessionEventSink,
   StructuredAgentSessionSinkAdmission
 } from '../../../native-chat/agent-session-wire/journal-ingress/structured-agent-session-event-sink'
+import { isLoginRefreshRejectedText } from '../../../../shared/usage-sign-in-required'
+import { reportSealClaudeLoginFailure } from '../../../seal-accounts/seal-login-failure'
+import { claudeStartupResultError } from '../../sdk-transport/claude-stream-json-exit-error'
 import type { ClaudeStreamJsonConnection } from '../../claude-stream-json-connection'
 import type { ClaudeJournalTranslator } from './claude-journal-translator-contract'
 import { createClaudeJournalTranslator } from './claude-structured-journal-translation'
@@ -25,13 +28,18 @@ export function createClaudeSessionJournalTranslator(
   acceptStartupFailure: (message: Record<string, unknown>) => boolean
 ): ClaudeJournalTranslator | null {
   const { attempt } = failure
+  const onLoginFailure = (text: string): void => {
+    if (attempt.launch) {
+      void reportSealClaudeLoginFailure({ claudeConfigDir: attempt.launch.claudeConfigDir, text })
+    }
+  }
   attempt.delivery.onFailure = createClaudeJournalFailureHandler(failure)
   attempt.delivery.bind(sink)
   return sink
     ? createClaudeJournalTranslator({
         sink,
         delivery: attempt.delivery,
-        account: () => attempt.account,
+        account: () => attempt.launch?.account,
         model: () => {
           const session = currentSession()
           return (
@@ -47,7 +55,14 @@ export function createClaudeSessionJournalTranslator(
         onBackgroundTaskJournalFailure: createClaudeJournalFailureHandler(failure),
         bindPromptItemId: (itemId, promptKey) =>
           attempt.prompts.bindJournalItemId(itemId, promptKey),
-        acceptStartupFailure
+        acceptStartupFailure: (message) => {
+          const text = claudeStartupResultError(message).message
+          if (isLoginRefreshRejectedText(text)) {
+            onLoginFailure(text)
+          }
+          return acceptStartupFailure(message)
+        },
+        onLoginFailure
       })
     : null
 }

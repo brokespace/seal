@@ -68,6 +68,13 @@ function MethodRow({
 }
 
 /** Adds an account by any supported route, or signs an existing one in again. */
+/** A Claude login has one way back in, so signing it in again starts as its dialog opens. */
+export function startSealRelogin(signIn: SealSignInController, account: SealFleetAccount): void {
+  if (account.provider === 'claude' && !signIn.status) {
+    signIn.start({ provider: 'claude', method: 'browser', openBrowser: true, account: account.key })
+  }
+}
+
 export function SealAddAccountDialog({
   open,
   onOpenChange,
@@ -80,8 +87,11 @@ export function SealAddAccountDialog({
 }: SealAddAccountDialogProps): React.JSX.Element {
   const t = useTranslate()
   const [group, setGroup] = useState<SealAccountGroup>(relogin?.provider ?? initialGroup)
-  // A sign-in that is still running when the dialog opens is shown rather than restarted.
-  const [view, setView] = useState<View>(signIn.status ? 'sign-in' : 'methods')
+  // A sign-in that is still running when the dialog opens is shown rather than restarted; the page
+  // starts a Claude re-login as it opens the dialog (startSealRelogin).
+  const [view, setView] = useState<View>(
+    signIn.status || relogin?.provider === 'claude' ? 'sign-in' : 'methods'
+  )
   const [method, setMethod] = useState<SealSignInMethod>('browser')
   const [importing, setImporting] = useState(false)
   const provider: SealProvider = group === 'codex' ? 'codex' : 'claude'

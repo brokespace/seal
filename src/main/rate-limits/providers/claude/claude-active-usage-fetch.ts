@@ -19,6 +19,7 @@ import { fetchClaudeOAuthProfileBilling } from './claude-oauth-profile-request'
 import { readClaudeStateBilling } from './claude-state-billing'
 import { getClaudeProfileRouter } from '../../../claude-accounts/profiles/routing/claude-profile-installed-router'
 import { readUserClaudeConfigDir } from '../../../claude-accounts/profiles/claude-profile-paths'
+import { isClaudeRefreshFingerprintRejected } from '../../../claude-accounts/runtime-auth/claude-refresh-rejections'
 
 export const CLAUDE_API_KEY_BILLING_MESSAGE = 'No subscription plan — API key billing'
 export const CLAUDE_LOGIN_UNREADABLE_MESSAGE =
@@ -164,6 +165,7 @@ function canClaudeRenewLogin(
   const refreshTokenExpiresAt = credentials.refreshTokenExpiresAt
   return (
     credentials.hasRefreshableCredentials &&
+    !isClaudeRefreshFingerprintRejected(credentials.refreshTokenFingerprint) &&
     (refreshTokenExpiresAt === undefined || refreshTokenExpiresAt > Date.now()) &&
     !(error instanceof OAuthUsageError && /revoked/i.test(error.message))
   )

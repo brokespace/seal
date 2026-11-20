@@ -1,11 +1,14 @@
+import { isLoginRefreshRejectedText } from '../../shared/usage-sign-in-required'
 import { SEAL_PROVIDERS } from '../../shared/seal-accounts/seal-accounts-config'
 import {
   decideSessionSwap,
   isRateLimitStop
 } from '../../shared/seal-accounts/seal-session-swap-decision'
+import type { SealSessionAssignment } from '../../shared/seal-accounts/seal-accounts-status'
 import type { SealAccountManager } from './seal-account-manager'
 import { reconcileFleetCredentials } from './seal-fleet-credentials'
 import { sealFleetTransport } from './seal-fleet-sync'
+import { reportSealClaudeLoginFailure } from './seal-login-failure'
 import { loginIsCopied, reconcileClaudeLogin, reconcileCodexLogin } from './seal-login-copies'
 import { removeSessionHome } from './seal-session-homes'
 import { swapSealSession } from './seal-session-swap'
@@ -29,6 +32,7 @@ export class SealSessionWatch {
   private timer: ReturnType<typeof setTimeout> | null = null
   private running: Promise<void> | null = null
   private lastUpkeep = 0
+  private readonly reportedLoginFailures = new Map<string, string>()
   private disposed = false
   private readonly unsubscribe: (() => void)[]
 
@@ -72,6 +76,8 @@ export class SealSessionWatch {
 
   private async runTick(): Promise<void> {
     this.manager.usage.sync()
+    // Self-throttled; the shorter cadence for a login that looks dead runs from here.
+    void this.manager.loginExpiry.refresh(this.manager)
     const terminal = sealSessionTerminal()
     if (terminal) {
       await this.trackPanes(terminal.handleForPane.bind(terminal))
@@ -127,6 +133,7 @@ export class SealSessionWatch {
         row.state !== 'working' &&
         row.receivedAt > (session.lastSwapAt ?? 0) &&
         isRateLimitStop(row.lastAssistantMessage)
+      this.reportLoginFailure(session, row?.lastAssistantMessage)
       if (rateLimited && session.accountKey) {
         this.manager.limitStops.set(session.accountKey, row.receivedAt)
       }
@@ -168,6 +175,27 @@ export class SealSessionWatch {
         continueAfter: decision.reason === 'rate-limit'
       })
     }
+  }
+
+  /** A session that printed Claude's refresh failure tells Seal its login is dead; once per message. */
+  private reportLoginFailure(session: SealSessionAssignment, message: string | undefined): void {
+    if (
+      session.provider !== 'claude' ||
+      !message ||
+      !isLoginRefreshRejectedText(message) ||
+      this.reportedLoginFailures.get(session.id) === message
+    ) {
+      return
+    }
+    this.reportedLoginFailures.set(session.id, message)
+    void reportSealClaudeLoginFailure(
+      {
+        text: message,
+        accountKey: session.accountKey ?? undefined,
+        claudeConfigDir: session.profileHome ?? undefined
+      },
+      this.manager
+    )
   }
 
   /** Keeps each shared login's copies (account home, session homes, other machines) on one token. */

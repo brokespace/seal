@@ -207,7 +207,7 @@ export function SealAccountCard({
           {tone === 'dead' && candidate.credential === 'login' ? (
             <Button variant="outline" size="xs" onClick={onRelogin}>
               <LogIn />
-              {t('seal.accounts.action.relogin', 'Sign in again')}
+              {t('seal.accounts.action.signIn', 'Sign in')}
             </Button>
           ) : brokenElsewhere.length > 0 ? (
             <Button

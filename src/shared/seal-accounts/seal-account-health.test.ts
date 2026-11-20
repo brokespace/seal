@@ -27,4 +27,28 @@ describe('sealAccountHealth', () => {
     })
     expect(health).toEqual({ state: 'dead', reason: 'wrong-login' })
   })
+
+  it('calls a folder that names a login but holds no token signed out', () => {
+    const health = sealAccountHealth({
+      ...BASE,
+      expiry: { expiresAt: null, refreshable: false, missing: true }
+    })
+    expect(health).toEqual({ state: 'dead', reason: 'signed-out' })
+  })
+
+  it('calls a login whose refresh token was refused expired, whatever its access token says', () => {
+    const health = sealAccountHealth({
+      ...BASE,
+      expiry: { expiresAt: BASE.now + 3_600_000, refreshable: false, refreshRejected: true }
+    })
+    expect(health).toEqual({ state: 'dead', reason: 'expired' })
+  })
+
+  it('calls a lapsed login that cannot renew itself expired', () => {
+    const health = sealAccountHealth({
+      ...BASE,
+      expiry: { expiresAt: BASE.now - 1, refreshable: false }
+    })
+    expect(health).toEqual({ state: 'dead', reason: 'expired' })
+  })
 })

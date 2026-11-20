@@ -28,6 +28,7 @@ describe('Claude credentials', () => {
       accessToken: 'at-1',
       refreshToken: 'rt-1',
       expiresAt: 1_800_000_000_000,
+      refreshTokenExpiresAt: null,
       subscriptionType: 'max'
     })
     expect(parseClaudeOAuth('{"claudeAiOauth":{}}')).toBeNull()

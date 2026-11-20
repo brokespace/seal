@@ -57,8 +57,9 @@ export function sealAccountName(alias: string | undefined, email: string | null)
 
 function toCandidate(seed: SealCandidateSeed, sources: SealCandidateSources): SealAccountCandidate {
   const profile = findSealProfile(sources.config, seed.key)
-  const authFailure = isDeadLogin(seed.limits)
   const secret = seed.kind === 'api-key'
+  const expiry = secret ? null : (sources.loginExpiry?.(seed.key) ?? null)
+  const authFailure = isDeadLogin(seed.limits) || expiry?.refreshRejected === true
   return {
     key: seed.key,
     provider: seed.provider,
@@ -77,7 +78,7 @@ function toCandidate(seed: SealCandidateSeed, sources: SealCandidateSources): Se
       needsSignIn: seed.needsSignIn,
       missingSecret: secret && !seed.launchable,
       setupTokenCreatedAt: seed.credential === 'setup-token' ? seed.addedAt : null,
-      expiry: secret ? null : (sources.loginExpiry?.(seed.key) ?? null)
+      expiry
     }),
     wslDistro: seed.wslDistro,
     addedAt: seed.addedAt,

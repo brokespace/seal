@@ -36,6 +36,7 @@ import {
   ProviderFrameRow
 } from '../diagnostics/NativeChatProviderDetails'
 import { NativeChatSetupButton } from '../../host-access/NativeChatSetupButton'
+import { isLoginRefreshRejectedText } from '../../../../../../shared/usage-sign-in-required'
 import { agentSessionFailureDetailText } from '../../../../../../shared/agent-session/failures/agent-session-failure-quoted-detail'
 import { readWholeAgentSessionFailureFact } from '../../../../../../shared/agent-session/failures/agent-session-failure'
 import { agentSessionFailureSentence } from '../../../../../../shared/agent-session/failures/agent-session-failure-words'
@@ -260,38 +261,44 @@ export function NativeChatNoticeRow({
           (surface) => block.text === agentSessionFailureSentence(failure, surface, { agentName })
         )
       : undefined
-  const text = named
-    ? nativeChatOrcaStopRowText(
-        orcaStop.cause,
-        machine,
-        { continueAvailable, remoteHost },
-        sayNativeChatOrcaStopTranslated
-      )
-    : failure?.kind === 'usageLimitReached'
-      ? agentSessionFailureSentence(
-          failure,
-          'row',
-          {
-            agentName,
-            usageLimitReset: formatUsageLimitResetClock
-          },
-          sayAgentSessionFailureTranslated
+  const sessionExpired =
+    failure?.kind === 'notSignedIn' &&
+    (isLoginRefreshRejectedText(agentSessionFailureDetailText(failure)) ||
+      isLoginRefreshRejectedText(block.text))
+  const text = sessionExpired
+    ? t('seal.accounts.health.loginExpired', 'Session expired')
+    : named
+      ? nativeChatOrcaStopRowText(
+          orcaStop.cause,
+          machine,
+          { continueAvailable, remoteHost },
+          sayNativeChatOrcaStopTranslated
         )
-      : failure && factSurface
+      : failure?.kind === 'usageLimitReached'
         ? agentSessionFailureSentence(
             failure,
-            factSurface,
-            { agentName },
+            'row',
+            {
+              agentName,
+              usageLimitReset: formatUsageLimitResetClock
+            },
             sayAgentSessionFailureTranslated
           )
-        : failure && wslMissingSurface && wslDistro
+        : failure && factSurface
           ? agentSessionFailureSentence(
               failure,
-              wslMissingSurface,
-              { agentName, wslDistro },
+              factSurface,
+              { agentName },
               sayAgentSessionFailureTranslated
             )
-          : agentSessionGoalControlWords(block.text)
+          : failure && wslMissingSurface && wslDistro
+            ? agentSessionFailureSentence(
+                failure,
+                wslMissingSurface,
+                { agentName, wslDistro },
+                sayAgentSessionFailureTranslated
+              )
+            : agentSessionGoalControlWords(block.text)
   const failureDetail = agentSessionFailureDetailText(failure)
   const detail = failureDetail?.trim() !== text.trim() ? failureDetail : undefined
   const tone = named ? 'notice' : look.kind === 'line' ? look.tone : null
