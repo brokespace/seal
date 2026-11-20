@@ -4,6 +4,7 @@ import path from 'node:path'
 import { z } from 'zod'
 import type { ClaudeBillingSignals } from '../../../../shared/claude-account-billing'
 import { isDefinitiveAbsence } from '../../../../shared/definitive-filesystem-absence'
+import { claudeRefreshTokenFingerprint } from '../../../claude-accounts/runtime-auth/claude-refresh-rejections'
 import { readActiveClaudeKeychainCredentialsStrict } from '../../../claude-accounts/runtime-auth/keychain'
 import type { ClaudeRuntimeAuthPreparation } from '../../../claude-accounts/runtime-auth/runtime-auth-types'
 import { readUserClaudeConfigDir } from '../../../claude-accounts/profiles/claude-profile-paths'
@@ -19,6 +20,8 @@ export type ClaudeOAuthCredentialReadResult = {
   hasRefreshableCredentials: boolean
   /** Epoch ms; Claude Code 2.1.x records it beside the refresh token. */
   refreshTokenExpiresAt?: number
+  /** Fingerprint of the refresh token, so a refused one can be recognized without holding it. */
+  refreshTokenFingerprint?: string
   /** The plan fields Claude Code saved beside the token at sign-in. */
   billing?: ClaudeBillingSignals
   source: ClaudeOAuthCredentialSource
@@ -72,6 +75,9 @@ export function parseClaudeOAuthCredentialsJson(
       hasRefreshableCredentials: Boolean(oauth?.refreshToken),
       ...(typeof oauth?.refreshTokenExpiresAt === 'number'
         ? { refreshTokenExpiresAt: oauth.refreshTokenExpiresAt }
+        : {}),
+      ...(oauth?.refreshToken
+        ? { refreshTokenFingerprint: claudeRefreshTokenFingerprint(oauth.refreshToken) }
         : {}),
       ...(billing ? { billing } : {}),
       source

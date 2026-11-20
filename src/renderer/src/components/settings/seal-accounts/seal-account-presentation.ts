@@ -52,7 +52,7 @@ export function sealHealthLabel(
     case 'no-refresh':
       return t('seal.accounts.health.signInNeeded', 'Sign-in needed')
     case 'expired':
-      return t('seal.accounts.health.loginExpired', 'Login expired')
+      return t('seal.accounts.health.loginExpired', 'Session expired')
     case 'wrong-login':
       return t('seal.accounts.health.wrongLogin', 'Wrong login stored')
     case 'missing-secret':

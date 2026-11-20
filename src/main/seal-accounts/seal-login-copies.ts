@@ -11,6 +11,7 @@ import {
   refreshMarginMs,
   withRefreshedClaudeTokens
 } from '../../shared/seal-accounts/seal-credential-freshness'
+import { markClaudeRefreshRejected } from '../claude-accounts/runtime-auth/claude-refresh-rejections'
 import type { SealAccountManager } from './seal-account-manager'
 import { withLoginOnly } from '../seal-connectors/claude-mcp-oauth-entries'
 import { withClaudeConfigLocks } from './seal-claude-config-lock'
@@ -19,7 +20,7 @@ import {
   readClaudeOAuthAccount,
   writeClaudeHomeCredentials
 } from './seal-claude-home-credentials'
-import { refreshClaudeOAuthToken } from './seal-claude-oauth-refresh'
+import { refreshClaudeOAuthToken, SealClaudeRefreshFailed } from './seal-claude-oauth-refresh'
 
 type CopiesManager = Pick<
   SealAccountManager,
@@ -115,11 +116,12 @@ async function claudeCopyHomes(
  * it is near expiry and shared. A refresh token works once, so the refresh runs under Claude's
  * locks on every copy and its successor lands in the account home first, then everywhere else.
  * Claude Code itself refreshes about five minutes before expiry; Seal's earlier margin means only
- * one holder ever spends the token.
+ * one holder ever spends the token. `force` also refreshes an unshared login, to verify a session
+ * that reported its refresh failing; it still never spends a token that is not near expiry.
  */
 export function reconcileClaudeLogin(
   manager: CopiesManager,
-  args: { accountId: string; accountKey: SealAccountKey; fetch?: typeof fetch }
+  args: { accountId: string; accountKey: SealAccountKey; force?: boolean; fetch?: typeof fetch }
 ): Promise<SealLoginReconcile> {
   return serialized(`claude:${args.accountId}`, async () => {
     const homes = await claudeCopyHomes(manager, args.accountId, args.accountKey)
@@ -140,7 +142,11 @@ export function reconcileClaudeLogin(
       let refreshed = false
       const oauth = parseClaudeOAuth(target)
       const margin = refreshMarginMs(manager.machineKey === 'local' ? 'vault' : 'remote')
-      if (shared && oauth?.refreshToken && needsRefresh(oauth.expiresAt, manager.now(), margin)) {
+      if (
+        oauth?.refreshToken &&
+        (shared || args.force) &&
+        needsRefresh(oauth.expiresAt, manager.now(), margin)
+      ) {
         try {
           const tokens = await refreshClaudeOAuthToken(oauth.refreshToken, {
             fetch: args.fetch,
@@ -150,6 +156,9 @@ export function reconcileClaudeLogin(
           freshness = tokens.expiresAt
           refreshed = true
         } catch (error) {
+          if (error instanceof SealClaudeRefreshFailed && error.kind === 'invalid_grant') {
+            markClaudeRefreshRejected(oauth.refreshToken)
+          }
           // Claude Code still refreshes on its own five minutes before expiry.
           console.warn('[seal-accounts]', error instanceof Error ? error.message : String(error))
         }

@@ -5,18 +5,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CLAUDE_LOGIN_FIXTURES } from '../../../../shared/claude-account-billing.test-fixture'
 import type { ProviderRateLimits } from '../../../../shared/rate-limit-types'
 import { setMainHttpClient } from '../../../network/http-client'
+import {
+  markClaudeRefreshRejected,
+  resetClaudeRefreshRejectionsForTest
+} from '../../../claude-accounts/runtime-auth/claude-refresh-rejections'
 import { fetchActiveClaudeRateLimits } from './claude-active-usage-fetch'
 import { resetClaudeOAuthProfileCacheForTests } from './claude-oauth-profile-request'
 
-vi.mock('./claude-oauth-usage-request', () => ({
-  fetchClaudeOAuthUsage: async (): Promise<ProviderRateLimits> => ({
-    provider: 'claude',
-    session: { usedPercent: 12, windowMinutes: 300, resetsAt: null, resetDescription: null },
-    weekly: null,
-    updatedAt: 1,
-    error: null,
-    status: 'ok'
-  })
+const usageRequest = vi.hoisted(() => ({ rejectedStatus: null as number | null }))
+
+vi.mock('./claude-oauth-usage-request', async () => ({
+  fetchClaudeOAuthUsage: async (): Promise<ProviderRateLimits> => {
+    if (usageRequest.rejectedStatus !== null) {
+      const { OAuthUsageError } = await import('./claude-oauth-usage-error')
+      throw new OAuthUsageError('token expired', usageRequest.rejectedStatus, true)
+    }
+    return {
+      provider: 'claude',
+      session: { usedPercent: 12, windowMinutes: 300, resetsAt: null, resetDescription: null },
+      weekly: null,
+      updatedAt: 1,
+      error: null,
+      status: 'ok'
+    }
+  }
 }))
 // The Keychain is this computer's own login; these fixtures live in a temp folder.
 vi.mock('../../../claude-accounts/runtime-auth/keychain', async (importOriginal) => ({
@@ -66,6 +78,8 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  usageRequest.rejectedStatus = null
+  resetClaudeRefreshRejectionsForTest()
   setMainHttpClient(null)
   vi.unstubAllEnvs()
   await rm(home, { recursive: true, force: true })
@@ -124,5 +138,30 @@ describe('fetchActiveClaudeRateLimits billing', () => {
 
     expect(limits.error).toBe('No subscription plan — API key billing')
     expect(limits.billing).toBeUndefined()
+  })
+})
+
+describe('fetchActiveClaudeRateLimits expired logins', () => {
+  const staleLogin = {
+    ...CLAUDE_LOGIN_FIXTURES.team,
+    credentials: { claudeAiOauth: { accessToken: 'access-old', refreshToken: 'refresh-old' } }
+  }
+
+  it('waits for Claude to renew a lapsed token while its refresh token still works', async () => {
+    usageRequest.rejectedStatus = 401
+
+    const limits = await readSystemLogin(staleLogin)
+
+    expect(limits.error).toBe('Claude usage updates the next time Claude runs.')
+  })
+
+  it('asks for a new sign-in once Claude refused the refresh token', async () => {
+    usageRequest.rejectedStatus = 401
+    markClaudeRefreshRejected('refresh-old')
+
+    const limits = await readSystemLogin(staleLogin)
+
+    expect(limits.error).toBe('Sign in again to use this account.')
+    expect(limits.usageMetadata?.failureKind).toBe('missing-credentials')
   })
 })

@@ -15,20 +15,45 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+export type ClaudeHomeCredentialsResult =
+  | { kind: 'present'; json: string }
+  | { kind: 'absent' }
+  | { kind: 'unreadable' }
+
+/** Tells a home with no stored login apart from one whose store could not be read (locked keychain). */
+export async function readClaudeHomeCredentialsResult(
+  configDir: string,
+  options: { system?: boolean } = {}
+): Promise<ClaudeHomeCredentialsResult> {
+  let keychainUnreadable = false
+  if (process.platform === 'darwin') {
+    try {
+      const fromKeychain = await readActiveClaudeKeychainCredentialsStrict(
+        options.system ? undefined : configDir
+      )
+      if (fromKeychain) {
+        return { kind: 'present', json: fromKeychain }
+      }
+    } catch {
+      keychainUnreadable = true
+    }
+  }
+  try {
+    return { kind: 'present', json: await readFile(join(configDir, '.credentials.json'), 'utf8') }
+  } catch (error) {
+    return isRecord(error) && error.code === 'ENOENT' && !keychainUnreadable
+      ? { kind: 'absent' }
+      : { kind: 'unreadable' }
+  }
+}
+
 /** The login stored for one Claude config dir: macOS keychain first, as Claude Code reads it. */
 export async function readClaudeHomeCredentials(
   configDir: string,
   options: { system?: boolean } = {}
 ): Promise<string | null> {
-  if (process.platform === 'darwin') {
-    const fromKeychain = await readActiveClaudeKeychainCredentialsStrict(
-      options.system ? undefined : configDir
-    ).catch(() => null)
-    if (fromKeychain) {
-      return fromKeychain
-    }
-  }
-  return readFile(join(configDir, '.credentials.json'), 'utf8').catch(() => null)
+  const result = await readClaudeHomeCredentialsResult(configDir, options)
+  return result.kind === 'present' ? result.json : null
 }
 
 export async function readClaudeOAuthAccount(

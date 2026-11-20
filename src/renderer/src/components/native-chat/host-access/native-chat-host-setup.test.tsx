@@ -53,6 +53,16 @@ vi.mock('@/runtime/hosts/wsl/wsl-host-user-start', () => ({
 vi.mock('@/lib/provider-accounts/claude-account-sign-in', () => ({
   signInToClaudeAccount: managedSignIn
 }))
+const sealChat = vi.hoisted(() => ({
+  sessions: [] as { id: string; chat: boolean; accountKey: string }[],
+  relogin: vi.fn()
+}))
+vi.mock('@/components/seal-session/use-seal-host-snapshot', () => ({
+  useSealHostSnapshot: () => ({ status: { sessions: sealChat.sessions }, readAt: 0 })
+}))
+vi.mock('@/components/settings/seal-accounts/seal-accounts-navigation', () => ({
+  requestSealRelogin: sealChat.relogin
+}))
 vi.mock('@/app-shell/platform/renderer-app-platform', () => ({
   getRendererAppPlatform: () => 'linux'
 }))
@@ -87,6 +97,27 @@ it('suppresses all sign-in actions after managed sign-in succeeds until a new fa
   expect(result.current.signIn).toBeNull()
   rerender({ failure: { kind: 'notSignedIn' } })
   expect(result.current.signIn?.signingIn).toBe(false)
+})
+
+it('signs in the Seal account a chat runs on instead of the active managed account', () => {
+  state.settings = { activeClaudeManagedAccountId: 'managed-account' }
+  sealChat.sessions = [{ id: 'chat-1', chat: true, accountKey: 'claude:ada@example.com' }]
+  const { result } = renderHook(() =>
+    useNativeChatHostSetup({
+      agent: 'claude',
+      sessionId: 'chat-1',
+      target: { kind: 'local' },
+      worktreeId: 'project',
+      account: 'managed',
+      failure: { kind: 'notSignedIn' },
+      startFailures: [],
+      onRechecked: vi.fn()
+    })
+  )
+  act(() => result.current.signIn?.signIn())
+  expect(sealChat.relogin).toHaveBeenCalledWith('claude:ada@example.com')
+  expect(managedSignIn).not.toHaveBeenCalled()
+  sealChat.sessions = []
 })
 
 function renderRemoteSetup() {

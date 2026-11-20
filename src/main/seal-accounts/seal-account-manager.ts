@@ -26,6 +26,10 @@ import {
   withAccountOrder,
   withWorkspacePin
 } from '../../shared/seal-accounts/seal-accounts-config-edits'
+import {
+  onClaudeRefreshRejected,
+  persistClaudeRefreshRejections
+} from '../claude-accounts/runtime-auth/claude-refresh-rejections'
 import { runSealAccountsMigration } from './seal-account-migration'
 import { SealLoginExpiryCache } from './seal-login-expiry'
 import { readSealSystemLogins } from './seal-system-login'
@@ -58,7 +62,7 @@ export class SealAccountManager {
   readonly vault: SealApiKeyVault
   readonly now: () => number
   readonly autoSwap = new SealHostAutoSwap(this)
-  private unsubscribeUsage: (() => void) | null = null
+  private readonly unsubscribe: (() => void)[] = []
   readonly usage: SealUsagePoller
   /** When an agent running on each account last printed a limit stop. */
   readonly limitStops = new Map<SealAccountKey, number>()
@@ -84,7 +88,12 @@ export class SealAccountManager {
 
   start(): void {
     this.host.load(this.deps.installationId)
-    this.unsubscribeUsage = this.services.rateLimits.onStateChange(() => this.scheduleEvaluation())
+    persistClaudeRefreshRejections(join(this.dataRoot, 'seal-accounts', 'refused-logins.json'))
+    this.unsubscribe.push(
+      this.services.rateLimits.onStateChange(() => this.scheduleEvaluation()),
+      this.loginExpiry.onChange(() => this.scheduleEvaluation()),
+      onClaudeRefreshRejected(() => this.recheckLogins())
+    )
     this.usage.sync()
     this.migrated = runSealAccountsMigration(this).catch((error: unknown) => {
       console.warn('[seal-accounts] Could not merge duplicate accounts:', error)
@@ -92,7 +101,9 @@ export class SealAccountManager {
   }
 
   dispose(): void {
-    this.unsubscribeUsage?.()
+    for (const unsubscribe of this.unsubscribe.splice(0)) {
+      unsubscribe()
+    }
     this.usage.dispose()
     this.autoSwap.dispose()
   }
@@ -195,6 +206,12 @@ export class SealAccountManager {
       this.loginExpiry.refresh(this)
     ])
     await this.usage.readAll()
+  }
+
+  /** Re-reads every stored login now, e.g. after a refresh token was refused. */
+  recheckLogins(olderThanMs?: number): void {
+    this.loginExpiry.invalidate(olderThanMs)
+    void this.loginExpiry.refresh(this)
   }
 
   private scheduleEvaluation(): void {

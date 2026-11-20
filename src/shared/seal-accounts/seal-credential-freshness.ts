@@ -26,6 +26,8 @@ export type SealClaudeOAuth = {
   refreshToken: string | null
   /** Epoch ms the access token expires; Claude Code writes it beside the tokens. */
   expiresAt: number | null
+  /** Epoch ms the refresh token itself lapses, when Claude records one. */
+  refreshTokenExpiresAt: number | null
   /** The plan the login was issued for: `max`, `pro`, `team` or `enterprise`. */
   subscriptionType: string | null
 }
@@ -39,6 +41,8 @@ export function parseClaudeOAuth(credentialsJson: string): SealClaudeOAuth | nul
     accessToken: oauth.accessToken,
     refreshToken: typeof oauth.refreshToken === 'string' ? oauth.refreshToken : null,
     expiresAt: typeof oauth.expiresAt === 'number' ? oauth.expiresAt : null,
+    refreshTokenExpiresAt:
+      typeof oauth.refreshTokenExpiresAt === 'number' ? oauth.refreshTokenExpiresAt : null,
     subscriptionType: typeof oauth.subscriptionType === 'string' ? oauth.subscriptionType : null
   }
 }

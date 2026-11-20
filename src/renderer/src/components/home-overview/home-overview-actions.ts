@@ -3,20 +3,8 @@ import { rememberMachineSelection } from '@/components/machines/model/machine-se
 import { activateAndRevealWorkspace } from '@/lib/workspace/activation/worktree-activation'
 import { normalizeExecutionHostId } from '../../../../shared/execution-host'
 import { parseMachineId } from '../../../../shared/machines/machine-types'
-import type { SettingsNavigationTarget } from '../settings/navigation/settings-navigation-types'
+import { openAccountsSettings } from '../settings/seal-accounts/seal-accounts-navigation'
 import type { HomeOverviewActions } from './home-overview-model'
-
-// Setting a target alone only queues the deep link; the page must be opened too.
-function openSettingsPane(target: SettingsNavigationTarget): void {
-  const state = useAppStore.getState()
-  state.openSettingsTarget(target)
-  state.openSettingsPage()
-}
-
-/** Settings > Accounts, where Seal's account vault lives. */
-function openAccountsSettings(): void {
-  openSettingsPane({ pane: 'accounts', repoId: null })
-}
 
 function openAutomations(): void {
   useAppStore.getState().openAutomationsPage()

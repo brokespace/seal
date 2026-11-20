@@ -12,6 +12,8 @@ vi.mock('../macos-keychain/generic-password', () => ({
 }))
 
 const { reconcileClaudeLogin } = await import('./seal-login-copies')
+const { isClaudeRefreshRejected, resetClaudeRefreshRejectionsForTest } =
+  await import('../claude-accounts/runtime-auth/claude-refresh-rejections')
 
 const NOW = 1_800_000_000_000
 const HOUR = 3_600_000
@@ -65,6 +67,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  resetClaudeRefreshRejectionsForTest()
   rmSync(root, { recursive: true, force: true })
 })
 
@@ -102,5 +105,43 @@ describe('reconcileClaudeLogin', () => {
     expect(posted).toEqual(['rt-one'])
     expect(result).toEqual({ freshness: NOW + HOUR, refreshed: true, updated: 2 })
     expect([tokenIn(join(root, 'account')), tokenIn(session)]).toEqual(['rt-two', 'rt-two'])
+  })
+
+  it('records a refresh token Claude refused, even for a login only this host holds', async () => {
+    home('account', 'a@x.io', creds('dead', NOW + 60_000))
+    await reconcileClaudeLogin(manager([]), {
+      accountId: 'acct',
+      accountKey: 'claude:a@x.io',
+      force: true,
+      fetch: async () => new Response(JSON.stringify({ error: 'invalid_grant' }), { status: 400 })
+    })
+    expect(isClaudeRefreshRejected('rt-dead')).toBe(true)
+    expect(tokenIn(join(root, 'account'))).toBe('rt-dead')
+  })
+
+  it('does not record a refresh that merely failed to reach Claude', async () => {
+    home('account', 'a@x.io', creds('live', NOW + 60_000))
+    await reconcileClaudeLogin(manager([]), {
+      accountId: 'acct',
+      accountKey: 'claude:a@x.io',
+      force: true,
+      fetch: async () => new Response('{}', { status: 503 })
+    })
+    expect(isClaudeRefreshRejected('rt-live')).toBe(false)
+  })
+
+  it('never spends a token that is not near expiry, even when forced', async () => {
+    home('account', 'a@x.io', creds('fresh', NOW + 8 * HOUR))
+    let requests = 0
+    await reconcileClaudeLogin(manager([]), {
+      accountId: 'acct',
+      accountKey: 'claude:a@x.io',
+      force: true,
+      fetch: async () => {
+        requests += 1
+        return new Response('{}', { status: 503 })
+      }
+    })
+    expect(requests).toBe(0)
   })
 })

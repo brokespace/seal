@@ -56,7 +56,14 @@ export function homeAccountsFromSeal(status: SealAccountsStatus): HomeAccount[] 
         limits: candidate.limits,
         fetching: candidate.usageFetching === true,
         ...(candidate.health?.state === 'dead' || candidate.authFailure
-          ? { needsSignIn: true }
+          ? {
+              needsSignIn: true,
+              signInReason:
+                candidate.health?.state === 'dead' && candidate.health.reason === 'expired'
+                  ? ('expired' as const)
+                  : ('signed-out' as const),
+              accountKey: candidate.key
+            }
           : {})
       })
     }
