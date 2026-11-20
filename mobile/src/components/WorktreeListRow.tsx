@@ -1,14 +1,14 @@
 import { memo } from 'react'
-import { Bell, ChevronDown, ChevronRight, GitBranch } from 'lucide-react-native'
+import { Bell, GitBranch } from 'lucide-react-native'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import type { MobileRenderableRepoIcon } from '../host-screen/host-screen-reply-schema'
 import { triggerMediumImpact } from '../platform/haptics/haptics'
-import { colors, feedback, radii, spacing, typography } from '../theme/mobile-theme'
+import { colors, radii, spacing, typography } from '../theme/mobile-theme'
 import { themedStyleSheet } from '../theme/themed-styles'
 import { useMobileColorScheme } from '../theme/use-mobile-color-scheme'
 import { useMobileTranslation } from '../i18n/use-mobile-translation'
 import type { WorkspaceListItem, Worktree, WorktreeRowView } from '../worktree/workspace-list-types'
-import type { WorktreeCardDetails } from '../../../src/shared/worktree/card-properties'
+import type { WorktreeCardDetails } from '../../../src/shared/worktree/row-display/card-properties'
 import { isRemoteExecutionHostId } from '../../../src/shared/execution-host'
 import type { AgentActivityDisplayMode } from '../../../src/shared/ui-chrome-types'
 import type { WorktreeStatus } from '../../../src/shared/worktree-status-rollup'
@@ -19,6 +19,9 @@ import { AgentSpinner } from './AgentSpinner'
 import { HostKindIcon } from './HostKindIcon'
 import { MobileRepoIcon } from './MobileRepoIcon'
 import { WorktreeAgentList } from './WorktreeAgentList'
+import { WorktreeLineageToggle } from './WorktreeLineageToggle'
+import { WorktreeSessionLines } from './WorktreeSessionLines'
+import type { LiveSession } from '../seal/live-sessions/live-session-schemas'
 import { WorktreeMetaGlyphs, prStateColor } from './WorktreeMetaGlyphs'
 import { PrStateIcon } from './PrStateIcon'
 import { WorktreeUnsavedName } from './WorktreeUnsavedName'
@@ -44,6 +47,9 @@ type Props = {
   onToggleLineage?: (item: WorkspaceListItem) => void
   /** A rename the desktop hasn't taken yet; the row keeps its real name and points to this one. */
   unsavedName?: string
+  /** Its running sessions outside Seal's panes, as the desktop card lists them. */
+  sessions?: readonly LiveSession[]
+  onSessionPress?: (session: LiveSession) => void
 }
 
 function WorktreeListRowComponent({
@@ -61,7 +67,9 @@ function WorktreeListRowComponent({
   statusLive,
   onLongPress,
   onToggleLineage,
-  unsavedName
+  unsavedName,
+  sessions,
+  onSessionPress
 }: Props) {
   useMobileColorScheme()
   const t = useMobileTranslation()
@@ -232,27 +240,19 @@ function WorktreeListRowComponent({
             fullList={agentActivityDisplayMode === 'full'}
           />
         ) : null}
+        {cardDetails.inlineAgents && sessions && sessions.length > 0 ? (
+          <WorktreeSessionLines
+            sessions={sessions}
+            isReadOnly={isReadOnly}
+            onPress={onSessionPress}
+          />
+        ) : null}
         {count > 0 && onToggleLineage ? (
-          <Pressable
-            style={({ pressed }) => [styles.lineageToggle, pressed && styles.lineageTogglePressed]}
-            hitSlop={LINEAGE_TOGGLE_HIT_SLOP}
-            onPress={(event) => {
-              event.stopPropagation()
-              onToggleLineage({ row: item, view })
-            }}
-          >
-            {view.lineageCollapsed ? (
-              <ChevronRight size={12} color={colors.textSecondary} />
-            ) : (
-              <ChevronDown size={12} color={colors.textSecondary} />
-            )}
-            <GitBranch size={12} color={colors.textSecondary} />
-            <Text style={styles.lineageToggleText}>
-              {count === 1
-                ? t('components.worktreeListRow.children_one', '{{count}} child', { count })
-                : t('components.worktreeListRow.children_other', '{{count}} children', { count })}
-            </Text>
-          </Pressable>
+          <WorktreeLineageToggle
+            count={count}
+            collapsed={view.lineageCollapsed === true}
+            onPress={() => onToggleLineage({ row: item, view })}
+          />
         ) : null}
       </View>
     </Pressable>
@@ -260,9 +260,6 @@ function WorktreeListRowComponent({
 }
 
 export const WorktreeListRow = memo(WorktreeListRowComponent, areStructurallyEqual)
-
-// Grows the 20 pt pill to a 44 pt target without pushing the row apart.
-const LINEAGE_TOGGLE_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 } as const
 
 const styles = themedStyleSheet(() => ({
   worktreeRow: {
@@ -393,25 +390,6 @@ const styles = themedStyleSheet(() => ({
   },
   hostHealthText: {
     flexShrink: 0
-  },
-  lineageToggle: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-    backgroundColor: colors.bgRaised,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.control
-  },
-  lineageTogglePressed: {
-    opacity: feedback.pressedOpacity
-  },
-  lineageToggleText: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    fontWeight: '600'
   },
   terminalCount: {
     marginLeft: 'auto',

@@ -1,5 +1,5 @@
 import type { DictationTerm } from './dictation-dictionary'
-import type { SmartTier } from './sidebar-list/sort-stamps'
+import type { SmartTier } from './sidebar-list/sorting/sort-stamps'
 import type {
   AgentStatusState,
   AgentType,
@@ -46,6 +46,8 @@ export type RuntimeWorktreeAgentRow = {
   /** The name desktop's compact row leads with (rename, chat or live title). Old hosts omit it. */
   conversationName?: string
   lastAssistantMessage: string | null
+  /** The host's one-sentence summary of where the agent stopped; absent while it works, with summaries off, and from old hosts. */
+  statusSummary?: string
   toolName: string | null
   toolInput: string | null
   interrupted: boolean

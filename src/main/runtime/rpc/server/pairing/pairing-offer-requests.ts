@@ -6,6 +6,7 @@ import type {
 } from '../../../../../shared/remote-runtime/pairing/pairing-create-offer-contract'
 import { classifyRemotePairingHostname } from '../../../../../shared/remote-runtime/pairing/remote-pairing-address'
 import type { RuntimePairingReach } from '../../../../../shared/runtime-pairing-reach'
+import { bindHostIsNetworkExposed } from '../../../../../shared/orcad-bind-address'
 import { renderServePairingQr } from '../../../../server/serve-pairing-output'
 import { NETWORK_EXPOSURE_FAILED_GUIDANCE } from './network/network-exposure-guidance'
 import { resolveAdvertisedPairingHostname } from './network/pairing-endpoint'
@@ -25,7 +26,7 @@ import { getWindowsDefaultRouteInterfaceNames } from './network/windows-default-
 
 export type PairingOfferServer = Pick<
   RuntimeRpcPairing,
-  'getNetworkExposureBindHost' | 'ensureNetworkExposure' | 'createPairingOffer'
+  'getNetworkExposureBindHost' | 'isNetworkExposed' | 'ensureNetworkExposure' | 'createPairingOffer'
 > & {
   createMobilePairingOffer(args: {
     address?: string | null
@@ -38,6 +39,13 @@ export type PairingOfferServer = Pick<
 
 const NO_PAIRING_ADDRESS_GUIDANCE =
   'No reachable network address is available for pairing. Connect to Wi‑Fi or Tailscale, or pick an address manually.'
+const LOOPBACK_ONLY_MOBILE_GUIDANCE =
+  'This server listens only on this machine, so a phone cannot reach it over the network. Pair through Relay (pair --mobile --relay), or restart the server with --bind <address> to pair over the LAN.'
+
+/** The operator pinned the listener to loopback (serve's default): pairing never widens it. */
+function listensOnlyOnThisMachine(server: PairingOfferServer): boolean {
+  return !bindHostIsNetworkExposed(server.getNetworkExposureBindHost())
+}
 
 // Only explicit this-computer intent plus a loopback address avoids widening; custom tunnel endpoints still need remote reach.
 function servesThisComputerOnly(reach: RuntimePairingReach | undefined, address: string): boolean {
@@ -63,7 +71,7 @@ export async function requestMobilePairingOffer(
     address?: string
     connectionMode?: MobilePairingConnectionMode
     rotate?: boolean
-    // Unset leaves the offer without an expiry, as headless serve/orcad mint today.
+    // Unset uses the scope's default lifetime; no offer is valid forever.
     offerTtlMs?: number
   },
   lookup: DefaultRouteInterfaceLookup = getWindowsDefaultRouteInterfaceNames
@@ -71,9 +79,17 @@ export async function requestMobilePairingOffer(
   | PairingOfferUnavailable
   | (Omit<MobilePairingOfferAvailable, 'endpoint'> & { endpoint: string | null })
 > {
-  const ip = await pairingAddress(server, args.address, lookup)
+  const lanOnly = args.connectionMode === 'local-only'
+  if (lanOnly && listensOnlyOnThisMachine(server)) {
+    return pairingUnavailable('network_exposure_failed', LOOPBACK_ONLY_MOBILE_GUIDANCE)
+  }
+  // A Relay offer names a LAN address only when the listener already answers there; it never widens one.
+  const ip =
+    lanOnly || server.isNetworkExposed()
+      ? await pairingAddress(server, args.address, lookup)
+      : (args.address ?? null)
   // Relay works without a direct candidate; LAN-only must refuse when none is usable.
-  if (!ip && args.connectionMode === 'local-only') {
+  if (!ip && lanOnly) {
     return pairingUnavailable('invalid_advertised_endpoint', NO_PAIRING_ADDRESS_GUIDANCE)
   }
   // Reuse never-scanned tokens until explicit rotation; authenticated entries remain independent.
@@ -102,6 +118,18 @@ export async function requestRuntimePairingOffer(
   },
   lookup: DefaultRouteInterfaceLookup = getWindowsDefaultRouteInterfaceNames
 ): Promise<ReturnType<PairingOfferServer['createPairingOffer']>> {
+  if (listensOnlyOnThisMachine(server)) {
+    // Reached through an SSH forward or a tunnel, so the offer names the bound loopback endpoint.
+    return server.createPairingOffer({
+      address: args.address,
+      rotate: args.rotate,
+      name: `Runtime ${new Date().toLocaleDateString()}`,
+      scope: 'runtime',
+      reach: 'this-computer',
+      grants: args.grants,
+      offerTtlMs: args.offerTtlMs
+    })
+  }
   const ip = await pairingAddress(server, args.address, lookup)
   if (!ip) {
     return pairingUnavailable('invalid_advertised_endpoint', NO_PAIRING_ADDRESS_GUIDANCE)
@@ -142,7 +170,7 @@ export async function createOwnerPairingOffer(
       server,
       {
         address: params.address,
-        // A headless host has no Relay; Relay stays an explicit opt-in here as on the desktop.
+        // Relay stays an explicit opt-in here, as on the desktop.
         connectionMode: params.relay ? 'automatic' : 'local-only',
         rotate: params.rotate
       },
@@ -159,7 +187,8 @@ export async function createOwnerPairingOffer(
       deviceId: offer.deviceId,
       webClientUrl: offer.webClientUrl,
       connectionMode: offer.connectionMode,
-      qr: await renderServePairingQr(offer.pairingUrl)
+      qr: await renderServePairingQr(offer.pairingUrl),
+      offerExpiresAt: offer.offerExpiresAt
     }
   }
   const offer = await requestRuntimePairingOffer(
@@ -182,6 +211,7 @@ export async function createOwnerPairingOffer(
     deviceId: offer.deviceId,
     webClientUrl: offer.webClientUrl,
     connectionMode: null,
-    qr: null
+    qr: null,
+    offerExpiresAt: offer.offerExpiresAt
   }
 }

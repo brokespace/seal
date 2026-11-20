@@ -1,0 +1,24 @@
+[
+  {
+    "key": "ece3b5d8ac50d4f51134907f8a77cb14",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a --dry-run flag to the import script and document it in docs/import.md.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add a --dry-run flag to the import script and document it in docs/import.md.\n\n[m2] AGENT: Added --dry-run to scripts/import.ts: it parses and validates every row and writes nothing. I haven't documented it yet.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [{\"text\": \"Add --dry-run flag to import script and document in docs/import.md\", \"ref\": \"m1\"}],\n    \"did\": [{\"text\": \"Added --dry-run to scripts/import.ts\", \"state\": \"done\", \"ref\": \"m2\"}],\n    \"questions\": [{\"text\": \"Document --dry-run flag in docs/import.md\", \"state\": \"in-progress\", \"ref\": \"m2\"}]\n  }\n}"
+  },
+  {
+    "key": "0c25de24e1788d95974e6a8dbd32898c",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a --dry-run flag to the import script and document it in docs/import.md.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add --dry-run flag to import script and document in docs/import.md\"}],\"did\":[{\"id\":\"w2\",\"text\":\"Added --dry-run to scripts/import.ts\",\"state\":\"done\"}],\"questions\":[{\"id\":\"q3\",\"text\":\"Document --dry-run flag in docs/import.md\"}],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: document it please\n\n[m2] AGENT: Documented --dry-run in docs/import.md with an example.\n</new_messages>"
+      }
+    ],
+    "reply": "{\"update\":[{\"id\":\"q3\",\"text\":\"Document --dry-run flag in docs/import.md\",\"state\":\"done\"}],\"resolve\":[\"q3\"]}"
+  }
+]

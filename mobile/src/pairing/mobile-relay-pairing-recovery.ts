@@ -4,12 +4,11 @@ import type {
   PairingGetEndpointsResult
 } from '../../../src/shared/remote-runtime/relay/mobile-relay-credential-contract'
 import type { PairingRelay } from '../../../src/shared/remote-runtime/pairing/mobile-relay-pairing-offer'
-import { loadHosts, savePairedHost } from '../host-catalog/host-store'
+import { loadHosts, resolvePairingHostIdentity, savePairedHost } from '../host-catalog/host-store'
 import {
   promotePairingJournalCredential,
   readMobileRelayCredentialBundle,
-  writeMobileRelayCredentialBundle,
-  type MobileRelayCredentialBundle
+  writeMobileRelayCredentialBundle
 } from '../host-credentials/mobile-relay-credential-bundle'
 import { resolvePairingInviteThroughDirector } from './mobile-relay-invite-director'
 import type { MobileRelayPairingJournal } from './mobile-relay-pairing-journal'
@@ -24,6 +23,11 @@ import {
   type PairingCandidateClient
 } from './mobile-relay-physical-client'
 import { isExplicitCredentialRejection } from '../transport/relay/relay-credential-eligibility'
+import {
+  adoptKnownHostIdentity,
+  journalNamesItsHostsOwnRelay,
+  recoveryCredentials
+} from './pairing-journal-recovery-bounds'
 import { createRecoveringPairingRelayCandidate } from './pairing-relay-candidate'
 import { relayHost } from './pairing-relay-host'
 import {
@@ -41,6 +45,7 @@ type RecoveryDependencies = {
   readCredentialBundle: typeof readMobileRelayCredentialBundle
   writeCredentialBundle: typeof writeMobileRelayCredentialBundle
   loadHosts: typeof loadHosts
+  resolveHostIdentity: typeof resolvePairingHostIdentity
   savePairedHost: typeof savePairedHost
   connectRelay: typeof connectMobileRelayForPairing
   resolveInviteDirector: typeof resolvePairingInviteThroughDirector
@@ -56,6 +61,7 @@ const defaultDependencies: RecoveryDependencies = {
   readCredentialBundle: readMobileRelayCredentialBundle,
   writeCredentialBundle: writeMobileRelayCredentialBundle,
   loadHosts,
+  resolveHostIdentity: resolvePairingHostIdentity,
   savePairedHost,
   connectRelay: connectMobileRelayForPairing,
   resolveInviteDirector: resolvePairingInviteThroughDirector,
@@ -111,6 +117,10 @@ async function runRecovery(
   if (!journal) {
     return 'none'
   }
+  if (!journalNamesItsHostsOwnRelay(journal)) {
+    await dependencies.clearJournal(journal.metadata.journalId).catch(() => {})
+    return 'abandoned'
+  }
   const bundle = await dependencies.readCredentialBundle(journal.metadata.host.id).catch(() => null)
   const hosts = await dependencies.loadHosts().catch(() => [])
   const existing = hosts.find(({ id }) => id === journal!.metadata.host.id)
@@ -119,7 +129,7 @@ async function runRecovery(
     return 'recovered'
   }
 
-  const credentials = recoveryCredentials(journal, bundle, dependencies.now())
+  const credentials = recoveryCredentials(journal, dependencies.now())
   // Track committed status separately so local publication failure cannot discard the only durable recovery record.
   let observedCommitted = false
   let rejectedCredentials = 0
@@ -139,6 +149,8 @@ async function runRecovery(
               expectedCredentialKind: 'resume'
             })
       const endpoints = await getRecoveryStatus(client, journal, credential.kind)
+      // That reply was sealed by the host key, so only now may the journal take a known host's identity.
+      journal = await adoptKnownHostIdentity(journal, dependencies)
       if (endpoints.installStatus?.state === 'committed') {
         observedCommitted = true
         await publishCommitted(journal, endpoints, dependencies)
@@ -178,23 +190,6 @@ async function runRecovery(
     return 'abandoned'
   }
   return 'deferred'
-}
-
-function recoveryCredentials(
-  journal: MobileRelayPairingJournal,
-  bundle: MobileRelayCredentialBundle | null,
-  now: number
-): { kind: 'resume' | 'invite'; token: string }[] {
-  const credentials: { kind: 'resume' | 'invite'; token: string }[] = [
-    { kind: 'resume', token: journal.secrets.pendingResumeToken }
-  ]
-  if (bundle?.current.token && bundle.current.token !== journal.secrets.pendingResumeToken) {
-    credentials.push({ kind: 'resume', token: bundle.current.token })
-  }
-  if (journal.metadata.relay.inviteExpiresAt > now) {
-    credentials.push({ kind: 'invite', token: journal.secrets.inviteToken })
-  }
-  return credentials
 }
 
 function createInviteClient(

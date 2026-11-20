@@ -7,8 +7,8 @@ import {
 } from '../../../shared/plugins/catalog/plugin-kill-list'
 import { PluginKillListStore } from './plugin-kill-list-store'
 import { fetchBoundedJson } from './plugin-bounded-json-fetch'
+import { cleanCloudServiceUrl } from '../../../shared/cloud-service-url'
 
-export const PLUGIN_KILL_LIST_URL = 'https://orca.dev/plugins/kill-list.json'
 const PLUGIN_KILL_LIST_DOWNLOAD_LIMIT = 4 * 1024 * 1024
 // Why: revocations must reach sessions that stay open for days, not only fresh launches.
 export const PLUGIN_KILL_LIST_REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000
@@ -20,9 +20,14 @@ const PLUGIN_KILL_LIST_FETCH_TIMEOUT_MS = 30_000
 
 type PluginKillListFetcher = () => Promise<PluginKillList>
 
+/** Seal hosts no plugin directory; the safety list is fetched only from an explicit override. */
+export function pluginKillListUrl(env: NodeJS.ProcessEnv = process.env): string | null {
+  return cleanCloudServiceUrl(env.SEAL_PLUGIN_KILL_LIST_URL, false)
+}
+
 export class PluginKillListService {
   private readonly store: PluginKillListStore
-  private readonly fetcher: PluginKillListFetcher
+  private readonly fetcher: PluginKillListFetcher | null
   private readonly listeners = new Set<() => void>()
   private currentList: PluginKillList | null = null
   private loadPromise: Promise<void> | null = null
@@ -37,7 +42,8 @@ export class PluginKillListService {
     fetcher?: PluginKillListFetcher
   }) {
     this.store = options.store ?? new PluginKillListStore(options.pluginsDataDir)
-    this.fetcher = options.fetcher ?? (() => fetchPluginKillList())
+    const url = pluginKillListUrl()
+    this.fetcher = options.fetcher ?? (url ? () => fetchPluginKillList(fetch, url) : null)
   }
 
   async initialize(): Promise<void> {
@@ -133,6 +139,9 @@ export class PluginKillListService {
 
   private async performRefresh(): Promise<PluginKillList> {
     await this.initialize()
+    if (!this.fetcher) {
+      return this.currentList ?? emptyKillList()
+    }
     const fetched = pluginKillListSchema.parse(await this.fetcher())
     if (isPluginKillListTooFarInFuture(fetched)) {
       throw new Error('refusing a plugin kill list generated too far in the future')
@@ -153,8 +162,8 @@ export class PluginKillListService {
 }
 
 export async function fetchPluginKillList(
-  fetcher: typeof fetch = fetch,
-  url = PLUGIN_KILL_LIST_URL
+  fetcher: typeof fetch,
+  url: string
 ): Promise<PluginKillList> {
   const json = await fetchBoundedJson(fetcher, url, {
     label: 'plugin kill-list',

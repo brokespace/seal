@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import type {
   ClaudeManagedAccount,
   ClaudeManagedAccountSummary,
@@ -8,6 +9,7 @@ import type { RateLimitService } from '../../rate-limits/service/rate-limit-serv
 import { claudeStateFile, readClaudeFolderLogin } from '../sign-in/claude-account-folder'
 import { readClaudeOAuthCredentials } from '../../rate-limits/providers/claude/claude-oauth-credentials'
 import { resolveLoginShellEnvironment } from '../../startup/shell-environment/login-shell-environment'
+import { readClaudeProfileObject } from '../profiles/claude-profile-paths'
 import { savedWslClaudeAccountHome } from '../profiles/wsl/claude-profile-wsl-paths'
 import type { ClaudeRuntimeAuthService } from '../runtime-auth-service'
 import {
@@ -21,6 +23,23 @@ import {
   setSelectedClaudeAccountIdForTarget,
   type ClaudeAccountSelectionTarget
 } from './runtime-selection'
+
+const CREDENTIALS_CHECK_MAX_AGE_MS = 5_000
+const credentialsSeenAt = new Map<string, number>()
+
+/** Off macOS the token lives in this file. list() is hot, so a found file is trusted for a few seconds; a missing one is re-checked so a new sign-in shows at once. */
+function credentialsFileAbsent(home: string): boolean {
+  const seenAt = credentialsSeenAt.get(home)
+  if (seenAt !== undefined && Date.now() - seenAt < CREDENTIALS_CHECK_MAX_AGE_MS) {
+    return false
+  }
+  if (readClaudeProfileObject(join(home, '.credentials.json')).kind === 'absent') {
+    credentialsSeenAt.delete(home)
+    return true
+  }
+  credentialsSeenAt.set(home, Date.now())
+  return false
+}
 
 export const CLAUDE_ACCOUNT_NEEDS_SIGN_IN_MESSAGE =
   'Sign in to this Claude account again before selecting it.'
@@ -113,6 +132,10 @@ export class ClaudeAccountSelection {
     const home = this.runtimeAuth.router.accountHome(account.id)
     const login = readClaudeFolderLogin(claudeStateFile(home))
     if (login) {
+      // Off macOS the token lives in a file; a named login without it is signed out.
+      if (process.platform !== 'darwin' && credentialsFileAbsent(home)) {
+        return { ...summary, home, needsSignIn: true }
+      }
       return {
         ...summary,
         home,

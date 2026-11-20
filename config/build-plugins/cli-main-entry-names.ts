@@ -11,6 +11,7 @@ export const CLI_MAIN_ENTRY_NAMES = [
   'filesystem/macos-tree-clone',
   'orcad/instance-lock/orcad-stale-lock-reclaim',
   'orcad/profile-state/orcad-host-identity-reset',
+  'orcad/profile-state/paired-devices-under-lock',
   'plugins/plugin-artifact-validation',
   'plugins/plugin-content-hash',
   'plugins/plugin-catalog-release-entry',

@@ -16,6 +16,8 @@ export class DeviceRegistryStore {
   /** Parse failures prevent authoritative absence/revocation verdicts. */
   protected registryDoubtful = false
   private corruptFilePending = false
+  /** Rows another writer took out of the file: revocations whose cleanup is still owed. */
+  private externallyRemoved: DeviceEntry[] = []
   protected pendingLastSeenFlush: NodeJS.Timeout | null = null
   private readonly writer: DeviceRegistryWriter
 
@@ -52,9 +54,29 @@ export class DeviceRegistryStore {
   /** Auth checks see a disk removal (an admin revoke) within a second; `fresh` planners see it now. */
   protected adoptExternalEdits(options: { fresh?: boolean } = {}): void {
     // An unreadable load refuses everything until restart; there is nothing to merge into.
-    if (!this.registryUnreadable) {
-      this.devices = this.writer.adoptExternalEdits(this.devices, options) ?? this.devices
+    if (this.registryUnreadable) {
+      return
     }
+    const adopted = this.writer.adoptExternalEdits(this.devices, options)
+    if (adopted) {
+      this.noteExternallyRemoved(this.devices, adopted)
+      this.devices = adopted
+    }
+  }
+
+  private noteExternallyRemoved(
+    expected: readonly DeviceEntry[],
+    actual: readonly DeviceEntry[]
+  ): void {
+    const kept = new Set(actual.map((device) => device.deviceId))
+    this.externallyRemoved.push(...expected.filter((device) => !kept.has(device.deviceId)))
+  }
+
+  /** Each removal is handed out once; the caller finishes it like a revoke it made itself. */
+  protected takeExternallyRemoved(): DeviceEntry[] {
+    // One stat per sweep: the sweep's period, not the auth-path throttle, bounds a revoked socket's life.
+    this.adoptExternalEdits({ fresh: true })
+    return this.externallyRemoved.splice(0)
   }
 
   private load(): void {
@@ -66,6 +88,9 @@ export class DeviceRegistryStore {
     // Session-only browser keys died with the prior host; remove their registry rows.
     if (this.devices.length !== read.devices.length) {
       this.saveOrLog({ durable: true }, 'drop session-only devices after restart', read.devices)
+    } else if (read.plaintextCredentialsStored && !read.corruptFilePending) {
+      // An older build's file: a used bearer must not stay readable on disk.
+      this.saveOrLog({ durable: true }, 'replace stored device tokens with their hashes')
     }
   }
 
@@ -103,6 +128,7 @@ export class DeviceRegistryStore {
   ): DeviceEntry[] {
     this.assertReadable()
     const written = this.writer.write(before, devices, options)
+    this.noteExternallyRemoved(devices, written)
     // Every save includes current timestamps, making a pending refresh redundant.
     this.cancelPendingLastSeenFlush()
     return written

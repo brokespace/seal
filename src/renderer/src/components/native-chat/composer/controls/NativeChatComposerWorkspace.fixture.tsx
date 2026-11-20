@@ -4,6 +4,7 @@ import type { Worktree } from '../../../../../../shared/worktree/types'
 import { getDefaultSettings } from '../../../../../../shared/constants'
 import { NativeChatComposerWorkspace } from './NativeChatComposerWorkspace'
 import { nativeChatAppearanceStyle } from '../../appearance/native-chat-appearance-style'
+import type { NativeChatComposerSessionPlace } from '../submit/native-chat-structured-composer-transport'
 import { useAppStore } from '@/store'
 
 function workspaceFixture({
@@ -13,7 +14,8 @@ function workspaceFixture({
   folder = false,
   checkout = 'orca',
   machineName = '',
-  fontSize
+  fontSize,
+  sessionPlace
 }: {
   branch?: string
   width?: number
@@ -22,6 +24,8 @@ function workspaceFixture({
   checkout?: string
   machineName?: string
   fontSize?: number
+  /** Shows a session Seal does not host, whose tab sits in the fixture's workspace. */
+  sessionPlace?: (workspaceId: string) => NativeChatComposerSessionPlace
 } = {}) {
   const repo: Repo = {
     id: 'composer-preview',
@@ -53,6 +57,7 @@ function workspaceFixture({
     sortOrder: 0,
     lastActivityAt: 1
   }
+  const place = sessionPlace?.(workspace.id)
   return defineFixture({
     width,
     store: {
@@ -89,11 +94,25 @@ function workspaceFixture({
           fontSize ? nativeChatAppearanceStyle({ nativeChatAppearance: { fontSize } }) : undefined
         }
       >
-        <NativeChatComposerWorkspace terminalTabId="composer-preview-tab" />
+        <NativeChatComposerWorkspace
+          terminalTabId="composer-preview-tab"
+          structuredTransport={
+            place && { worktreeId: workspace.id, runtimeEnvironmentId: null, sessionPlace: place }
+          }
+        />
       </div>
     ),
     interact: (frame) => {
-      if (machineName) {
+      if (place && !frame.querySelector(`[title="${place.machine}"]`)) {
+        throw new Error('The footer must name the machine the session runs on')
+      }
+      if (place && !place.worktreeId) {
+        if (frame.querySelectorAll('button').length !== 1 || frame.textContent?.includes('·')) {
+          throw new Error('A session in no known workspace shows its folder only')
+        }
+        return
+      }
+      if (machineName && !place) {
         const machine = frame.querySelector<HTMLElement>(`[title="${machineName}"]`)
         if (!machine || machine.getBoundingClientRect().width === 0) {
           throw new Error('The large-text case must include the visible machine context')
@@ -203,3 +222,24 @@ export const remoteBranch = workspaceFixture({ hostId: 'runtime:preview-server' 
 export const sshBranch = workspaceFixture({ hostId: 'ssh:preview-server' })
 export const detachedCommit = workspaceFixture({ branch: '' })
 export const folderWorkspace = workspaceFixture({ folder: true, width: 320 })
+export const sessionOnAnotherMachine = workspaceFixture({
+  hostId: 'ssh:2299',
+  branch: 'feature/payments',
+  sessionPlace: (worktreeId) => ({
+    executionHostId: 'ssh:2299',
+    machine: '2299',
+    cwd: '/preview/orca/services/api',
+    project: 'api',
+    worktreeId
+  })
+})
+export const sessionOutsideTabWorkspace = workspaceFixture({
+  machineName: 'kessel-dev',
+  sessionPlace: () => ({
+    executionHostId: 'ssh:2299',
+    machine: '2299',
+    cwd: '/home/brian/scratch',
+    project: 'scratch',
+    worktreeId: null
+  })
+})

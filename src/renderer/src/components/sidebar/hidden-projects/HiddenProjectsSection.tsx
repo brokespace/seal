@@ -1,6 +1,6 @@
 import React, { useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, FolderTree } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '@/store'
 import { useTranslate } from '@/i18n/use-translate'
@@ -14,15 +14,36 @@ import {
 } from '../../../../../shared/execution-host'
 import { isRepoHidden } from '../../../../../shared/hidden-projects'
 import { getRepoRowIdentity } from '@/store/repos/repo-host-identity'
+import type { ProjectGroup } from '../../../../../shared/project-group-types'
 import type { Repo } from '../../../../../shared/repo-types'
-import { setProjectHidden } from './set-project-hidden'
+import { setProjectGroupHidden, setProjectHidden } from './set-project-hidden'
 
-function selectHiddenRepos(repos: readonly Repo[]): Repo[] {
-  return repos
-    .filter(isRepoHidden)
-    .sort(
-      (a, b) => (b.hiddenAt ?? 0) - (a.hiddenAt ?? 0) || a.displayName.localeCompare(b.displayName)
-    )
+/** A hidden project's row: a repo's host copy, or a project group. */
+type HiddenEntry =
+  | { kind: 'repo'; key: string; name: string; hiddenAt: number; row: Repo }
+  | { kind: 'group'; key: string; name: string; hiddenAt: number; row: ProjectGroup }
+
+function selectHiddenEntries(
+  repos: readonly Repo[],
+  projectGroups: readonly ProjectGroup[]
+): HiddenEntry[] {
+  return [
+    ...repos.filter(isRepoHidden).map((row): HiddenEntry => ({
+      kind: 'repo',
+      // The full row identity: paired-server twins share id and host, differing by SSH target.
+      key: getRepoRowIdentity(row),
+      name: row.displayName,
+      hiddenAt: row.hiddenAt ?? 0,
+      row
+    })),
+    ...projectGroups.filter(isRepoHidden).map((row): HiddenEntry => ({
+      kind: 'group',
+      key: `group:${getRepoExecutionHostId(row)}:${row.id}`,
+      name: row.name,
+      hiddenAt: row.hiddenAt ?? 0,
+      row
+    }))
+  ].sort((a, b) => b.hiddenAt - a.hiddenAt || a.name.localeCompare(b.name))
 }
 
 /** Collapsed list of hidden projects under the workspace list, each with a Show action. */
@@ -32,7 +53,11 @@ const HiddenProjectsSection = React.memo(function HiddenProjectsSection() {
   useTranslation()
   const listId = useId()
   const repos = useAppStore((state) => state.repos)
-  const hiddenRepos = useMemo(() => selectHiddenRepos(repos), [repos])
+  const projectGroups = useAppStore((state) => state.projectGroups)
+  const hiddenEntries = useMemo(
+    () => selectHiddenEntries(repos, projectGroups),
+    [repos, projectGroups]
+  )
   const [expanded, setExpanded] = useState(false)
   const [pendingKeys, setPendingKeys] = useState<ReadonlySet<string>>(new Set())
   // Name hosts only when one is not this computer; a local-only list needs no host column.
@@ -40,20 +65,23 @@ const HiddenProjectsSection = React.memo(function HiddenProjectsSection() {
   const hostLabels = useAppStore(
     useShallow((state) =>
       expanded &&
-      hiddenRepos.some((repo) => getRepoExecutionHostId(repo) !== LOCAL_EXECUTION_HOST_ID)
-        ? hiddenRepos.map((repo) =>
-            selectExecutionHostDisplayLabel(state, getRepoExecutionHostId(repo))
+      hiddenEntries.some(({ row }) => getRepoExecutionHostId(row) !== LOCAL_EXECUTION_HOST_ID)
+        ? hiddenEntries.map(({ row }) =>
+            selectExecutionHostDisplayLabel(state, getRepoExecutionHostId(row))
           )
         : null
     )
   )
-  if (hiddenRepos.length === 0) {
+  if (hiddenEntries.length === 0) {
     return null
   }
 
-  const show = async (repo: Repo, key: string): Promise<void> => {
+  const show = async (entry: HiddenEntry): Promise<void> => {
+    const { key } = entry
     setPendingKeys((previous) => new Set(previous).add(key))
-    await setProjectHidden([repo], false, repo.displayName)
+    await (entry.kind === 'repo'
+      ? setProjectHidden([entry.row], false, entry.name)
+      : setProjectGroupHidden(entry.row, false, entry.name))
     setPendingKeys((previous) => {
       const next = new Set(previous)
       next.delete(key)
@@ -79,7 +107,7 @@ const HiddenProjectsSection = React.memo(function HiddenProjectsSection() {
         />
         <span className="min-w-0 flex-1 truncate">
           {t('sidebar.hiddenProjects.sectionTitle', 'Hidden projects ({{count}})', {
-            count: hiddenRepos.length
+            count: hiddenEntries.length
           })}
         </span>
       </button>
@@ -89,9 +117,8 @@ const HiddenProjectsSection = React.memo(function HiddenProjectsSection() {
         className="flex flex-col pb-1"
         aria-label={t('sidebar.hiddenProjects.listLabel', 'Hidden projects')}
       >
-        {hiddenRepos.map((repo, index) => {
-          // The full row identity: paired-server twins share id and host, differing by SSH target.
-          const key = getRepoRowIdentity(repo)
+        {hiddenEntries.map((entry, index) => {
+          const { key, name } = entry
           const hostLabel = hostLabels?.[index]
           return (
             <li
@@ -99,15 +126,19 @@ const HiddenProjectsSection = React.memo(function HiddenProjectsSection() {
               data-testid="hidden-project"
               className="group/hidden-project flex h-7 min-w-0 items-center gap-1.5 rounded-md pl-1.5 pr-0.5 transition-colors hover:bg-worktree-sidebar-accent focus-within:bg-worktree-sidebar-accent"
             >
-              <RepoIconGlyph
-                repoIcon={repo.repoIcon}
-                color={repo.badgeColor || undefined}
-                className="size-4 shrink-0 text-muted-foreground"
-                iconClassName="size-3.5"
-              />
-              <span className="min-w-0 flex-1 truncate text-[13px] leading-4">
-                {repo.displayName}
-              </span>
+              {entry.kind === 'repo' ? (
+                <RepoIconGlyph
+                  repoIcon={entry.row.repoIcon}
+                  color={entry.row.badgeColor || undefined}
+                  className="size-4 shrink-0 text-muted-foreground"
+                  iconClassName="size-3.5"
+                />
+              ) : (
+                <span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground">
+                  <FolderTree className="size-3" />
+                </span>
+              )}
+              <span className="min-w-0 flex-1 truncate text-[13px] leading-4">{name}</span>
               {hostLabel ? (
                 <span className="min-w-0 max-w-[40%] shrink truncate text-[10px] leading-none text-muted-foreground">
                   {hostLabel}
@@ -125,13 +156,13 @@ const HiddenProjectsSection = React.memo(function HiddenProjectsSection() {
                       ? t(
                           'sidebar.hiddenProjects.showOnHostAriaLabel',
                           'Show {{name}} on {{host}} in the sidebar',
-                          { name: repo.displayName, host: hostLabel }
+                          { name, host: hostLabel }
                         )
                       : t('sidebar.hiddenProjects.showAriaLabel', 'Show {{name}} in the sidebar', {
-                          name: repo.displayName
+                          name
                         })
                   }
-                  onClick={() => void show(repo, key)}
+                  onClick={() => void show(entry)}
                   className="shrink-0"
                 >
                   {t('sidebar.hiddenProjects.show', 'Show')}

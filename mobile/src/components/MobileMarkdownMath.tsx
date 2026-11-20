@@ -11,6 +11,7 @@ import {
   loadMobileMathTypesetter,
   type MobileMathTypesetter
 } from './mobile-markdown-math-typesetter'
+import { isWebDomElement } from '../platform/web-dom-element'
 
 let loaded: MobileMathTypesetter | null = null
 let loading: Promise<MobileMathTypesetter | null> | null = null
@@ -69,7 +70,7 @@ export const MobileMarkdownMath = memo(function MobileMarkdownMath({
 
   useLayoutEffect(() => {
     const host = hostRef.current
-    if (html === null || !(host instanceof HTMLElement)) {
+    if (html === null || !isWebDomElement(host)) {
       return
     }
     host.innerHTML = html

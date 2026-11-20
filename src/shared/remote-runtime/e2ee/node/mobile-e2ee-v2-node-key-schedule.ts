@@ -1,7 +1,7 @@
 import { createHash, hkdfSync } from 'node:crypto'
 
 const SALT_LABEL = new TextEncoder().encode('orca-mobile-e2ee/v2/salt\0')
-const INFO_LABEL = new TextEncoder().encode('orca-mobile-e2ee/v2/session\0')
+const INFO_LABEL = new TextEncoder().encode('orca-mobile-e2ee/v2/forward-secret-session\0')
 
 export type MobileE2EEV2KeySchedule = {
   mobileToDesktopKey: Uint8Array
@@ -11,19 +11,23 @@ export type MobileE2EEV2KeySchedule = {
 }
 
 export function deriveMobileE2EEV2KeySchedule(args: {
-  sharedSecret: Uint8Array
+  staticSharedSecret: Uint8Array
+  ephemeralSharedSecret: Uint8Array
   transcript: Uint8Array
   clientNonce: Uint8Array
   desktopNonce: Uint8Array
 }): MobileE2EEV2KeySchedule {
-  requireLength(args.sharedSecret, 32, 'shared secret')
+  requireLength(args.staticSharedSecret, 32, 'static shared secret')
+  requireLength(args.ephemeralSharedSecret, 32, 'ephemeral shared secret')
   requireLength(args.clientNonce, 32, 'client nonce')
   requireLength(args.desktopNonce, 32, 'desktop nonce')
 
   const transcriptHash = sha256(args.transcript)
   const salt = sha256(concatBytes([SALT_LABEL, args.clientNonce, args.desktopNonce]))
   const info = concatBytes([INFO_LABEL, transcriptHash])
-  const expanded = new Uint8Array(hkdfSync('sha256', args.sharedSecret, salt, info, 96))
+  // Static authenticates the pinned host; ephemeral keeps a later leak of that key from opening this session.
+  const inputKeyMaterial = concatBytes([args.staticSharedSecret, args.ephemeralSharedSecret])
+  const expanded = new Uint8Array(hkdfSync('sha256', inputKeyMaterial, salt, info, 96))
   return {
     mobileToDesktopKey: expanded.slice(0, 32),
     desktopToMobileKey: expanded.slice(32, 64),

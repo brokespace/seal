@@ -1,0 +1,225 @@
+import { describe, expect, it, vi } from 'vitest'
+import { UtilityModelError, type UtilityModelProvider } from './utility-model-provider'
+import { UtilityModelService } from './utility-model-service'
+
+const REQUEST = { messages: [{ role: 'user' as const, content: 'hello' }], maxTokens: 48 }
+const PRIMARY = '@cf/zai-org/glm-5.3-flash'
+const FALLBACK = '@cf/google/gemma-4-26b-a4b-it'
+// 2026-03-04T10:00:00Z
+const MORNING = Date.UTC(2026, 2, 4, 10)
+const NEXT_UTC_DAY = Date.UTC(2026, 2, 5)
+
+function serviceWith(complete: UtilityModelProvider['complete']) {
+  const clock = { now: MORNING }
+  const provider: UtilityModelProvider = {
+    id: 'cloudflare-workers-ai',
+    complete: vi.fn(complete),
+    listModels: async () => []
+  }
+  const service = new UtilityModelService({
+    backend: async () => ({ provider, models: [PRIMARY, FALLBACK] }),
+    now: () => clock.now
+  })
+  return { service, provider, clock }
+}
+
+const planRefusal = (model: string) =>
+  new UtilityModelError('plan-unavailable', 'Not available on the Workers Free plan.', { model })
+
+describe('UtilityModelService', () => {
+  it('falls back when the plan refuses the model and stops asking for it', async () => {
+    const { service, provider } = serviceWith(async (model) => {
+      if (model === PRIMARY) {
+        throw planRefusal(model)
+      }
+      return 'ok'
+    })
+
+    const first = await service.complete(REQUEST)
+    const second = await service.complete(REQUEST)
+
+    expect(first).toEqual({
+      text: 'ok',
+      provider: 'cloudflare-workers-ai',
+      model: FALLBACK,
+      usedFallback: true
+    })
+    expect(second.model).toBe(FALLBACK)
+    expect(vi.mocked(provider.complete).mock.calls.map(([model]) => model)).toEqual([
+      PRIMARY,
+      FALLBACK,
+      FALLBACK
+    ])
+    expect(service.health().unavailableModels).toEqual([
+      {
+        kind: 'plan-unavailable',
+        message: 'Not available on the Workers Free plan.',
+        model: PRIMARY,
+        at: MORNING
+      }
+    ])
+  })
+
+  it('holds every request until the next UTC day once the daily allocation is spent', async () => {
+    const { service, provider, clock } = serviceWith(async () => {
+      throw new UtilityModelError('rate-limited', 'daily free allocation used up', {
+        dailyLimit: true
+      })
+    })
+
+    await expect(service.complete(REQUEST)).rejects.toMatchObject({ kind: 'rate-limited' })
+    expect(service.health().pausedUntil).toBe(NEXT_UTC_DAY)
+
+    clock.now = NEXT_UTC_DAY - 1
+    await expect(service.complete(REQUEST)).rejects.toMatchObject({ kind: 'rate-limited' })
+    expect(provider.complete).toHaveBeenCalledTimes(1)
+
+    clock.now = NEXT_UTC_DAY
+    await expect(service.complete(REQUEST)).rejects.toMatchObject({ kind: 'rate-limited' })
+    expect(provider.complete).toHaveBeenCalledTimes(2)
+  })
+
+  it('pauses briefly for an ordinary 429 and for a day after three in a row', async () => {
+    const { service, clock } = serviceWith(async () => {
+      throw new UtilityModelError('rate-limited', 'Capacity temporarily exceeded', {
+        retryAfterMs: 5_000
+      })
+    })
+
+    await expect(service.complete(REQUEST)).rejects.toMatchObject({ kind: 'rate-limited' })
+    expect(service.health().pausedUntil).toBe(MORNING + 5_000)
+
+    clock.now = MORNING + 5_000
+    await expect(service.complete(REQUEST)).rejects.toMatchObject({ kind: 'rate-limited' })
+    clock.now = MORNING + 10_000
+    await expect(service.complete(REQUEST)).rejects.toMatchObject({ kind: 'rate-limited' })
+
+    expect(service.health().pausedUntil).toBe(NEXT_UTC_DAY)
+  })
+
+  it('lets a test through a pause and lifts the pause when it succeeds', async () => {
+    let limited = true
+    const { service } = serviceWith(async () => {
+      if (limited) {
+        throw new UtilityModelError('rate-limited', 'daily free allocation used up', {
+          dailyLimit: true
+        })
+      }
+      return 'ready'
+    })
+    await expect(service.complete(REQUEST)).rejects.toMatchObject({ kind: 'rate-limited' })
+
+    limited = false
+    const result = await service.test()
+
+    expect(result).toMatchObject({ ok: true, model: PRIMARY, reply: 'ready', usedFallback: false })
+    expect(service.health()).toEqual({
+      unavailableModels: [],
+      pausedUntil: null,
+      lastFailure: null
+    })
+  })
+
+  it("answers from the next model when a limit is one model's own, and rests that model", async () => {
+    const { service, provider, clock } = serviceWith(async (model) => {
+      if (model === PRIMARY) {
+        throw new UtilityModelError('rate-limited', 'temporarily rate-limited upstream', {
+          model,
+          modelScoped: true,
+          retryAfterMs: 30_000
+        })
+      }
+      return 'ok'
+    })
+
+    const first = await service.complete(REQUEST)
+    const second = await service.complete(REQUEST)
+    clock.now = MORNING + 30_000
+    await service.complete(REQUEST)
+
+    expect(first).toMatchObject({ model: FALLBACK, usedFallback: true })
+    expect(second.model).toBe(FALLBACK)
+    expect(service.health().pausedUntil).toBeNull()
+    expect(vi.mocked(provider.complete).mock.calls.map(([model]) => model)).toEqual([
+      PRIMARY,
+      FALLBACK,
+      FALLBACK,
+      PRIMARY,
+      FALLBACK
+    ])
+  })
+
+  it('holds the provider only once every model is resting', async () => {
+    const { service, provider } = serviceWith(async (model) => {
+      throw new UtilityModelError('rate-limited', 'temporarily rate-limited upstream', {
+        model,
+        modelScoped: true,
+        retryAfterMs: model === PRIMARY ? 30_000 : 90_000
+      })
+    })
+
+    await expect(service.complete(REQUEST)).rejects.toMatchObject({ kind: 'rate-limited' })
+    await expect(service.complete(REQUEST)).rejects.toMatchObject({ kind: 'rate-limited' })
+
+    expect(service.health().pausedUntil).toBe(MORNING + 30_000)
+    expect(provider.complete).toHaveBeenCalledTimes(2)
+  })
+
+  it("tries the caller's model and fallback before the provider's own", async () => {
+    const { service, provider } = serviceWith(async (model) => {
+      if (model !== PRIMARY) {
+        throw new UtilityModelError('model-not-found', 'No such model', { model })
+      }
+      return 'ok'
+    })
+
+    const reply = await service.complete(REQUEST, undefined, {
+      choice: { model: 'vendor/chosen', fallbackModel: 'vendor/spare' }
+    })
+
+    expect(reply).toMatchObject({ model: PRIMARY, usedFallback: true })
+    expect(vi.mocked(provider.complete).mock.calls.map(([model]) => model)).toEqual([
+      'vendor/chosen',
+      'vendor/spare',
+      PRIMARY
+    ])
+  })
+
+  it('asks the next model when the caller could not use the reply of the first', async () => {
+    const { service } = serviceWith(async (model) => `from ${model}`)
+
+    const other = await service.complete(REQUEST, undefined, { avoid: [PRIMARY] })
+    const none = service.complete(REQUEST, undefined, { avoid: [PRIMARY, FALLBACK] })
+
+    expect(other).toMatchObject({ text: `from ${FALLBACK}`, model: FALLBACK })
+    await expect(none).rejects.toMatchObject({ kind: 'not-configured' })
+  })
+
+  it('asks a decision model alone: its failure reaches the caller, and no other model is tried', async () => {
+    const asked: string[] = []
+    const provider: UtilityModelProvider = {
+      id: 'cloudflare-workers-ai',
+      complete: vi.fn(async () => 'ok'),
+      decide: async (model) => {
+        asked.push(model)
+        throw new UtilityModelError('network', 'The decision model took too long')
+      },
+      listModels: async () => []
+    }
+    const service = new UtilityModelService({
+      backend: async () => ({ provider, models: [PRIMARY, FALLBACK] })
+    })
+
+    await expect(service.decide('@cf/cloudflare/clef', { body: {} })).rejects.toMatchObject({
+      kind: 'network'
+    })
+    expect(asked).toEqual(['@cf/cloudflare/clef'])
+    expect(provider.complete).not.toHaveBeenCalled()
+  })
+
+  it('reports not-configured without a provider', async () => {
+    const service = new UtilityModelService({ backend: async () => null })
+
+    expect(await service.test()).toMatchObject({ ok: false, failure: { kind: 'not-configured' } })
+  })
+})

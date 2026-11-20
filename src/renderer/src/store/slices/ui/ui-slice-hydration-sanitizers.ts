@@ -1,3 +1,4 @@
+import { isProjectGroupHookTrustKey } from '../../../../../shared/workspace-hook-owner'
 import { normalizeExplorerDisplayRootByWorktree } from '../../../../../shared/file-listing/file-explorer-display-root'
 import type { AppState } from '../../types'
 import type { PersistedTrustedOrcaHooks } from '../../../../../shared/orca-yaml-hook-types'
@@ -18,7 +19,10 @@ import { isTopLevelView } from '../../../../../shared/top-level-view'
 import { AGENT_STATUS_HYDRATE_MAX_AGE_MS } from '../../../../../shared/agent-status/contracts/agent-status-freshness'
 import { resolveVisibleWorkspaceHostIds } from '../../../../../shared/workspace-view/workspace-host-visibility'
 import { persistedUIValuesEqual } from '../../../../../shared/persisted-ui-equality'
-import { DEFAULT_STATUS_BAR_ITEMS } from '../../../../../shared/constants'
+import {
+  DEFAULT_STATUS_BAR_ITEMS,
+  normalizeAgentActivityDisplayMode
+} from '../../../../../shared/constants'
 import type { UISlice } from './ui-slice-contract'
 
 const MIN_SIDEBAR_WIDTH = 220
@@ -74,7 +78,7 @@ export function hydrateTrustedOrcaHooks(
   }
   const next: PersistedTrustedOrcaHooks = {}
   for (const [repoId, entry] of Object.entries(sanitized)) {
-    if (validRepoIds.has(repoId)) {
+    if (validRepoIds.has(repoId) || isProjectGroupHookTrustKey(repoId)) {
       next[repoId] = entry
     }
   }
@@ -260,5 +264,16 @@ export function sanitizeExplorerPreferences(
       ui.explorerDisplayRootByWorktree
     ),
     showDotfilesByWorktree: sanitizeShowDotfilesByWorktree(ui.showDotfilesByWorktree)
+  }
+}
+
+/** How the sidebar shows agents: what it lists in place of workspaces and what each card names. */
+export function hydrateSidebarDisplay(
+  ui: PersistedUIState
+): Pick<UISlice, 'showAgentModels' | 'hideSidebarWorkspaces' | 'agentActivityDisplayMode'> {
+  return {
+    showAgentModels: ui.showAgentModels !== false,
+    hideSidebarWorkspaces: ui.hideSidebarWorkspaces !== false,
+    agentActivityDisplayMode: normalizeAgentActivityDisplayMode(ui.agentActivityDisplayMode)
   }
 }

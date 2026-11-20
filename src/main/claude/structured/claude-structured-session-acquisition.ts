@@ -108,6 +108,7 @@ export async function acquireClaudeSession({
     const permissionChanged = proof.observeClaudeReportedPermissionMode(observedOptions, message)
     const modelReport = observeClaudeExecutionModel(liveSession, init?.model)
     if (init) {
+      initProof.observeStartupHook(init)
       initProof.resolve(init)
       if (liveSession) {
         liveSession.capabilities = proof.readClaudeCapabilities(
@@ -190,7 +191,7 @@ export async function acquireClaudeSession({
     // Granted from this final launch before the connection can deliver a request.
     const permissions = claudeLaunchPermissions({ sessionId, prompts, emit }, launch)
     naming?.launch(launch)
-    attempt.account = launch.account
+    attempt.launch = launch
     observedLeafUuid = launch.resumeLeafUuid
     const connection = await withAgentSessionCreatePhase('spawn', input.recordPhase, () =>
       (deps.openConnection ?? openClaudeStreamJsonConnection)(

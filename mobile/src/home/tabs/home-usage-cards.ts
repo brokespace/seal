@@ -9,8 +9,9 @@ import type { AccountsSnapshot, ProviderRateLimits } from '../../accounts/accoun
 import { getActiveCodexAccountIdForRateLimitTarget } from '../../accounts/usage/codex-reset-credit'
 
 export type HomeUsageCard = {
-  /** The managed account's id, or null for the agent's own login (System default). */
+  /** The saved account's id, or null for the machine's own CLI login. */
   accountId: string | null
+  /** The account's name on the desktop (its alias or email); null for an unnamed system login. */
   email: string | null
   /** Claude's organization or Codex's workspace, when the desktop knows it. */
   subtitle: string | null
@@ -59,11 +60,13 @@ export function selectHomeUsageCards(
 ): HomeUsageCard[] {
   const activeId = activeAccountId(snapshot, provider)
   const activeLimits = getActiveProviderRateLimits(snapshot, provider)
+  // The desktop's own account names, so the phone shows what Settings > Accounts shows.
+  const seal = snapshot.seal?.[provider]
   const cards: HomeUsageCard[] = []
   if (activeId === null) {
     cards.push({
       accountId: null,
-      email: null,
+      email: seal?.systemLogin?.label ?? null,
       subtitle: null,
       active: true,
       limits: activeLimits,
@@ -77,7 +80,7 @@ export function selectHomeUsageCards(
     const limits = active ? activeLimits : (inactive?.rateLimits ?? null)
     cards.push({
       accountId: account.id,
-      email: account.email,
+      email: seal?.labels[account.id] ?? account.email,
       subtitle: account.subtitle,
       active,
       limits,

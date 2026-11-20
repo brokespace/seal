@@ -39,12 +39,18 @@ function fixture(accounts: ClaudeManagedAccount[] = [account('a'), account('b')]
   const root = mkdtempSync(join(tmpdir(), 'claude-accounts-'))
   roots.push(root)
   const home = (id: string) => join(root, id, 'home')
-  const signIn = (id: string, email: string, organizationUuid?: string) => {
+  const signIn = (id: string, email: string, organizationUuid?: string, token = true) => {
     mkdirSync(home(id), { recursive: true })
     writeFileSync(
       join(home(id), '.claude.json'),
       JSON.stringify({ oauthAccount: { emailAddress: email, organizationUuid } })
     )
+    if (token) {
+      writeFileSync(
+        join(home(id), '.credentials.json'),
+        JSON.stringify({ claudeAiOauth: { accessToken: 'access-old' } })
+      )
+    }
   }
   const covered = new Set<string>()
   let settings: GlobalSettings = {
@@ -199,7 +205,7 @@ describe('ClaudeAccountService', () => {
 
   it('refuses to select an account that has its identity but no login to start Claude with', async () => {
     const f = fixture()
-    f.signIn('b', 'b@example.test')
+    f.signIn('b', 'b@example.test', undefined, false)
     await expect(f.service.selectAccount('b')).rejects.toThrow(
       'Sign in to this Claude account again before selecting it.'
     )

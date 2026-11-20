@@ -1,0 +1,50 @@
+name: Seal Relay
+
+on:
+  pull_request:
+    paths:
+      - cloud/seal-relay/**
+      - cloud/apps/relay-edge/src/**
+      - cloud/apps/push/src/**
+      - cloud/packages/push-contract/src/**
+      - cloud/packages/relay-contract/src/**
+      - src/main/runtime/mobile-cloud-relay/**
+      - src/main/runtime/push/**
+      - src/main/runtime/rpc/transports/relay-transport.ts
+      - .github/workflows/seal-relay.yml
+  push:
+    branches: [main, seal/all]
+    paths:
+      - cloud/seal-relay/**
+      - .github/workflows/seal-relay.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seal-relay-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  worker:
+    name: Worker typecheck and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-pnpm
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      # The round-trip test imports the shipped desktop relay and push clients.
+      - name: Install desktop dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Install worker dependencies
+        working-directory: cloud/seal-relay
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        working-directory: cloud/seal-relay
+        run: pnpm typecheck
+      - name: Test
+        working-directory: cloud/seal-relay
+        run: pnpm test

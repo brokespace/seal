@@ -1,0 +1,82 @@
+{
+  "id": "compaction-between-ask-and-work",
+  "title": "The agent compacts its context between an open ask and the turn that does it",
+  "categories": ["long-session", "agent-surface"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "/healthz leaves the not-addressed list once it is added, and neither the compaction summary nor the /compact command shows up as something the user asked.",
+  "steps": [
+    {
+      "user": "Add request IDs to every log line, and add a /healthz endpoint."
+    },
+    {
+      "edit": "/srv/shop/src/middleware/request-id.ts"
+    },
+    {
+      "agent": "Request IDs are on every log line now, via a middleware that sets req.id. I haven't added /healthz yet."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "healthz",
+          "why": "/healthz is asked for and not added yet"
+        }
+      ]
+    },
+    {
+      "compact": "The user asked for request IDs on every log line (done, via a middleware that sets req.id) and for a /healthz endpoint (not started). Next step: add /healthz."
+    },
+    {
+      "user": "continue"
+    },
+    {
+      "edit": "/srv/shop/src/routes/healthz.ts"
+    },
+    {
+      "agent": "Added /healthz: it returns 200 with the build SHA and checks the database connection."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "healthz",
+          "why": "/healthz was added"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "healthz",
+          "why": "/healthz is recorded as done"
+        },
+        {
+          "in": "asked",
+          "lacks": "compact|continued from|summary",
+          "why": "the agent's own compaction is not a request from the user"
+        },
+        {
+          "in": "asked",
+          "max": 3,
+          "why": "the two requests and at most the nudge to continue"
+        }
+      ]
+    }
+  ]
+}

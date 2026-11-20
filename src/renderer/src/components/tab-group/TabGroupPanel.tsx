@@ -3,6 +3,7 @@ import { lazyWithRetry as lazy } from '@/app-shell/startup/lazy-with-retry'
 import { useDroppable } from '@dnd-kit/core'
 import { useAppStore } from '../../store/index'
 import TabBar from '../tab-bar/TabBar'
+import { TAB_STRIP_CONTAINER_CLASSES, TAB_STRIP_ROW_CLASSES } from '../tab-bar/drop-indicator'
 
 import { TabBarQuickCommandsButton } from '../tab-bar/TabBarQuickCommandsButton'
 import { TabGroupPaneActionsMenu } from './TabGroupPaneActionsMenu'
@@ -15,11 +16,11 @@ import { registerTabGroupBody } from './tab-group-body-geometry'
 import { observeTabGroupBodyGridSize } from '@/runtime/sync-runtime-graph/graph-sync-scheduler'
 import { useTranslate } from '@/i18n/use-translate'
 import type { TabGroup } from '../../../../shared/tab-types'
-import { isStructuredTab } from '../../../../shared/agent-session/view/structured-agent-session-tab'
+import { isAgentSessionSurfaceTab } from '../../../../shared/tab-types'
 import type { ClientHostedBrowserRow } from '../../../../shared/client-hosted-browser-rows'
 import { useClientHostedBrowserRows } from '@/runtime/browser/client-hosting/client-hosted-browser-row-state'
 import { resolveClientHostedBrowserRowStripGroupId } from '../tab-bar/client-hosted-browser-row-strip-placement'
-import { useEditorGroupFileDropOwner } from '../editor/use-editor-group-file-drop-owner'
+import { useEditorGroupFileDropOwner } from '../editor/file-drop/use-editor-group-file-drop-owner'
 import { cn } from '@/lib/class-names'
 import { UNFOCUSED_SPLIT_GROUP_OPACITY } from './split-group-dim'
 import { useWindowBackdropActive } from '@/app-shell/appearance/window-backdrop'
@@ -142,7 +143,7 @@ export default function TabGroupPanel({
       activeTabId={
         activeTab?.contentType === 'terminal'
           ? activeTab.entityId
-          : activeTab?.contentType === 'agent-session'
+          : activeTab && isAgentSessionSurfaceTab(activeTab.contentType)
             ? activeTab.id
             : null
       }
@@ -153,7 +154,7 @@ export default function TabGroupPanel({
       onActivate={commands.activateTerminal}
       onClose={(terminalId) => {
         const item = resolveGroupTabFromVisibleId(model.groupTabs, terminalId)
-        if (item?.contentType === 'terminal' || item?.contentType === 'agent-session') {
+        if (item?.contentType === 'terminal' || isAgentSessionSurfaceTab(item?.contentType)) {
           commands.closeItem(item.id)
           return
         }
@@ -195,7 +196,7 @@ export default function TabGroupPanel({
       agentSessionTabs={agentSessionItems}
       activeFileId={
         activeTab?.contentType === 'terminal' ||
-        activeTab?.contentType === 'agent-session' ||
+        isAgentSessionSurfaceTab(activeTab?.contentType) ||
         activeTab?.contentType === 'browser' ||
         activeTab?.contentType === 'simulator'
           ? null
@@ -206,7 +207,7 @@ export default function TabGroupPanel({
       activeTabType={
         activeTab?.contentType === 'terminal'
           ? 'terminal'
-          : activeTab?.contentType === 'agent-session'
+          : isAgentSessionSurfaceTab(activeTab?.contentType)
             ? 'agent-session'
             : activeTab?.contentType === 'browser'
               ? 'browser'
@@ -287,7 +288,7 @@ export default function TabGroupPanel({
       {/* Omit external strips entirely because hidden duplicates would still register competing drag sortables. */}
       {tabStrip !== 'attached' ? null : (
         <div
-          className="h-[32px] shrink-0 border-b border-border bg-tab-bar"
+          className={TAB_STRIP_ROW_CLASSES}
           data-tab-group-strip-id={groupId}
           data-terminal-focus-release-surface="true"
           data-worktree-id={worktreeId}
@@ -306,7 +307,7 @@ export default function TabGroupPanel({
               />
             ) : null}
             {/* Why: the tab-strip container excludes the reserved spacers, so width rules see only the room tabs and actions share. */}
-            <div className="@container/tab-strip flex min-w-0 flex-1 items-stretch">
+            <div className={TAB_STRIP_CONTAINER_CLASSES}>
               <div className="min-w-10 flex-1 h-full">{tabBar}</div>
               {/* Why: overflowing tabs eat all strip whitespace; keep a window-drag handle while the right sidebar header is closed. It goes first in narrow strips: 203 = 40 gap + 163 for the tab floor and every control, so controls never clip behind it. */}
               {reserveRightTitlebarSpace ? (
@@ -360,7 +361,7 @@ export default function TabGroupPanel({
         // Why: the pane overlays paint terminals and chats above this body; only they show the backdrop.
         data-translucent-tab-body={
           activeTab?.contentType === 'terminal' ||
-          (activeTab && isStructuredTab(activeTab) && backdropActive)
+          (isAgentSessionSurfaceTab(activeTab?.contentType) && backdropActive)
             ? ''
             : undefined
         }
@@ -379,7 +380,7 @@ export default function TabGroupPanel({
         ) : null}
         {activeTab &&
           activeTab.contentType !== 'terminal' &&
-          activeTab.contentType !== 'agent-session' &&
+          !isAgentSessionSurfaceTab(activeTab.contentType) &&
           activeTab.contentType !== 'browser' &&
           activeTab.contentType !== 'simulator' && (
             // Why: a capture-phase owner, so Monaco never sees the drop and the file opens as a tab here.

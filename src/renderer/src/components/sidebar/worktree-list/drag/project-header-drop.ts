@@ -148,6 +148,7 @@ export function computeProjectHeaderDropPreview(args: {
   rects: readonly ProjectHeaderDragRect[]
   sidebarRepoHeaderIds: readonly string[]
   contentBottom?: number
+  viewTop?: number
 }): ProjectHeaderDropPreview | null {
   const { rects, sidebarRepoHeaderIds } = args
   return computeWorktreeSidebarHeaderDropPreview({
@@ -157,7 +158,8 @@ export function computeProjectHeaderDropPreview(args: {
     rects,
     headerCount: sidebarRepoHeaderIds.length,
     getId: (rect) => rect.repoId,
-    contentBottom: args.contentBottom
+    contentBottom: args.contentBottom,
+    viewTop: args.viewTop
   })
 }
 

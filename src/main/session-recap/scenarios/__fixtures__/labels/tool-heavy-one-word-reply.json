@@ -1,0 +1,17 @@
+{
+  "id": "tool-heavy-one-word-reply",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Upgrade React Router from v5 to v6 across the app"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 14: the agent says Done after installing v6, editing the routes and pages, and passing tsc, tests and build"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

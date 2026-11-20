@@ -5,10 +5,10 @@ import type { AppState } from '@/store/types'
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
 import type { Worktree } from '../../../../../../shared/worktree/types'
 import { getWorktreeHostIdentity } from '../../../../../../shared/worktree/host-qualified-identity'
-import { isActiveSidebarWorkspace } from '../../../../../../shared/sidebar-list/active-workspace'
+import { isActiveSidebarWorkspace } from '../../../../../../shared/sidebar-list/selection/active-workspace'
 import WorktreeCard from '../../workspace-card/surface/WorktreeCard'
 import type { ActiveSurfaceVariant } from '../../workspace-card/controller/worktree-card-model'
-import { PINNED_GROUP_KEY } from '../../../../../../shared/sidebar-list/group-keys'
+import { PINNED_GROUP_KEY } from '../../../../../../shared/sidebar-list/sections/group-keys'
 import type { WorktreeGroupBy } from '../../../../../../shared/sidebar-list/row-types'
 import type { LineageToggleHandler } from '../../workspace-card/identity/worktree-lineage-toggle-handler-cache'
 import type { LineageRowFrame } from '../listing/lineage-row-projection'
@@ -26,6 +26,8 @@ export type WorktreeItemRowContext = {
   nativeLineageDropTargetIdentity: string | null
   activeWorktreeId: string | null
   activeWorkspaceExecutionHostId: ExecutionHostId | null
+  /** False while the main area shows a session: its row carries the mark, not the active card. */
+  marksActiveCard: boolean
   currentWorktreeId: string | null
   highlightedRevealRowKey: string | null
   selectedWorktreeIds: ReadonlySet<string>
@@ -111,7 +113,7 @@ export function renderWorktreeItemRow(
         isActive={isActiveWorktree}
         isCurrentWorktree={ctx.currentWorktreeId === itemRow.worktree.id}
         // Why: a child-active parent should look active without the active-card side effects (e.g. SSH reconnect UI).
-        isActiveSurface={forceActiveSurface || isActiveWorktree}
+        isActiveSurface={ctx.marksActiveCard && (forceActiveSurface || isActiveWorktree)}
         activeSurfaceVariant={isActiveWorktree ? ctx.getActiveSurfaceVariant(itemRow) : 'primary'}
         isMultiSelected={isMultiSelected}
         revealHighlight={ctx.highlightedRevealRowKey === itemRow.rowKey}
@@ -140,6 +142,7 @@ export function renderWorktreeItemRow(
         lineageChildCount={itemRow.lineageChildCount}
         lineageChildWorktreeIds={itemRow.lineageChildWorktreeIds}
         lineageCollapsed={itemRow.lineageCollapsed}
+        lineageDescendantIdentities={itemRow.lineageDescendantIdentities}
         onLineageToggle={
           itemRow.lineageGroupKey ? ctx.getLineageToggleHandler(itemRow.lineageGroupKey) : undefined
         }

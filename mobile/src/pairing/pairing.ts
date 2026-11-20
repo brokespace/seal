@@ -5,6 +5,8 @@ import {
 } from '../../../src/shared/remote-runtime/pairing/mobile-relay-pairing-offer'
 import { normalizePairingBase64 } from '../../../src/shared/remote-runtime/pairing/mobile-pairing-base64'
 import { PAIRING_INPUT_MAX_CHARACTERS } from '../../../src/shared/remote-runtime/pairing/mobile-pairing-protocol-limits'
+import { acceptedPairingSchemePrefixLength } from '../../../src/shared/remote-runtime/pairing/pairing-url-scheme'
+import { assertPinnedMobileRelayCell } from '../transport/relay/mobile-relay-cell-pin'
 
 // Keep parsing aligned with src/shared/pairing.ts; use mobile base64 APIs instead of Node Buffer.
 
@@ -26,7 +28,12 @@ export function extractPairingCodeFromUrl(url: string): string | null {
     return null
   }
   const trimmed = url.trim()
-  const match = /^orca:\/\/([^/?#]*)([^?#]*)?/i.exec(trimmed)
+  const schemeLength = acceptedPairingSchemePrefixLength(trimmed)
+  if (schemeLength === null) {
+    return null
+  }
+  const afterScheme = trimmed.slice(schemeLength)
+  const match = /^([^/?#]*)([^?#]*)?/.exec(afterScheme)
   if (!match) {
     return null
   }
@@ -36,7 +43,7 @@ export function extractPairingCodeFromUrl(url: string): string | null {
     return null
   }
 
-  const rest = trimmed.slice(match[0].length)
+  const rest = afterScheme.slice(match[0].length)
   const queryIndex = rest.indexOf('?')
   if (queryIndex !== -1) {
     const query = rest.slice(queryIndex + 1).split('#')[0] ?? ''
@@ -62,7 +69,7 @@ export function parsePairingCode(input: string): PairingOffer | null {
     return null
   }
   try {
-    if (/^orca:\/\//i.test(trimmed)) {
+    if (acceptedPairingSchemePrefixLength(trimmed) !== null) {
       return decodePairingUrl(trimmed)
     }
     return decodePairingBase64(trimmed)
@@ -74,5 +81,10 @@ export function parsePairingCode(input: string): PairingOffer | null {
 function decodePairingBase64(base64url: string): PairingOffer {
   // Restore desktop-stripped QR padding for runtimes that reject unpadded atob input.
   const json = atob(normalizePairingBase64(base64url))
-  return PairingOfferSchema.parse(JSON.parse(json))
+  const offer = PairingOfferSchema.parse(JSON.parse(json))
+  // A code naming a cell its own director could not send this phone to is refused before anything is dialed.
+  if (offer.relay) {
+    assertPinnedMobileRelayCell(offer.relay)
+  }
+  return offer
 }

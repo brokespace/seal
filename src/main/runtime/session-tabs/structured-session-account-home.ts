@@ -4,7 +4,11 @@ import { getProfileUserDataPath } from '../../orca-profiles/profile-storage-path
 import { resolveHostStructuredAgentLaunchEnvironment } from '../agent-session/launch/structured-agent-launch-support'
 import { agentWorkspaceTrustDecisionForWorkspace } from '../../agent-launch/trust/agent-workspace-trust-spawn'
 import { OrcaRuntimeWithStructuredSessionCliWriterHost } from './structured-session-cli-writer-host'
-import type { AgentSessionAccountHome } from '../../../shared/agent-session/lifecycle/agent-session-account-home'
+import {
+  agentSessionAccountHome,
+  type AgentSessionAccountHome
+} from '../../../shared/agent-session/lifecycle/agent-session-account-home'
+import { prepareSealChatLaunch, sealChatAccountHome } from '../../seal-accounts/seal-chat-launch'
 import type { AgentSessionRecord } from '../../../shared/agent-session/lifecycle/agent-session-record'
 
 export abstract class OrcaRuntimeWithStructuredSessionAccountHome extends OrcaRuntimeWithStructuredSessionCliWriterHost {
@@ -62,8 +66,14 @@ export abstract class OrcaRuntimeWithStructuredSessionAccountHome extends OrcaRu
     purpose: 'read' | 'identity' = 'read'
   ): Promise<AgentSessionAccountHome | null> {
     const { provider, location } = record
-    if (!structuredAgentRuntimeMetadata(provider)?.launchFollowsSelection?.()) {
+    const registration = structuredAgentRuntimeMetadata(provider)
+    if (!registration?.launchFollowsSelection?.()) {
       return null
+    }
+    const variable = registration.definition.accountHomeVariable
+    const sealHome = variable ? sealChatAccountHome(record) : null
+    if (variable && sealHome) {
+      return agentSessionAccountHome({ accountHomeVariable: variable }, sealHome)
     }
     const read = this.structuredAgentAccountHomeResolver(provider, '', purpose)
     const launchEnv = this.structuredAgentLaunchEnv(provider, this.requireStore().getSettings())
@@ -81,7 +91,8 @@ export abstract class OrcaRuntimeWithStructuredSessionAccountHome extends OrcaRu
     }
     const prepare = this.structuredAgentAccountHomeResolver(provider, '', 'launch', launchDirectory)
     await this.accounts.prepareHostAgentLaunch(provider)
-    const launchEnv = this.structuredAgentLaunchEnv(provider, this.requireStore().getSettings())
+    const hostEnv = this.structuredAgentLaunchEnv(provider, this.requireStore().getSettings())
+    const launchEnv = (await prepareSealChatLaunch(record, hostEnv))?.env ?? hostEnv
     return (await prepare?.({ launchEnv, location })) ?? null
   }
 }

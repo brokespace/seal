@@ -6,7 +6,10 @@ import {
   RuntimeRpcEnvelopeSchema,
   type RuntimeRpcResponse
 } from '../../runtime-rpc-envelope'
-import { parseRemoteRuntimeJsonText } from './remote-runtime-request-frames'
+import {
+  parseRemoteRuntimeJsonText,
+  remoteRuntimeReadyFailureMessage
+} from './remote-runtime-request-frames'
 import type { RuntimeStatus } from '../../runtime-session-contracts'
 import {
   acceptSealedReady,
@@ -76,9 +79,7 @@ export class RemoteRuntimeRequestResponseRouter<TResult> {
       this.options.finishError(
         new RemoteRuntimeClientError(
           'invalid_runtime_response',
-          readyFrame === 'invalid'
-            ? 'Remote Orca runtime returned an invalid E2EE handshake frame.'
-            : 'Remote Orca runtime returned an unexpected E2EE handshake frame.',
+          remoteRuntimeReadyFailureMessage(readyFrame),
           { pairingStage: 'host-identity' }
         )
       )

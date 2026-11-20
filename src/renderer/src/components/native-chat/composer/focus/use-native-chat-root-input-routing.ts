@@ -68,9 +68,12 @@ export function useNativeChatRootInputRouting(
 
   const onPointerDownCapture = useCallback(
     (event: ReactPointerEvent) => {
+      // Focusing the root from a portaled menu dismisses it before its item's click lands.
       if (
         !event.defaultPrevented &&
         event.button === 0 &&
+        event.target instanceof Node &&
+        rootRef.current?.contains(event.target) &&
         shouldFocusNativeChatPaneFromPointerTarget(event.target)
       ) {
         rootRef.current?.focus({ preventScroll: true })

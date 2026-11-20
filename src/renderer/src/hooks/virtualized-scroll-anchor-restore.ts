@@ -19,6 +19,8 @@ type RunVirtualizedScrollAnchorRestoreArgs<
   rekeyedRowKeys?: ReadonlyMap<string, string>
   rowIndexByKey: ReadonlyMap<string, number>
   scrollOffsetRef: MutableRefObject<number>
+  // Height of a header pinned over the rows; anchor offsets are measured from its bottom edge.
+  topInset?: number
   virtualizer: Virtualizer<TScrollElement, TItemElement>
 }
 
@@ -37,6 +39,7 @@ export function runVirtualizedScrollAnchorRestore<
   rekeyedRowKeys,
   rowIndexByKey,
   scrollOffsetRef,
+  topInset = 0,
   virtualizer
 }: RunVirtualizedScrollAnchorRestoreArgs<TScrollElement, TItemElement>): (() => void) | undefined {
   const hasExactKey = rowIndexByKey.has(anchor.key)
@@ -58,7 +61,8 @@ export function runVirtualizedScrollAnchorRestore<
   }
   // Preserve within-row offset only for the same/rekeyed row; a fallback names a different row.
   const followedRow = resolvedKey === followedKey
-  const offset = hasExactKey || followedRow ? anchor.offset : 0
+  // A fallback row still keeps the gap the anchor had above it.
+  const offset = hasExactKey || followedRow ? anchor.offset : Math.min(0, anchor.offset)
   // A rekey can shrink the row, such as a dissolved lineage group; clamp its preserved offset.
   const offsetWithinRow = (rowHeight: number): number =>
     followedRow ? Math.min(rowHeight, offset) : offset
@@ -77,7 +81,7 @@ export function runVirtualizedScrollAnchorRestore<
     }
     const scrollRect = el.getBoundingClientRect()
     const rect = element.getBoundingClientRect()
-    const desiredTop = scrollRect.top - offsetWithinRow(rect.height)
+    const desiredTop = scrollRect.top + topInset - offsetWithinRow(rect.height)
     const delta = rect.top - desiredTop
     if (Math.abs(delta) > 1) {
       // Keep the target anchor until later layout confirms the landing.
@@ -102,7 +106,7 @@ export function runVirtualizedScrollAnchorRestore<
     const maxScrollTop = Math.max(0, el.scrollHeight - el.clientHeight)
     const nextScrollTop = Math.min(
       maxScrollTop,
-      Math.max(0, item.start + offsetWithinRow(item.size))
+      Math.max(0, item.start + offsetWithinRow(item.size) - topInset)
     )
     if (Math.abs(el.scrollTop - nextScrollTop) > 1) {
       programmaticScrollMarks?.mark(nextScrollTop)

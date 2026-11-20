@@ -1,0 +1,13 @@
+[1;2m› [0mRun the task
+
+
+
+  [2mQuestion 1/1 (1 unanswered)[0m
+  Which database should the migration target?
+
+  [1;7m› 1. Postgres (Recommended)  [0;7mThe production database[1m                                                                                    [0m
+    2. SQLite                  [2mThe local development database[0m
+    3. None of the above       [2mOptionally, add details in notes (tab)[0m
+
+  [1mtab[0m to add notes[2m | [0;1menter[0m to submit answer[2m | [0;1mesc[0m to interrupt
+

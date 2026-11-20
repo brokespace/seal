@@ -1,5 +1,6 @@
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import type { TabGroupLayoutNode } from '../../../../shared/tab-types'
+import { isAgentSessionSurfaceTab } from '../../../../shared/tab-types'
 import type { AppState } from '@/store/types'
 
 export type FloatingWorkspaceSurfaceModel =
@@ -40,7 +41,7 @@ export function resolveFloatingWorkspaceSurfaceModel(
     if (tab.contentType === 'browser') {
       return browserIds.has(tab.entityId)
     }
-    if (tab.contentType === 'agent-session' || tab.contentType === 'simulator') {
+    if (isAgentSessionSurfaceTab(tab.contentType) || tab.contentType === 'simulator') {
       return true
     }
     return fileIds.has(tab.entityId)

@@ -1,7 +1,10 @@
 // Keep Electron imports out: both desktop and orcad bundle these account services.
+import { join } from 'node:path'
+import { getAppEnvironment } from '../../../shared/app-environment'
 import { getClaudeAgentViewService } from '../../claude/agent-view/agent-view-service'
 import type { Store } from '../../persistence/loading-store/store'
 import { RateLimitService } from '../../rate-limits/service/rate-limit-service'
+import { KeptUsageReadings } from '../../rate-limits/service/kept-usage-readings'
 import { CodexRuntimeHomeService } from '../../codex-accounts/runtime-home-service'
 import { CodexAccountService } from '../../codex-accounts/service'
 import { ClaudeRuntimeAuthService } from '../../claude-accounts/runtime-auth-service'
@@ -24,6 +27,8 @@ import { createAccountRuntimeTargetSettingsSync } from '../../rate-limits/servic
 import { normalizeCodexRuntimeSelection } from '../../codex-accounts/account-management/runtime-selection'
 import { normalizeClaudeRuntimeSelection } from '../../claude-accounts/selection/runtime-selection'
 import type { ClaudeStatusLineRateLimits } from '../../../shared/claude-statusline-rate-limits'
+import { installSealAccountManager } from '../../seal-accounts/seal-account-manager'
+import { installSealConnectors } from '../../seal-connectors/seal-connectors-install'
 
 export type ProviderAccountServices = {
   rateLimits: RateLimitService
@@ -43,6 +48,11 @@ export function createProviderAccountServices(
   const agentView = getClaudeAgentViewService()
   void agentView.reconcile(store.getSettings())
   const rateLimits = new RateLimitService()
+  rateLimits.setKeptReadings(
+    new KeptUsageReadings(
+      join(getAppEnvironment().getPath('userData'), 'usage-readings', 'last-good.json')
+    )
+  )
   const codexRuntimeHome = new CodexRuntimeHomeService(store)
   const codexAccounts = new CodexAccountService(
     store,
@@ -203,5 +213,13 @@ export function createProviderAccountServices(
   })
   // Every host runs the poll timer; ticks fetch only while a window or remote reader watches.
   rateLimits.start({ fetchImmediately: false })
-  return { rateLimits, codexRuntimeHome, codexAccounts, claudeRuntimeAuth, claudeAccounts }
+  const services = {
+    rateLimits,
+    codexRuntimeHome,
+    codexAccounts,
+    claudeRuntimeAuth,
+    claudeAccounts
+  }
+  installSealConnectors({ manager: installSealAccountManager({ store, services }) })
+  return services
 }

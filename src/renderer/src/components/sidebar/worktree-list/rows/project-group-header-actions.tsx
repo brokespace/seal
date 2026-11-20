@@ -15,12 +15,20 @@ import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { FolderWorkspacePathStatus } from '../../../../../../shared/folder-workspaces/folder-workspace-path-status'
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
 import { getFolderProjectGroupRefreshHandler } from './project-group-folder-refresh'
+import { isFolderWorkspaceCreateDisabled } from './FolderPathStatusIndicator'
 import { REPO_HEADER_ACTION_BUTTON_CLASS } from './repo-header-action-button-class'
 import {
   handleRepoHeaderActionPointerDown,
   stopRepoHeaderKeyboardToggle,
   stopRepoHeaderMenuEvent
 } from './header-event-guards'
+
+type HeaderGroup = ProjectGroup | { id: null } | undefined
+
+/** The group behind a header when a folder backs it; null for any other header. */
+export function folderProjectGroupOf(group: HeaderGroup): ProjectGroup | null {
+  return group && 'parentPath' in group && group.parentPath ? group : null
+}
 
 export function ProjectGroupHeaderMenu({
   groupId,
@@ -54,7 +62,9 @@ export function ProjectGroupHeaderMenu({
           aria-label={t(
             'auto.components.sidebar.WorktreeList.79465e9034',
             'Group actions for {{value0}}',
-            { value0: label }
+            {
+              value0: label
+            }
           )}
           onClick={(event) => event.stopPropagation()}
           onKeyDown={stopRepoHeaderKeyboardToggle}
@@ -147,4 +157,27 @@ export function ProjectGroupCreateWorkspaceButton({
       </TooltipContent>
     </Tooltip>
   )
+}
+
+/** A folder group header's +: makes a workspace in the folder. */
+export function ProjectGroupHeaderAddButton({
+  folderGroup,
+  label,
+  pathStatus,
+  onCreateFolderWorkspace
+}: {
+  folderGroup: ProjectGroup | null
+  label: string
+  pathStatus: FolderWorkspacePathStatus | null
+  onCreateFolderWorkspace: (projectGroup: ProjectGroup) => void
+}): React.JSX.Element | null {
+  return folderGroup ? (
+    <ProjectGroupCreateWorkspaceButton
+      projectGroup={folderGroup}
+      label={label}
+      pathStatus={pathStatus}
+      disabled={isFolderWorkspaceCreateDisabled(pathStatus)}
+      onCreate={onCreateFolderWorkspace}
+    />
+  ) : null
 }

@@ -34,7 +34,7 @@ function createIsolatedProofRepo(): string {
   git('init', '-q')
   git('config', 'user.email', 'e2e@test.local')
   git('config', 'user.name', 'E2E Test')
-  writeFileSync(path.join(repoDir, 'README.md'), '# Orca mouse-mode reattach proof repo\n')
+  writeFileSync(path.join(repoDir, 'README.md'), '# Seal mouse-mode reattach proof repo\n')
   git('add', '-A')
   git('commit', '-q', '-m', 'Seed commit for the reattach mouse-mode proof')
   return repoDir

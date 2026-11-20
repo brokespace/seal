@@ -21,6 +21,9 @@ import { HostRelayPhones } from './host-relay-phones'
 
 export type { AuthorizeResult, ConfirmResult } from './host-relay-base'
 
+const INSTALL_RESULT_RETENTION_MS = 24 * 60 * 60 * 1000
+const DEAD_DEVICE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
+
 export class HostRelay extends HostRelayPhones {
   // ---------------- director admin (phase 2; the Worker verified the signed request) ----------------
 
@@ -252,6 +255,13 @@ export class HostRelay extends HostRelayPhones {
       return 'wiped'
     }
     await new RelayCredentialStore(this.store.database, () => now).cleanup()
+    // The store's cleanup keeps these forever: install answers are only read by a retrying host,
+    // and a device revoked or expired this long ago can never connect again.
+    await this.store.database.query('DELETE FROM relay_install_results WHERE committed_at <= ?', [now - INSTALL_RESULT_RETENTION_MS])
+    await this.store.database.query(
+      'DELETE FROM relay_devices WHERE (revoked_at IS NOT NULL AND revoked_at <= ?) OR current_expires_at <= ?',
+      [now - DEAD_DEVICE_RETENTION_MS, now - DEAD_DEVICE_RETENTION_MS]
+    )
     await this.ctx.storage.put(SWEEP_AT_KEY, now + this.config.sweepIntervalMs)
     metric(this.env, 'sweep', 1, 'swept')
     return 'swept'

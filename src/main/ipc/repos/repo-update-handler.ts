@@ -20,7 +20,7 @@ import { normalizeRepoSourceControlAiOverrides } from '../../../shared/source-co
 import {
   normalizeCustomWorktreeVisibilitySources,
   normalizeWorktreeVisibilitySourcePreferences
-} from '../../../shared/worktree/visibility-sources'
+} from '../../../shared/worktree/visibility/visibility-sources'
 import { prepareLocalWorktreeRootForRepo } from '../../workspaces/creation/worktree-root-preparation'
 import { commitProvenRepoKindChange } from '../../workspaces/catalog/folder-repo-git-conversion'
 import { normalizeDictationTerms } from '../../../shared/dictation-dictionary'
@@ -73,6 +73,7 @@ export function registerRepoUpdateHandler(mainWindow: BrowserWindow, store: Stor
             | Repo['externalWorktreeDiscoverySuppressedAt']
             | null
           hiddenAt?: Repo['hiddenAt'] | null
+          autoCreated?: Repo['autoCreated'] | null
           ghAccount?: GhAccountBinding | null
         }
       }
@@ -212,6 +213,12 @@ export function registerRepoUpdateHandler(mainWindow: BrowserWindow, store: Stor
           !Number.isFinite(updates.externalWorktreeDiscoverySuppressedAt))
       ) {
         delete updates.externalWorktreeDiscoverySuppressedAt
+      }
+      if ('autoCreated' in updates) {
+        updates.autoCreated =
+          typeof updates.autoCreated?.displayName === 'string'
+            ? { displayName: updates.autoCreated.displayName }
+            : null
       }
       if ('hiddenAt' in updates && updates.hiddenAt === null) {
         updates.hiddenAt = undefined

@@ -32,6 +32,7 @@ const TerminalPaneOverlayLayer = memo(function TerminalPaneOverlayLayer({
   worktreeId,
   worktreePath,
   isWorktreeActive,
+  isWorktreeFocused = isWorktreeActive,
   coldParkTerminalPanes = false,
   isForceParked = false,
   shouldMeasureHiddenWorktree = false,
@@ -44,6 +45,8 @@ const TerminalPaneOverlayLayer = memo(function TerminalPaneOverlayLayer({
   worktreeId: string
   worktreePath: string
   isWorktreeActive: boolean
+  /** Keyboard ownership; a workspace can be on screen without it. */
+  isWorktreeFocused?: boolean
   coldParkTerminalPanes?: boolean
   /** Retention-budget force-park keeps eviction-exempt tabs mounted. */
   isForceParked?: boolean
@@ -69,7 +72,7 @@ const TerminalPaneOverlayLayer = memo(function TerminalPaneOverlayLayer({
   const focusGroup = useAppStore((state) => state.focusGroup)
   const consumeSuppressedPtyExit = useAppStore((state) => state.consumeSuppressedPtyExit)
 
-  useNativeChatToggleShortcut(worktreeId, isWorktreeActive && ownsNativeChatToggleShortcut)
+  useNativeChatToggleShortcut(worktreeId, isWorktreeFocused && ownsNativeChatToggleShortcut)
 
   const captureEmptiedReaction = useCallback(
     () => captureWorkspaceEmptiedReaction(worktreeId),
@@ -152,7 +155,9 @@ const TerminalPaneOverlayLayer = memo(function TerminalPaneOverlayLayer({
             </RetainedPaneHost>
           ) : null
         }
-        const isActive = Boolean(isVisible && assignment?.groupId === activeGroupId)
+        const isActive = Boolean(
+          isVisible && isWorktreeFocused && assignment?.groupId === activeGroupId
+        )
         const activityTerminalPortal = findActivityTerminalPortal(activityTerminalPortals, {
           worktreeId,
           tabId: terminalTab.id

@@ -9,7 +9,6 @@ import {
   openMobileE2EEV2Frame,
   sealMobileE2EEV2Frame
 } from '../../../../shared/remote-runtime/e2ee/mobile-e2ee-v2-framing'
-import { deriveSharedKey } from '../../../../shared/remote-runtime/e2ee/node/e2ee-crypto'
 import { deriveMobileE2EEV2KeySchedule } from '../../../../shared/remote-runtime/e2ee/node/mobile-e2ee-v2-node-key-schedule'
 
 // Independent mobile wire peer for desktop tests, avoiding Expo imports.
@@ -31,7 +30,7 @@ export class SimulatedMobileE2EEV2Peer {
       v: 2,
       clientPublicKeyB64: Buffer.from(clientKeys.publicKey).toString('base64'),
       clientNonceB64: Buffer.from(clientNonce).toString('base64'),
-      capabilities: { framing: [2], payloadKinds: ['text', 'binary'] },
+      capabilities: { framing: [2], payloadKinds: ['text', 'binary'], forwardSecrecy: true },
       context: {
         protocol: 'orca-mobile-e2ee',
         initiator: 'mobile',
@@ -49,7 +48,11 @@ export class SimulatedMobileE2EEV2Peer {
       return false
     }
     this.schedule = deriveMobileE2EEV2KeySchedule({
-      sharedSecret: deriveSharedKey(this.clientKeys.secretKey, this.desktopPublicKey),
+      staticSharedSecret: nacl.scalarMult(this.clientKeys.secretKey, this.desktopPublicKey),
+      ephemeralSharedSecret: nacl.scalarMult(
+        this.clientKeys.secretKey,
+        handshake.desktopEphemeralPublicKey
+      ),
       transcript: encodeMobileE2EEV2Transcript(handshake),
       clientNonce: handshake.clientNonce,
       desktopNonce: handshake.desktopNonce

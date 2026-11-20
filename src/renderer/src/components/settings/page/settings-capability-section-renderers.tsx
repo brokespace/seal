@@ -1,5 +1,16 @@
 import { AccountsPane } from '../accounts/AccountsPane'
+import { OtherProviderAccountsHeader } from '../accounts/OtherProviderAccountsHeader'
+import { ClaudeAccountOptionRows } from '../accounts/claude/ClaudeAccountOptionRows'
+import { getSealAccountsSearchEntries } from '../seal-accounts/seal-accounts-search'
+import { matchesSettingsSearch } from '../search/settings-search'
+import { SealAccountsPage } from '../seal-accounts/SealAccountsPage'
+import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
 import { getProviderAccountsOwnerKey } from '@/runtime/provider-accounts/observations/runtime-provider-accounts-client'
+import { SessionSummariesSettingsPane } from '../session-summaries/SessionSummariesSettingsPane'
+import { AgentConfigSettingsPane } from '../agent-config/AgentConfigSettingsPane'
+import { AgentPluginsPane } from '../../agent-plugins/AgentPluginsPane'
+import { ConnectorsPage } from '../seal-connectors/ConnectorsPage'
+import { SealSkillsPane } from '../seal-connectors/skills/SealSkillsPane'
 import { AgentsPane } from '../agents/AgentsPane'
 import { AgentDefaultSurfaceSection } from '../agents/surfaces/AgentDefaultSurfaceSection'
 import { ComputerUsePane } from '../computer-use/ComputerUsePane'
@@ -7,12 +18,18 @@ import { LinearAgentSkillPane } from '../skills/linear/LinearAgentSkillPane'
 import { OrchestrationPane } from '../orchestration/OrchestrationPane'
 import { VoicePane } from '../voice/VoicePane'
 import { SettingsSection } from '../section-layout/SettingsSection'
-import { SettingsHostScopeUnavailableNotice } from '../host-scope/SettingsHostScopePicker'
+import {
+  SettingsHostScopePicker,
+  SettingsHostScopeUnavailableNotice,
+  shouldShowSettingsHostScopePicker
+} from '../host-scope/SettingsHostScopePicker'
 import { LOCAL_SETTINGS_HOST_SCOPE } from '../host-scope/settings-host-scope'
 import { wslHostDistroForTarget } from '@/runtime/provider-accounts/ownership/wsl-host-account-owner'
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import type { SettingsRenderContext } from './settings-render-context'
+
+const LOCAL_RUNTIME_TARGET: RuntimeClientTarget = { kind: 'local' }
 
 export function renderAgentsSettingsSection(
   context: SettingsRenderContext,
@@ -49,6 +66,86 @@ export function renderAgentsSettingsSection(
   )
 }
 
+export function renderAgentConfigSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element | null {
+  const { model, navigation, view } = context
+  return model.showDesktopOnlySettings ? (
+    <SettingsSection
+      id="agent-config"
+      title={t('auto.components.agentConfig.search.title', 'Agent configuration')}
+      description={t(
+        'seal.agentConfig.search.description',
+        'Instructions, skills and settings for Claude Code, Codex and other agents, machine by machine.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('agent-config')}
+    >
+      {view.isSectionMounted('agent-config') ? <AgentConfigSettingsPane /> : null}
+    </SettingsSection>
+  ) : null
+}
+
+export function renderAgentPluginsSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element | null {
+  const { model, navigation, view } = context
+  return model.showDesktopOnlySettings ? (
+    <SettingsSection
+      id="agent-plugins"
+      title={t('seal.plugins.title', 'Plugins')}
+      description={t(
+        'seal.plugins.description',
+        'Install a plugin from Claude Code’s or Codex’s marketplaces once for every agent, account and machine.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('agent-plugins')}
+    >
+      {view.isSectionMounted('agent-plugins') ? <AgentPluginsPane /> : null}
+    </SettingsSection>
+  ) : null
+}
+
+export function renderConnectorsSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element | null {
+  const { model, navigation, view } = context
+  return model.showDesktopOnlySettings ? (
+    <SettingsSection
+      id="connectors"
+      title={t('seal.connectors.title', 'Connectors')}
+      description={t(
+        'seal.connectors.description',
+        'MCP servers every agent session gets, with one sign-in per service shared across machines and accounts.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('connectors')}
+    >
+      {view.isSectionMounted('connectors') ? <ConnectorsPage /> : null}
+    </SettingsSection>
+  ) : null
+}
+
+export function renderSealSkillsSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element | null {
+  const { model, navigation, view } = context
+  return model.showDesktopOnlySettings ? (
+    <SettingsSection
+      id="skills"
+      title={t('seal.skills.title', 'Skills')}
+      description={t(
+        'seal.skills.navDescription',
+        'Skills from plugins and the Seal library, and which agents get each.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('skills')}
+    >
+      {view.isSectionMounted('skills') ? <SealSkillsPane /> : null}
+    </SettingsSection>
+  ) : null
+}
+
 export function renderAccountsSettingsSection(
   context: SettingsRenderContext,
   t: Translate = translate
@@ -58,48 +155,130 @@ export function renderAccountsSettingsSection(
     model.settingsHostScope.target,
     model.runtimeEnvironments
   )
+  // The desktop manages Seal accounts for its whole fleet; a web client manages its own server.
+  const sealTarget = model.isWebClient ? model.settingsHostScope.target : LOCAL_RUNTIME_TARGET
   return (
     <SettingsSection
       id="accounts"
-      title={t('auto.components.settings.Settings.4198aae333', 'AI provider accounts')}
+      title={t('seal.accounts.section.title', 'Accounts')}
       description={t(
-        'auto.components.settings.Settings.21f09426ea',
-        'Optional. Orca works with your existing provider logins; add accounts only if you want Orca to help switch between them.'
+        'seal.accounts.section.description',
+        'The Claude, Codex and API-key accounts Seal runs agents on, how it swaps between them, and which machines hold each login.'
       )}
       searchEntries={navigation.getSectionSearchEntries('accounts')}
     >
-      {!view.isSectionMounted('accounts') ? null : !model.settingsHostScope.available ? (
+      {!view.isSectionMounted('accounts') ? null : (
+        <div className="space-y-10">
+          {!matchesSettingsSearch(
+            model.settingsSearchQuery,
+            getSealAccountsSearchEntries()
+          ) ? null : (
+            <SealAccountsPage
+              key={getProviderAccountsOwnerKey(sealTarget)}
+              target={sealTarget}
+              claudeOptions={
+                <ClaudeAccountOptionRows
+                  settings={model.settings}
+                  updateSettings={model.updateSettings}
+                />
+              }
+            />
+          )}
+          <OtherProviderAccountsHeader
+            hostPicker={
+              !model.isWebClient &&
+              shouldShowSettingsHostScopePicker(
+                model.settingsHostScope,
+                model.runtimeEnvironments
+              ) ? (
+                <SettingsHostScopePicker
+                  scope={model.settingsHostScope}
+                  environments={model.runtimeEnvironments}
+                  onChoose={model.setSettingsHostChoice}
+                />
+              ) : null
+            }
+          />
+          {!model.settingsHostScope.available ? (
+            <SettingsHostScopeUnavailableNotice />
+          ) : (
+            <AccountsPane
+              key={wslHostDistro ?? getProviderAccountsOwnerKey(model.settingsHostScope.target)}
+              nativeAccounts={model.nativeAccounts}
+              onAccountLocationChange={model.releaseNativeAccounts}
+              settings={model.settings}
+              updateSettings={model.updateSettings}
+              updateSettingsOrThrow={model.updateSettingsOrThrow}
+              // A WSL host's orcad has no account services; this desktop owns its distro's accounts.
+              hostScope={wslHostDistro ? LOCAL_SETTINGS_HOST_SCOPE : model.settingsHostScope}
+              wslHostDistro={wslHostDistro}
+              wslSupportedPlatform={
+                wslHostDistro
+                  ? terminal.localWslSupportedPlatform
+                  : terminal.runtimeWslSupportedPlatform
+              }
+              wslAvailable={
+                (wslHostDistro
+                  ? terminal.localWindowsRuntimeCapabilities
+                  : terminal.windowsTerminalCapabilities
+                ).wslAvailable
+              }
+              wslDistros={
+                (wslHostDistro
+                  ? terminal.localWindowsRuntimeCapabilities
+                  : terminal.windowsTerminalCapabilities
+                ).wslDistros
+              }
+              wslCapabilitiesLoading={
+                (wslHostDistro
+                  ? terminal.localWindowsRuntimeCapabilities
+                  : terminal.windowsTerminalCapabilities
+                ).isLoading
+              }
+              accountOwnerPlatform={
+                wslHostDistro ? undefined : terminal.windowsTerminalCapabilities.hostPlatform
+              }
+            />
+          )}
+        </div>
+      )}
+    </SettingsSection>
+  )
+}
+
+export function renderSessionSummariesSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element {
+  const { model, navigation, view } = context
+  const { target } = model.settingsHostScope
+  const environmentId = target.kind === 'environment' ? target.environmentId : null
+  return (
+    <SettingsSection
+      id="session-summaries"
+      title={t('seal.summaryModels.section.title', 'Session summaries & recaps')}
+      description={t(
+        'seal.summaryModels.section.description',
+        'Seal can write a one-line summary and a longer recap of every agent session. Choose whether each runs, and the provider and model that writes it.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('session-summaries')}
+    >
+      {!view.isSectionMounted('session-summaries') ? null : !model.settingsHostScope.available ? (
         <SettingsHostScopeUnavailableNotice />
-      ) : wslHostDistro ? (
-        // A WSL host's orcad has no account services; this desktop owns its distro's accounts.
-        <AccountsPane
-          key={wslHostDistro ?? getProviderAccountsOwnerKey(model.settingsHostScope.target)}
-          nativeAccounts={model.nativeAccounts}
-          onAccountLocationChange={model.releaseNativeAccounts}
-          settings={model.settings}
-          updateSettings={model.updateSettings}
-          updateSettingsOrThrow={model.updateSettingsOrThrow}
-          hostScope={LOCAL_SETTINGS_HOST_SCOPE}
-          wslHostDistro={wslHostDistro}
-          wslSupportedPlatform={terminal.localWslSupportedPlatform}
-          wslAvailable={terminal.localWindowsRuntimeCapabilities.wslAvailable}
-          wslDistros={terminal.localWindowsRuntimeCapabilities.wslDistros}
-          wslCapabilitiesLoading={terminal.localWindowsRuntimeCapabilities.isLoading}
-        />
       ) : (
-        <AccountsPane
-          key={wslHostDistro ?? getProviderAccountsOwnerKey(model.settingsHostScope.target)}
-          nativeAccounts={model.nativeAccounts}
-          onAccountLocationChange={model.releaseNativeAccounts}
-          settings={model.settings}
-          updateSettings={model.updateSettings}
-          updateSettingsOrThrow={model.updateSettingsOrThrow}
-          hostScope={model.settingsHostScope}
-          wslSupportedPlatform={terminal.runtimeWslSupportedPlatform}
-          wslAvailable={terminal.windowsTerminalCapabilities.wslAvailable}
-          wslDistros={terminal.windowsTerminalCapabilities.wslDistros}
-          wslCapabilitiesLoading={terminal.windowsTerminalCapabilities.isLoading}
-          accountOwnerPlatform={terminal.windowsTerminalCapabilities.hostPlatform}
+        <SessionSummariesSettingsPane
+          key={getProviderAccountsOwnerKey(target)}
+          host={{
+            owner: target,
+            label:
+              environmentId === null
+                ? null
+                : (model.runtimeEnvironments.find((entry) => entry.id === environmentId)?.name ??
+                  t(
+                    'auto.components.settings.AccountsPane.remoteServerFallback',
+                    'the remote server'
+                  ))
+          }}
         />
       )}
     </SettingsSection>

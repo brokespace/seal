@@ -6,10 +6,16 @@ import { RELAY_CLOSE_CODE } from '../../../packages/relay-contract/src/close-cod
 import { RELAY_PROTOCOL_LIMITS } from '../../../packages/relay-contract/src/protocol-limits'
 import { verifyRelayJwt } from './jwt'
 import { metric } from './metrics'
+import { RelayStoreError } from '../../relay/src/credentials/credential-store'
 import { controlErrorCode } from './edge-backend'
 import { CONTROL_MAX_FRAME_BYTES, MESSAGE_TOO_BIG, frameOver } from './bytes'
 import { HostRelayHandshake } from './host-relay-handshake'
 import type { ControlAttachment } from './host-relay-base'
+
+// Installs and revokes write device rows; like invites, a host gets a bounded number per minute.
+const CREDENTIAL_COMMANDS_PER_MINUTE = 60
+// As the push gateway's maxDevicesPerHost: more paired phones than this is not a real host.
+const MAX_DEVICES_PER_HOST = 64
 
 export abstract class HostRelayControl extends HostRelayHandshake {
   // ---------------- silent keepalive controls ----------------
@@ -160,6 +166,10 @@ export abstract class HostRelayControl extends HostRelayHandshake {
       }
       if (type === 'device-credential-install') {
         const request = DeviceCredentialInstallSchema.parse(body)
+        await this.backend.consumeRate(identity, 'credential-install', CREDENTIAL_COMMANDS_PER_MINUTE)
+        if ((await this.backend.liveDeviceCount(identity, request.relayDeviceId)) >= MAX_DEVICES_PER_HOST) {
+          throw new RelayStoreError('device_limit_exceeded')
+        }
         if (!this.authActive(a) && request.authorization.mode === 'authenticated-direct') {
           throw new Error('authorization_expired')
         }
@@ -196,7 +206,14 @@ export abstract class HostRelayControl extends HostRelayHandshake {
       }
       if (type === 'device-revoke') {
         const request = DeviceRevokeSchema.parse(body)
+        await this.backend.consumeRate(identity, 'device-revoke', CREDENTIAL_COMMANDS_PER_MINUTE)
         await this.backend.revoke(identity, request.relayDeviceId)
+        // A revoked device loses the session it already has, not only its next connect.
+        await this.closeSplices(
+          (c) => c.reservation.relayDeviceId === request.relayDeviceId,
+          RELAY_CLOSE_CODE.BAD_OUTER_CREDENTIAL,
+          'device revoked'
+        )
         this.send(ws, { type: 'device-revoked', reqId: request.reqId })
         return
       }

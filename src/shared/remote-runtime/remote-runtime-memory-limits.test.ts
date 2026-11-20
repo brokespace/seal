@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { encrypt } from './e2ee/node/e2ee-crypto'
 import { sealMobileE2EEV2Frame } from './e2ee/mobile-e2ee-v2-framing'
 import {
   REMOTE_RUNTIME_MAX_INBOUND_FRAME_BYTES,
@@ -7,11 +6,10 @@ import {
 } from './remote-runtime-memory-limits'
 
 describe('remote runtime memory limits', () => {
-  it('seals the largest admitted request JSON within the host inbound frame, in both framings', () => {
+  it('seals the largest admitted request JSON within the host inbound frame', () => {
     const json = 'x'.repeat(REMOTE_RUNTIME_MAX_INBOUND_REQUEST_JSON_BYTES)
     const key = new Uint8Array(32).fill(1)
-    const legacy = encrypt(json, key)
-    const v2 = Buffer.from(
+    const frame = Buffer.from(
       sealMobileE2EEV2Frame({
         payload: new TextEncoder().encode(json),
         key,
@@ -21,8 +19,6 @@ describe('remote runtime memory limits', () => {
         counter: 0n
       })
     ).toString('base64')
-    for (const frame of [legacy, v2]) {
-      expect(frame.length).toBeLessThanOrEqual(REMOTE_RUNTIME_MAX_INBOUND_FRAME_BYTES)
-    }
+    expect(frame.length).toBeLessThanOrEqual(REMOTE_RUNTIME_MAX_INBOUND_FRAME_BYTES)
   })
 })

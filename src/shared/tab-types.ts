@@ -23,6 +23,8 @@ export type TabContentType =
   | 'check-details'
   | 'git-graph'
   | 'agent-session'
+  /** A session started outside Seal; entityId is its live-session record id. */
+  | 'external-agent-session'
   | 'browser'
   | 'simulator'
 
@@ -44,7 +46,17 @@ export function toVisibleTabType(contentType: TabContentType): WorkspaceVisibleT
   ) {
     return contentType
   }
+  if (contentType === 'external-agent-session') {
+    return 'agent-session'
+  }
   return 'editor'
+}
+
+/** Tabs whose body is a full-pane chat: a structured session or an external one. */
+export function isAgentSessionSurfaceTab(
+  contentType: TabContentType | undefined
+): contentType is 'agent-session' | 'external-agent-session' {
+  return contentType === 'agent-session' || contentType === 'external-agent-session'
 }
 
 export type Tab = {
@@ -72,6 +84,11 @@ export type Tab = {
   viewMode?: 'terminal' | 'chat'
   /** Timestamp when the tab was last focused / activated by the user. */
   lastFocusedAt?: number
+}
+
+/** A tab the strip draws as a chat: a structured session or an external one. */
+export type AgentSessionSurfaceTab = Tab & {
+  contentType: 'agent-session' | 'external-agent-session'
 }
 
 export type TabGroup = {

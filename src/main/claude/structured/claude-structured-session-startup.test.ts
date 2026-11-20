@@ -112,6 +112,65 @@ describe('Claude host-awaited open', () => {
     }
   })
 
+  it('fails a start whose initialize never answers, naming the SessionStart hooks it waits on', async () => {
+    // Claude stuck behind a foreground hook and an alwaysLoad MCP server reads nothing.
+    const claude = fakeClaude({ holdInit: true, initProof: 'none' })
+    const { adapter } = adapterFor(claude)
+    await adapter.acquire(ACQUIRE)
+    for (const [subtype, hookId] of [
+      ['hook_started', 'rewake'],
+      ['hook_started', 'quick'],
+      ['hook_response', 'quick']
+    ]) {
+      claudeFrame(claude.connections[0]!, {
+        type: 'system',
+        subtype,
+        hook_id: hookId,
+        hook_name: 'SessionStart:startup',
+        hook_event: 'SessionStart'
+      })
+    }
+    const failed = expect(claudeOpened(adapter, 'session-1')).rejects.toMatchObject({
+      retry: 'never',
+      fact: {
+        kind: 'startFailed',
+        requestTimeout: { method: 'initialize', timeoutMs: 180_000 },
+        detail: {
+          text: 'Claude was still running 1 SessionStart hook from its settings. It does not answer until they finish.',
+          audience: 'person'
+        }
+      }
+    })
+    await vi.advanceTimersByTimeAsync(180_000)
+    await failed
+  })
+
+  it('restarts a fresh start held behind a SessionStart hook once, then waits for the deadline', async () => {
+    const held = async () => {
+      const claude = fakeClaude({ holdInit: true, initProof: 'none', rewakeHookMayHold: true })
+      const { adapter } = adapterFor(claude)
+      await adapter.acquire(ACQUIRE)
+      claudeFrame(claude.connections[0]!, {
+        type: 'system',
+        subtype: 'hook_started',
+        hook_id: 'rewake',
+        hook_name: 'SessionStart:startup',
+        hook_event: 'SessionStart'
+      })
+      return claudeOpened(adapter, 'session-1')
+    }
+    const first = expect(held()).rejects.toMatchObject({ retry: 'safe' })
+    await vi.advanceTimersByTimeAsync(30_000)
+    await first
+    const retried = held()
+    let settled = false
+    void retried.catch(() => (settled = true))
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(settled).toBe(false)
+    await vi.advanceTimersByTimeAsync(150_000)
+    await expect(retried).rejects.toMatchObject({ retry: 'never' })
+  })
+
   it('opens a healthy Claude session whose initialize takes longer than a minute', async () => {
     const claude = fakeClaude({ initDelayMs: 75_000 })
     const { adapter } = adapterFor(claude)

@@ -11,7 +11,10 @@ import type {
   SkillCloudShare,
   SkillCloudVersion
 } from '../../../shared/skill-cloud-contract'
-import { resolveArtifactCloudApiUrl } from '../../artifacts/artifact-cloud-config'
+import {
+  ARTIFACT_CLOUD_UNCONFIGURED_MESSAGE,
+  findArtifactCloudApiUrl
+} from '../../artifacts/artifact-cloud-config'
 import { runSkillCloudOperation } from './skill-cloud-auth'
 import { uploadSkillPackageToSignedPolicy } from './skill-cloud-direct-upload'
 import { skillCloudRequest } from './skill-cloud-request'
@@ -298,7 +301,11 @@ export class SkillCloudService {
     options: SkillCloudOptions,
     operation: (apiUrl: string) => Promise<T>
   ): Promise<SkillCloudOperation<T>> {
-    const value = await operation(resolveArtifactCloudApiUrl(options.apiUrl))
+    const apiUrl = findArtifactCloudApiUrl(options.apiUrl)
+    if (!apiUrl) {
+      return { status: 'unconfigured', message: ARTIFACT_CLOUD_UNCONFIGURED_MESSAGE }
+    }
+    const value = await operation(apiUrl)
     return { status: 'ok', value }
   }
 }

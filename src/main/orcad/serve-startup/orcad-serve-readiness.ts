@@ -1,13 +1,15 @@
 import type { ServeReadiness } from '../../server/serve-readiness'
-import type { OrcaRuntimeRpcServer } from '../../runtime/rpc/server/runtime-rpc'
-import { buildServePairingReadiness } from '../../server/serve-pairing-readiness'
+import {
+  buildServePairingReadiness,
+  type ServePairingRpc
+} from '../../server/serve-pairing-readiness'
 import type { OrcadHealth } from '../diagnostics/orcad-health'
 import type { OrcadOptions } from './orcad-start-contract'
 
 export async function buildOrcadServeReadiness(input: {
   options: OrcadOptions
   runtimeId: string
-  rpc: Pick<OrcaRuntimeRpcServer, 'getWebSocketEndpoint' | 'createPairingOffer'>
+  rpc: ServePairingRpc
   collectHealth: () => Promise<OrcadHealth>
 }): Promise<ServeReadiness> {
   return {

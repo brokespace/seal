@@ -1,0 +1,30 @@
+{
+  "id": "withdrawn-by-a-change-of-plan",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Add a Redis-backed rate limiter to the login route"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 2: the agent has added nothing and asks where Redis should come from first"
+        },
+        "after turn 2": {
+          "is": "withdrawn",
+          "why": "step 6: the user says to scrap the rate limiter because Cloudflare goes in front instead"
+        }
+      }
+    },
+    {
+      "quotes": ["add a CAPTCHA to the login form"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 8: the agent says the login form has a CAPTCHA now, checked on the server"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

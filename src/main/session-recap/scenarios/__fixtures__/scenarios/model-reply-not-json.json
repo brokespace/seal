@@ -1,0 +1,116 @@
+{
+  "id": "model-reply-not-json",
+  "title": "No model's reply can be read, so the pass is tried again and then the host writes the requests down",
+  "categories": ["model-failure"],
+  "surfaces": ["claude-cli"],
+  "expected": "The first unreadable pass writes nothing and is tried again. After the second the recap holds the user's requests as the host reads them, marked as not written by the model, and claims nothing it cannot know. The next good pass reads the same turn again and fills in what the agent did.",
+  "steps": [
+    {
+      "fault": {
+        "kind": "not-json",
+        "model": "primary",
+        "times": 4
+      }
+    },
+    {
+      "fault": {
+        "kind": "not-json",
+        "model": "fallback",
+        "times": 4
+      }
+    },
+    {
+      "user": "Add a CSV export to the orders page and a date filter above the table."
+    },
+    {
+      "edit": "/srv/shop/src/pages/orders.tsx"
+    },
+    {
+      "agent": "Both are on the orders page: a date filter above the table and an Export CSV button that exports the filtered rows."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the first unreadable pass",
+      "check": [
+        {
+          "view": "failed",
+          "is": true,
+          "why": "the user is told the recap could not be written"
+        },
+        {
+          "view": "exists",
+          "is": false,
+          "why": "one unreadable pass writes nothing down"
+        }
+      ]
+    },
+    {
+      "advance": 30000
+    },
+    {
+      "label": "after the degraded pass",
+      "check": [
+        {
+          "view": "degraded",
+          "is": true,
+          "why": "the user is told this recap was not written by the model"
+        },
+        {
+          "in": "asked",
+          "has": "csv|export",
+          "why": "the host wrote the user's request down itself"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "a recap the model could not write does not claim a request was overlooked"
+        }
+      ]
+    },
+    {
+      "user": "make the date filter default to the last 30 days"
+    },
+    {
+      "edit": "/srv/shop/src/pages/orders.tsx"
+    },
+    {
+      "agent": "The date filter defaults to the last 30 days now."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after the next pass",
+      "check": [
+        {
+          "view": "degraded",
+          "is": false,
+          "why": "a good pass clears the degraded mark"
+        },
+        {
+          "in": "asked",
+          "max": 2,
+          "why": "the request the host wrote down is not listed again in the model's words"
+        },
+        {
+          "in": "did",
+          "has": "csv|export",
+          "why": "the work of the turn the model failed on is recorded"
+        },
+        {
+          "in": "did",
+          "has": "30 days|default",
+          "why": "the new work is recorded"
+        }
+      ]
+    }
+  ]
+}

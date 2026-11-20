@@ -1,27 +1,17 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Copy } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react'
 import { cn } from '../../lib/class-names'
 import type { PairingNetworkInterface } from '../../../../shared/pairing-address-auto-selection'
-import { AndroidLogo, IosBrandIcon } from './MobileBrandIcons'
-import type { InstallCopy } from './mobile-platform-copy'
 import type { MobilePairingConnectionMode } from '../../../../shared/remote-runtime/pairing/mobile-pairing-connection-mode'
 import type { MobileRelayMintFailure } from '../../../../shared/remote-runtime/relay/mobile-relay-mint-failure'
 import { MobileHeroPairingStep } from './MobileHeroPairingStep'
-import { MobileAndroidInstallHelp } from './MobileAndroidInstallHelp'
 import { useTranslate } from '@/i18n/use-translate'
 
-export type Platform = 'ios' | 'android'
 export type StepIndex = 0 | 1
 
 type HeroFlowProps = {
   stepIdx: StepIndex
-  platform: Platform
-  onPlatformChange: (next: Platform) => void
-  installQrUrl: string | null
-  installCopy: InstallCopy
-  onOpenAndroidInstallGuide: () => void
-  onOpenInstallUrl: () => void
-  onCopyInstallUrl: () => void
+  onOpenInstallGuide: () => void
   pairQrDataUrl: string | null
   pairQrSize?: number | null
   pairingUrl: string | null
@@ -34,7 +24,6 @@ type HeroFlowProps = {
   connectionMode: MobilePairingConnectionMode
   onConnectionModeChange: (mode: MobilePairingConnectionMode) => void
   onRegeneratePairing: () => void
-  canGeneratePairing: boolean
   onCopyPairingCode: () => void
   networkInterfaces: readonly PairingNetworkInterface[]
   customAddresses: readonly string[]
@@ -53,13 +42,7 @@ type HeroFlowProps = {
 
 export function HeroFlow({
   stepIdx,
-  platform,
-  onPlatformChange,
-  installQrUrl,
-  installCopy,
-  onOpenAndroidInstallGuide,
-  onOpenInstallUrl,
-  onCopyInstallUrl,
+  onOpenInstallGuide,
   pairQrDataUrl,
   pairQrSize = null,
   pairingUrl,
@@ -72,7 +55,6 @@ export function HeroFlow({
   connectionMode,
   onConnectionModeChange,
   onRegeneratePairing,
-  canGeneratePairing,
   onCopyPairingCode,
   networkInterfaces,
   customAddresses,
@@ -133,54 +115,20 @@ export function HeroFlow({
                 </span>
               </div>
               <h2 className="mp-h2">
-                {t('auto.components.mobile.MobileHero.0d9b33299e', 'Download the app.')}
+                {t('auto.components.mobile.MobileHero.installHeading', 'Install Seal Mobile.')}
               </h2>
               <p className="mp-lead-sm">
                 {t(
-                  'auto.components.mobile.MobileHero.e75647ace0',
-                  "Scan this download QR with your phone's camera. Already have Orca Mobile? Continue to step 2 for the pairing QR."
+                  'auto.components.mobile.MobileHero.installLead',
+                  'Seal Mobile is not on the App Store or Google Play. Build and install it from the Seal repository, then continue to step 2 for the pairing QR.'
                 )}
               </p>
-              <div className="mp-tab-toggle">
-                <button
-                  type="button"
-                  className={cn(platform === 'ios' && 'is-active')}
-                  aria-pressed={platform === 'ios'}
-                  onClick={() => onPlatformChange('ios')}
-                >
-                  <IosBrandIcon />
-                  {t('auto.components.mobile.MobileHero.711e6f4b47', 'iOS')}
-                </button>
-                <button
-                  type="button"
-                  className={cn(platform === 'android' && 'is-active')}
-                  aria-pressed={platform === 'android'}
-                  onClick={() => onPlatformChange('android')}
-                >
-                  <AndroidLogo />
-                  {t('auto.components.mobile.MobileHero.ac1eb64952', 'Android')}
-                </button>
-              </div>
               <div className="mp-inline-actions">
-                <button type="button" className="mp-ghost-action" onClick={onOpenInstallUrl}>
-                  {installCopy.ctaLabel}
-                </button>
-                <button type="button" className="mp-text-link" onClick={onCopyInstallUrl}>
-                  <Copy className="size-3.5" />
-                  {t('auto.components.mobile.MobileHero.aa97420ba4', 'Copy install link')}
+                <button type="button" className="mp-ghost-action" onClick={onOpenInstallGuide}>
+                  {t('auto.components.mobile.MobileHero.installGuide', 'Open install guide')}
+                  <ExternalLink className="size-3.5" />
                 </button>
               </div>
-              {platform === 'android' ? (
-                <MobileAndroidInstallHelp onOpenGuide={onOpenAndroidInstallGuide} />
-              ) : null}
-            </div>
-            <div className="mp-qr mp-qr-large">
-              {installQrUrl ? (
-                <img
-                  src={installQrUrl}
-                  alt={t('auto.components.mobile.MobileHero.3241f3c26a', 'Install QR')}
-                />
-              ) : null}
             </div>
           </div>
         </div>
@@ -206,7 +154,6 @@ export function HeroFlow({
             connectionMode={connectionMode}
             onConnectionModeChange={onConnectionModeChange}
             onRegeneratePairing={onRegeneratePairing}
-            canGeneratePairing={canGeneratePairing}
             onCopyPairingCode={onCopyPairingCode}
             networkInterfaces={networkInterfaces}
             customAddresses={customAddresses}

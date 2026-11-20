@@ -77,7 +77,7 @@ describe('DeviceRegistry pairing offer TTL', () => {
     owner.updateLastSeen(offer.deviceId)
 
     stale.addDevice('CLI', 'runtime')
-    vi.setSystemTime(9e12)
+    vi.setSystemTime(1_000_000 + TTL + 1)
     expect(new DeviceRegistry(dir).validateToken(offer.token)?.deviceId).toBe(offer.deviceId)
   })
 })

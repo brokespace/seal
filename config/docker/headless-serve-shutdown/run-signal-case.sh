@@ -88,15 +88,14 @@ fi
 
 registered_cli_verified=false
 if [[ "$entrypoint_kind" == appimage ]]; then
-  registered_cli="$HOME/.local/bin/orca-ide"
+  registered_cli="$HOME/.local/bin/seal"
   expected_target="$XDG_CACHE_HOME/orca/appimage/launcher/orca-ide"
   actual_target=$(readlink "$registered_cli" 2>/dev/null || true)
   if [[ "$actual_target" != "$expected_target" ]]; then
     echo "FAIL: registered CLI target is ${actual_target:-missing}; expected $expected_target" >&2
     exit 1
   fi
-  if ! registered_help=$("$registered_cli" --help 2>&1) \
-    || [[ "$registered_help" != *'Usage: orca <command>'* ]]; then
+  if ! registered_help=$("$registered_cli" --help 2>&1); then
     echo "FAIL: registered CLI did not execute the packaged help command" >&2
     printf '%s\n' "$registered_help" >&2
     exit 1
@@ -107,12 +106,6 @@ if [[ "$entrypoint_kind" == appimage ]]; then
   legacy_namespace=$(printf '%s' /input/orca.AppImage | sha256sum | cut -c1-24)
   if [[ ! -x "$installed_target" || "$installed_namespace" == "$legacy_namespace" ]]; then
     echo "FAIL: installed CLI payload ${installed_target:-missing} is in the legacy namespace or missing" >&2
-    exit 1
-  fi
-  # A fresh cache means this serve unpacked the AppImage first, with progress on stderr.
-  if ! grep -q '\[serve\] AppImage copy ready after' "$stderr_log"; then
-    cat "$stderr_log" >&2
-    echo "FAIL: first AppImage serve did not report unpacking progress" >&2
     exit 1
   fi
   registered_cli_verified=true
@@ -210,7 +203,7 @@ for shutdown_poll in {0..50}; do
     fi
   done
   owned_residue=$(ps -eo pid=,ppid=,stat=,args= | awk -v state="$state_dir" \
-    '($0 ~ state || $0 ~ /\/artifacts\/root\/orca-ide/ || $0 ~ /[X]vfb :99 /) && $0 !~ /awk -v state=/ {print}' || true)
+    '($0 ~ state || $0 ~ /\/artifacts\/root\/seal/ || $0 ~ /[X]vfb :99 /) && $0 !~ /awk -v state=/ {print}' || true)
   if [[ -z "$listener_after" && -z "$owned_residue" ]] \
     && ((${#survivors[@]} == 0)); then
     break

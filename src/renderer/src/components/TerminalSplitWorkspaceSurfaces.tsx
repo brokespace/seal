@@ -23,22 +23,22 @@ export function TerminalSplitWorkspaceSurfaces({
     measurableBackgroundWorktreeIdsRef,
     mountedWorktreeIdsRef,
     renderedActiveWorktreeId,
+    splitViewShowing,
     startupTerminalTabHold,
+    visibleWorkspacePanes,
     workspaceSurfaces
   } = controller
+  // In split view the panes decide what shows, so the area stays up with no active workspace layout.
+  const showsSurfaces = splitViewShowing ? visibleWorkspacePanes.size > 0 : !!effectiveActiveLayout
   // Every browser guest has this and TerminalSurface as ancestors; both must allow compositing for remote control to receive frames.
-  const retainBrowserGuestPaint = useAnyBrowserGuestNeedsPaint(!effectiveActiveLayout)
+  const retainBrowserGuestPaint = useAnyBrowserGuestNeedsPaint(!showsSurfaces)
   if (!anyMountedWorktreeHasLayout) {
     return null
   }
   return (
     <div
       className={`relative flex flex-1 min-w-0 min-h-0 overflow-hidden${
-        effectiveActiveLayout
-          ? ''
-          : retainBrowserGuestPaint
-            ? ' opacity-0 pointer-events-none'
-            : ' hidden'
+        showsSurfaces ? '' : retainBrowserGuestPaint ? ' opacity-0 pointer-events-none' : ' hidden'
       }`}
     >
       {workspaceSurfaces
@@ -48,7 +48,7 @@ export function TerminalSplitWorkspaceSurfaces({
           if (!layout) {
             return null
           }
-          const isVisible = activeView === 'terminal' && workspace.id === renderedActiveWorktreeId
+          const isVisible = visibleWorkspacePanes.has(workspace.id)
           const shouldMeasureHiddenWorktree =
             !isVisible && measurableBackgroundWorktreeIdsRef.current.has(workspace.id)
           const shouldColdParkTerminalPanes =
@@ -63,6 +63,10 @@ export function TerminalSplitWorkspaceSurfaces({
               layout={layout}
               focusedGroupId={activeGroupIdByWorktree[workspace.id]}
               isVisible={isVisible}
+              isFocused={
+                isVisible && activeView === 'terminal' && workspace.id === renderedActiveWorktreeId
+              }
+              paneId={visibleWorkspacePanes.get(workspace.id) ?? null}
               shouldMeasureHiddenWorktree={shouldMeasureHiddenWorktree}
               prewarmStage={
                 shouldMeasureHiddenWorktree

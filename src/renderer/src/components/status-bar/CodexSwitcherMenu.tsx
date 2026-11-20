@@ -4,15 +4,11 @@ import { DropdownMenuItem, DropdownMenuLabel } from '@/components/ui/dropdown-me
 import type { ProviderRateLimits } from '../../../../shared/rate-limit-types'
 import { useTranslate } from '@/i18n/use-translate'
 import { AccountRuntimeToggle, CodexRestartStatusPrompt } from './StatusBarAccountControls'
-import {
-  InlineUsageBars,
-  InlineUsageSignInAction,
-  InlineUsageSkeleton,
-  isUnavailableInactiveUsage
-} from './InlineProviderUsage'
+import { InlineUsageSignInAction, isUnavailableInactiveUsage } from './InlineProviderUsage'
 import { ProviderDetailsMenu } from './ProviderDetailsMenu'
 import { AccountSwitchSection } from './AccountSwitchList'
 import { AccountSwitchRowItem } from './AccountSwitchRowItem'
+import { accountUsage } from './AccountUsageReading'
 import { useCodexSwitcherController } from './use-codex-switcher-controller'
 
 export function CodexSwitcherMenu({
@@ -113,14 +109,9 @@ export function CodexSwitcherMenu({
   ): React.ReactNode {
     // Why: rows follow this desktop's codexTarget, so a remote owner's usage could land on the wrong row.
     if (active && !hasActiveRuntimeEnvironment) {
-      return <InlineUsageBars limits={codex} isFetching={codex.status === 'fetching'} />
+      return accountUsage(codex, codex.status === 'fetching')
     }
-    if (inactiveUsage?.isFetching && !inactiveUsage.rateLimits) {
-      return <InlineUsageSkeleton />
-    }
-    return inactiveUsage?.rateLimits ? (
-      <InlineUsageBars limits={inactiveUsage.rateLimits} isFetching={inactiveUsage.isFetching} />
-    ) : null
+    return accountUsage(inactiveUsage?.rateLimits, inactiveUsage?.isFetching === true)
   }
 
   return (
@@ -137,8 +128,7 @@ export function CodexSwitcherMenu({
       variant="account"
       accountLabel={
         !hasActiveRuntimeEnvironment
-          ? (activeTarget?.label ??
-            t('auto.components.status.bar.StatusBar.c676918adc', 'System default'))
+          ? (activeTarget?.label ?? t('seal.accounts.badge.systemLogin', 'System login'))
           : undefined
       }
       panelFooter={

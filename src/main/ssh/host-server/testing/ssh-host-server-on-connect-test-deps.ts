@@ -15,7 +15,7 @@ export function hostServerDepsStub(
     hasUnfinishedConversion: () => false,
     abandonConversion: vi.fn(async () => undefined),
     abandonDeploy: vi.fn(async () => undefined),
-    hasTemplate: () => true,
+    missingTemplate: () => null,
     recordedUnavailable: () => null,
     recordUnavailable: vi.fn(),
     isEmptyHost: () => false,

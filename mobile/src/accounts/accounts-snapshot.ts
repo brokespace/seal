@@ -153,8 +153,20 @@ const CodexAccountSummarySchema = z
     }
   })
 
+// How the desktop's Settings > Accounts names each row; older hosts send none.
+const SealAccountSwitchViewSchema = z
+  .object({
+    systemLogin: z.object({ label: z.string() }).passthrough().nullable(),
+    labels: z.record(z.string(), z.string())
+  })
+  .passthrough()
+
 export const AccountsSnapshotSchema = z
   .object({
+    seal: z
+      .object({ claude: SealAccountSwitchViewSchema, codex: SealAccountSwitchViewSchema })
+      .passthrough()
+      .optional(),
     claude: z
       .object({
         accounts: z.array(ClaudeAccountSummarySchema),

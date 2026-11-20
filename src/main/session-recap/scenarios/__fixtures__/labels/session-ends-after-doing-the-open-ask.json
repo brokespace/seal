@@ -1,0 +1,42 @@
+{
+  "id": "session-ends-after-doing-the-open-ask",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Write the release notes for 3.2"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 3: the agent says the 3.2 release notes are in docs/release-notes/3.2.md"
+        },
+        "four minutes after the session ended": {
+          "is": "done",
+          "why": "step 3: the agent says the 3.2 release notes are in docs/release-notes/3.2.md"
+        },
+        "after the user opens it": {
+          "is": "done",
+          "why": "step 3: the agent says the 3.2 release notes are in docs/release-notes/3.2.md"
+        }
+      }
+    },
+    {
+      "quotes": ["add a rollback section to the runbook", "add the rollback section"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the agent says it has not written the rollback section yet"
+        },
+        "four minutes after the session ended": {
+          "is": "done",
+          "why": "step 9: the agent says the runbook has a rollback section now"
+        },
+        "after the user opens it": {
+          "is": "done",
+          "why": "step 9: the agent says the runbook has a rollback section now"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

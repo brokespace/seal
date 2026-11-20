@@ -54,7 +54,7 @@ export type SafariDraftFixture = {
 export async function ensureSafariDraftFixtureLaunched(): Promise<SafariDraftFixture> {
   await closeSafariDraftFixture()
   safariDraftTempDir = await mkdtemp(join(tmpdir(), 'orca-computer-safari-e2e-'))
-  safariDraftTitle = `Orca Computer Use Draft Fixture ${Date.now()}`
+  safariDraftTitle = `Seal Computer Use Draft Fixture ${Date.now()}`
   const filePath = join(safariDraftTempDir, 'index.html')
   await writeFile(filePath, safariDraftFixtureHtml(safariDraftTitle), 'utf8')
   await execFileAsync('open', ['-F', '-a', 'Safari', filePath])
@@ -194,7 +194,7 @@ export async function killGedit(): Promise<void> {
   }
 }
 
-export async function ensureNotepadLaunched(): Promise<void> {
+export async function ensureNotepadLaunched(): Promise<string> {
   await killNotepad()
   windowsTempDir = await mkdtemp(join(tmpdir(), 'orca-computer-windows-e2e-'))
   const filePath = join(windowsTempDir, `orca-notepad-${Date.now()}.txt`)
@@ -206,6 +206,7 @@ export async function ensureNotepadLaunched(): Promise<void> {
     `Start-Process notepad.exe -ArgumentList ${quotePowerShellLiteral(filePath)}`
   ])
   notepadAppSelector = `pid:${await findNotepadWindowPid(filePath)}`
+  return filePath
 }
 
 export async function killNotepad(): Promise<void> {

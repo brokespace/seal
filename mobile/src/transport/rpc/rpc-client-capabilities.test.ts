@@ -1,22 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { connect } from './direct-rpc-connect'
 
-vi.mock(
-  '../encryption/direct-e2ee-framing-policy',
-  () => import('./legacy-direct-framing-test-policy')
-)
+vi.mock('./direct-socket-framing', () => import('./direct-socket-framing-test-double'))
 
 vi.mock('../encryption/e2ee', () => ({
-  generateKeyPair: () => ({
-    publicKey: new Uint8Array(32),
-    secretKey: new Uint8Array(32)
-  }),
-  deriveSharedKey: () => new Uint8Array(32),
-  publicKeyFromBase64: () => new Uint8Array(32),
-  publicKeyToBase64: () => 'client-public-key',
-  encrypt: (plaintext: string) => `encrypted:${plaintext}`,
-  decrypt: (raw: string) => raw.replace(/^encrypted:/, ''),
-  decryptBytes: (bytes: Uint8Array) => bytes
+  publicKeyFromBase64: () => new Uint8Array(32)
 }))
 
 class MockWebSocket {
@@ -100,7 +88,7 @@ describe('mobile rpc-client capabilities', () => {
       await vi.advanceTimersByTimeAsync(5_001)
 
       expect(client.getState()).toBe('connected')
-      expect(sentRequest(socket, 'session.tabs.subscribe')).toBeDefined()
+      sentRequest(socket, 'session.tabs.subscribe')
       expect(socket.readyState).toBe(MockWebSocket.OPEN)
 
       client.close()

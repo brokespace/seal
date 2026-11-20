@@ -1,3 +1,4 @@
+import { isAgentSessionSurfaceTab } from '../../../shared/tab-types'
 import { useAppStore } from '../store'
 import { getActiveTabNavOrder } from '@/components/tab-bar/group-tab-order'
 import {
@@ -297,7 +298,7 @@ export function handleSwitchTerminalTab(direction: number): boolean {
     store.activeTabId,
     store.activeFileId,
     store.activeBrowserTabId,
-    activeTab?.contentType === 'agent-session' ? activeTab.entityId : null
+    activeTab && isAgentSessionSurfaceTab(activeTab.contentType) ? activeTab.entityId : null
   )
   const next = getNextTerminalCycleTab(
     cycleTabs,

@@ -6,6 +6,7 @@ import { AGENT_JOURNAL_THREAD_SCOPE } from '../../../../shared/agent-session/jou
 import type { AgentJournalItemIdentity } from '../../../../shared/agent-session/journal/agent-session-journal-identity'
 import { codexProviderHandle } from '../../../../shared/agent-session/lifecycle/agent-session-provider-handle-encoding'
 import { readAgentJournalTurn } from '../../../../shared/agent-session/lifecycle/agent-session-turn-record'
+import type { CodexAutoCompactSettings } from '../../../../shared/agent-session/agent-auto-compact-settings'
 import { selectStructuredAgentContextUsage } from '../../../../shared/agent-session/structured-agent-session-context-usage'
 import { createTrackedJournalOpener } from '../../../native-chat/agent-session-journal/store-lifecycle/journal-host-database-test-support'
 import { createDeferredStructuredAgentSessionEventSink } from '../../../native-chat/agent-session-wire/journal-ingress/structured-agent-session-event-sink'
@@ -64,7 +65,7 @@ afterEach(async () => {
   }
 })
 
-async function session() {
+async function session(autoCompact: CodexAutoCompactSettings | null = null) {
   const root = await mkdtemp(join(tmpdir(), 'orca-codex-context-usage-'))
   const journal = await journals.open({
     identity: {
@@ -89,6 +90,7 @@ async function session() {
       sink: deferred.sink,
       sessionId: SESSION,
       primaryThreadId: () => THREAD,
+      autoCompact: () => autoCompact,
       // Supply dispatch timing so echoes can revise the turn row.
       dispatchRequestOrigin: () => ({ requestedAt: 900, sequence: 0 })
     })
@@ -186,6 +188,21 @@ describe('Codex context usage in the journal', () => {
     tokenUsage('helper-turn', FIRST_RESPONSE, 'thread-helper')
 
     expect(await contextUsage()).toMatchObject({ usedTokens: 17714, windowTokens: 475000 })
+  })
+
+  it("states where the host's config compacts the thread on its own", async () => {
+    const { on, tokenUsage, contextUsage } = await session({
+      provider: 'codex',
+      tokenLimit: 200_000
+    })
+    on('turn/started', { turn: { id: 'turn-1' } })
+    tokenUsage('turn-1', FINAL_RESPONSE)
+
+    expect(await contextUsage()).toMatchObject({
+      usedTokens: 17714,
+      windowTokens: 475000,
+      autoCompactAtTokens: 200_000
+    })
   })
 
   it('shows nothing once Codex names no window to measure against', async () => {

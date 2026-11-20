@@ -1,0 +1,173 @@
+{
+  "id": "many-asks-in-one-long-turn",
+  "title": "Five asks in one message, worked through in one long turn with recaps on the way",
+  "categories": ["multiple-asks", "mid-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "While the agent works down the list, the items it has finished show as done, the one it is on as in progress, and nothing as asked but not addressed: the agent has not overlooked what it has not reached yet. After the turn all five show as done, the pull request is recorded, and nothing is listed as not addressed.",
+  "steps": [
+    {
+      "user": "Big cleanup of the orders service before Friday's release. 1) Replace the hand-rolled retry loop in src/orders/sync.ts with the shared retry helper. 2) Add an index on orders.customer_id, the customer page takes 4 seconds. 3) The CSV export drops the timezone, export timestamps as ISO 8601 with offset. 4) Delete the unused legacy_orders table and its model. 5) Update docs/orders.md to describe the new export format. Open a PR when it is all done."
+    },
+    {
+      "edit": "/srv/shop/src/orders/sync.ts"
+    },
+    {
+      "edit": "/srv/shop/db/migrations/0042_orders_customer_id_index.sql"
+    },
+    {
+      "agent": "Working through the list in order. First the retry loop: src/orders/sync.ts had its own loop with a fixed 2 second sleep and no cap, so a dead upstream kept the worker spinning. I replaced it with the shared retry helper from src/lib/retry.ts using exponential backoff, five attempts and jitter, and I kept the existing log line so the dashboards that count sync retries still work. The sync tests pass, and I added one for the case where the upstream never recovers, which the old loop did not handle. Second, the index: I wrote migration 0042_orders_customer_id_index.sql, which creates the index concurrently so it does not lock the table in production, and I ran it against the staging copy, where the customer page query went from 3.9 seconds to 40 milliseconds. The query plan now uses the index instead of a sequential scan. I am on the CSV export now: the exporter formats timestamps with a pattern that has no offset, and three places build that pattern by hand, so I am moving them onto one formatter before changing the format, which keeps the change in one place. After that come the legacy table and the docs, and the pull request last, once the whole list is in."
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm test src/orders/export"
+        },
+        "output": "14 passed"
+      }
+    },
+    {
+      "advance": 250000
+    },
+    {
+      "label": "four minutes into the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "the agent is still working down the list; it has overlooked nothing"
+        },
+        {
+          "in": "did",
+          "has": "retry",
+          "state": "done",
+          "why": "the retry loop is recorded as done"
+        },
+        {
+          "in": "did",
+          "has": "index",
+          "state": "done",
+          "why": "the index is recorded as done"
+        },
+        {
+          "in": "did",
+          "has": "csv|export|timestamp|timezone",
+          "state": "in-progress",
+          "why": "the export is in progress"
+        }
+      ]
+    },
+    {
+      "edit": "/srv/shop/src/orders/export/format.ts"
+    },
+    {
+      "edit": "/srv/shop/db/migrations/0043_drop_legacy_orders.sql"
+    },
+    {
+      "agent": "The CSV export is done: all three call sites now use formatExportTimestamp in src/orders/export/format.ts, which writes ISO 8601 with the offset, for example 2026-11-13T10:42:00+01:00. I updated the export tests and added one that round-trips a timestamp through the export and the import so the offset cannot get lost again. The importer already accepted offsets, so files exported before and after this change both load. Then the legacy table: legacy_orders had no reads or writes anywhere in the code, only its model file and a mention in an old seed script. I removed src/models/legacy-order.ts, dropped the seed lines, and wrote migration 0043_drop_legacy_orders.sql. I checked the production replica first: the table's last write was in March 2024, and nothing has selected from it in the 90 days of query logs we keep, so dropping it is safe. The full test suite passes with both migrations applied on a fresh database and on the staging copy. What is left is the documentation: I am rewriting the export section of docs/orders.md now, with the new timestamp format, an example row, and a note for anyone parsing old files. The pull request comes after that, with the two migrations called out in its description so whoever deploys runs them in order."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/docs/orders.md"
+        },
+        "output": "# Orders"
+      }
+    },
+    {
+      "advance": 250000
+    },
+    {
+      "label": "eight minutes into the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "the agent is still working down the list; it has overlooked nothing"
+        },
+        {
+          "in": "did",
+          "has": "csv|export|timestamp|timezone",
+          "state": "done",
+          "why": "the export is recorded as done"
+        },
+        {
+          "in": "did",
+          "has": "legacy",
+          "state": "done",
+          "why": "the legacy table is recorded as done"
+        },
+        {
+          "in": "actions",
+          "max": 0,
+          "why": "what the agent has left to do is not a to-do for the user"
+        }
+      ]
+    },
+    {
+      "edit": "/srv/shop/docs/orders.md"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "gh pr create --fill"
+        },
+        "output": "https://github.com/acme/shop/pull/212"
+      }
+    },
+    {
+      "agent": "All five items are in, and the PR is open: https://github.com/acme/shop/pull/212. The full suite passes (311 tests)."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "all five items were done; nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "asked",
+          "min": 5,
+          "why": "the five requests are recorded"
+        },
+        {
+          "in": "did",
+          "has": "doc",
+          "state": "done",
+          "why": "the documentation is recorded as done"
+        },
+        {
+          "in": "did",
+          "has": "PR|pull request",
+          "state": "done",
+          "why": "the pull request is recorded as done"
+        },
+        {
+          "in": "did",
+          "lacks": "^$",
+          "max": 8,
+          "why": "the work list is not padded with repeats"
+        },
+        {
+          "text": "standing",
+          "has": "PR|pull request|done|complete|all five|finished",
+          "why": "where things stand says the list is finished"
+        },
+        {
+          "in": "actions",
+          "max": 0,
+          "why": "the docs were the agent's job and are done; nothing is waiting on the user"
+        }
+      ]
+    }
+  ]
+}

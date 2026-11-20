@@ -109,5 +109,8 @@ export const styles = themedStyleSheet(() => ({
     backgroundColor: colors.bgRaised,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.borderSubtle
+  },
+  imageThumbLoading: {
+    justifyContent: 'center'
   }
 }))

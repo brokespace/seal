@@ -1,0 +1,38 @@
+{
+  "id": "partly-done-by-a-subagent",
+  "title": "A subagent does two of three of the same fix; the third waits on the user",
+  "categories": ["partly-addressed", "subagent"],
+  "surfaces": ["claude-cli"],
+  "expected": "Two of the three routes have an auth check. /hooks/replay does not, and the recap says so with the agent's question.",
+  "steps": [
+    {
+      "user": "Add an auth check to the three unprotected routes: /export, /admin/stats and /hooks/replay."
+    },
+    {
+      "subagent": {
+        "prompt": "Add requireAuth to /export, /admin/stats and /hooks/replay under src/routes",
+        "says": ["Reading src/routes.", "Added requireAuth to two routes."],
+        "result": "Added requireAuth to /export and /admin/stats. Left /hooks/replay unchanged: a partner calls it without a token."
+      }
+    },
+    {
+      "agent": "/export and /admin/stats now require auth. I have not changed /hooks/replay: a partner calls it and sends no token, so I need to know how you want that one handled before I touch it."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "replay|hooks",
+          "why": "/hooks/replay still has no auth check"
+        }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import { shouldBootstrapInitialWebRuntimeTerminal } from './tracking-decisions'
 import type { RuntimeMobileSessionTabsResult } from '../../../../shared/runtime-types'
 import type { SessionTabsStreamEvent } from './state'
 import { hasSplitLandingGroup } from '../../store/slices/tabs/split-landing-groups'
+import { projectWorktreeTabModelReconciliation } from '../../store/slices/tabs/tabs-reconciliation'
 
 type SessionTabsFrame = RuntimeMobileSessionTabsResult & { type: 'snapshot' | 'updated' }
 
@@ -52,7 +53,10 @@ export function createInitialTerminalSeeder(
         requestedInitialTerminal ||
         isWebRuntimeInitialTerminalBootstrapInFlight(environmentId, worktreeId),
       snapshotIsFresh: true,
-      localTerminalCount: (state.tabsByWorktree[worktreeId] ?? []).length,
+      // A session, editor or browser tab already fills the workspace; a host shell beside it is a stray.
+      localTabCount:
+        (state.tabsByWorktree[worktreeId] ?? []).length +
+        projectWorktreeTabModelReconciliation(state, worktreeId).renderableTabCount,
       hasPersistedTerminalState: Object.hasOwn(state.tabsByWorktree, worktreeId),
       firstHostAnswer
     })

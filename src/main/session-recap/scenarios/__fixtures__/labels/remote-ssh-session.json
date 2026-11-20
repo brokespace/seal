@@ -1,0 +1,34 @@
+{
+  "id": "remote-ssh-session",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Add a --dry-run flag to the import script"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 3: the agent says --dry-run is added to scripts/import.ts"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says --dry-run is added to scripts/import.ts"
+        }
+      }
+    },
+    {
+      "quotes": ["document it in docs/import.md", "document it please"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the agent says it has not documented the flag yet"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 9: the agent says --dry-run is documented in docs/import.md"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

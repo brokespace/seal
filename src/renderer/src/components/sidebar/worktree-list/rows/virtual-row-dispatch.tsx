@@ -7,7 +7,7 @@ import type {
 } from '../../../../../../shared/worktree/types'
 import '../../workspace-status/presentation/workspace-status'
 import { getWorkspaceStatus } from '../../../../../../shared/workspace-statuses'
-import { isActiveSidebarWorkspace } from '../../../../../../shared/sidebar-list/active-workspace'
+import { isActiveSidebarWorkspace } from '../../../../../../shared/sidebar-list/selection/active-workspace'
 import type { WorktreeGroupBy } from '../../../../../../shared/sidebar-list/row-types'
 import { getWorktreeHostIdentity } from '../../../../../../shared/worktree/host-qualified-identity'
 import {
@@ -26,7 +26,8 @@ import type { LineageToggleHandler } from '../../workspace-card/identity/worktre
 import {
   renderImportedWorktreesVirtualRow,
   renderNewExternalWorktreesInboxVirtualRow,
-  renderPendingCreationVirtualRow
+  renderPendingCreationVirtualRow,
+  renderProjectSessionsVirtualRow
 } from './notice-rows'
 import { renderWorktreeItemRow, type WorktreeItemRowContext } from './item-row'
 import { renderWorktreeSectionHeaderRow } from './SectionHeader'
@@ -92,7 +93,9 @@ function renderHostHeaderVirtualRow(
       className={cn(
         'left-0 right-0 z-30 bg-worktree-sidebar',
         hasHeaderTopSpacing && !isActiveStickyHost && 'pt-1',
-        isActiveStickyHost ? 'sticky -top-px' : 'absolute top-0'
+        isActiveStickyHost
+          ? 'sticky top-[calc(var(--sidebar-sticky-inset,0px)-1px)]'
+          : 'absolute top-0'
       )}
       style={isActiveStickyHost ? undefined : { transform: getVirtualRowTransform(vItem.start) }}
     >
@@ -166,6 +169,14 @@ export function renderWorktreeVirtualRow(
       actionState: ctx.newExternalWorktreeInboxActionState.get(row.repo.id),
       onReview: ctx.onOpenWorktreeVisibility,
       onSuppress: ctx.onOpenSuppressExternalWorktreeInbox
+    })
+  }
+
+  if (row.type === 'project-sessions') {
+    return renderProjectSessionsVirtualRow({
+      row,
+      vItem,
+      measureVirtualRowElement: ctx.measureVirtualRowElement
     })
   }
 

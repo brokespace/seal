@@ -105,10 +105,10 @@ async function foundConversation(
     }
   }
   const launchDirectory =
-    !prior && isFloatingWorkspaceId(params.location.workspaceId)
-      ? (options.hostLaunchDirectory ??
-        (await deps.resolveWorkspacePath?.(params.location.workspaceId)))
-      : undefined
+    (!prior && options.hostLaunchDirectory) ||
+    (!prior && isFloatingWorkspaceId(params.location.workspaceId)
+      ? await deps.resolveWorkspacePath?.(params.location.workspaceId)
+      : undefined)
   if (!prior && isFloatingWorkspaceId(params.location.workspaceId) && !launchDirectory) {
     throw new Error('floating_agent_session_launch_directory_unavailable')
   }

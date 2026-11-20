@@ -31,6 +31,8 @@ type WebRuntimeConnectionFrameContext = {
   subscriptions: Map<string, WebRuntimeTransportSubscription>
   sendAuth: (handshake: PairedE2EEClientHandshake) => void
   setConnected: () => void
+  // The host's ready carries no per-session key: it predates the only framing this client speaks.
+  hostOutdated: () => void
   authRejected: (reply: Extract<PairedE2EEAuthReply, { kind: 'rejected' }>) => void
 }
 
@@ -70,8 +72,13 @@ export async function routeWebRuntimeConnectionFrame(
       return
     }
     // The authenticated control frame is encrypted, so anything but a ready is decrypted below.
-    if (handshake.acceptReadyText(raw) === 'accepted') {
+    const ready = handshake.acceptReadyText(raw)
+    if (ready === 'accepted') {
       context.sendAuth(handshake)
+      return
+    }
+    if (ready === 'host_outdated') {
+      context.hostOutdated()
       return
     }
     const plaintext = handshake.channel.openText(raw)

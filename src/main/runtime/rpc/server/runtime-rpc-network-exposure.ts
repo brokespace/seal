@@ -2,6 +2,7 @@ import { WebSocketTransport } from '../transports/websocket/ws-transport'
 import { writeWsFallbackPort } from '../transports/websocket/ws-fallback-port-store'
 import { RuntimeRpcLifecycle } from './runtime-rpc-lifecycle'
 import { WS_BIND_HOST_ALL_INTERFACES, WS_BIND_HOST_LOOPBACK } from './runtime-rpc-pairing-types'
+import { bindHostIsNetworkExposed } from '../../../../shared/orcad-bind-address'
 
 export class RuntimeRpcNetworkExposure extends RuntimeRpcLifecycle {
   // Advertise addresses the widened listener will answer, not its current loopback bind.
@@ -9,9 +10,18 @@ export class RuntimeRpcNetworkExposure extends RuntimeRpcLifecycle {
     return this.pinnedBindHost ?? WS_BIND_HOST_ALL_INTERFACES
   }
 
+  /** Whether the listener answers on a network address right now, not what pairing could widen it to. */
+  isNetworkExposed(): boolean {
+    return this.wsBoundHost !== null && bindHostIsNetworkExposed(this.wsBoundHost)
+  }
+
   // LAN opt-in rebinds loopback and disconnects local clients; reuse their already-issued port so all endpoints can reconnect (STA-2370).
   async ensureNetworkExposure(): Promise<void> {
-    if (this.pinnedBindHost && this.pinnedBindHost !== WS_BIND_HOST_ALL_INTERFACES) {
+    if (this.pinnedBindHost) {
+      if (bindHostIsNetworkExposed(this.pinnedBindHost)) {
+        // The operator chose the network address; it is served as pinned, never widened further.
+        return
+      }
       // Throw on failed widening so callers return network_exposure_failed rather than advertise unreachable LAN.
       throw new Error(
         `Runtime bind address is pinned to ${this.pinnedBindHost}; refusing to widen to all interfaces`

@@ -3,8 +3,7 @@ import {
   parseExecutionHostId,
   toRuntimeExecutionHostId
 } from '../../../../../../shared/execution-host'
-import { findFirstIndexedWorktree } from '@/lib/workspace/ownership/worktree-runtime-owner-index'
-import { requestsCwdOutsideWorkspaceRootForWorkspace } from '../../../../../../shared/shell/launch/terminal-startup-cwd'
+import { agentLaunchStartDirectoryInWorkspace } from './agent-launch-start-directory'
 import { workspaceKindForWorktreeId } from '../../../../../../shared/agent-launch/contracts/workspace-launch-kind'
 import {
   getConnectionIdFromState,
@@ -26,9 +25,8 @@ import {
 } from '@/store/workspaces/catalog/workspace-record-fields'
 import { readHostStructuredAgents } from '@/runtime/native-chat/agent-catalogs/host-structured-agents'
 import { lastVerifiedRuntimeStatus } from '../../../../../../shared/remote-runtime/host-status/runtime-host-status'
-import type { ProjectLaunchContext } from '../../../../../../shared/rpc-contract/preflight-params'
+import type { ProjectLaunchContext } from '../../../../../../shared/rpc-contract/preflight/preflight-params'
 import type { AppState } from '@/store/types'
-import type { Worktree } from '../../../../../../shared/worktree/types'
 import type { TuiAgent } from '../../../../../../shared/agent-launch/catalog/tui-agent'
 import type { AgentLaunchRoutingInput } from '@/lib/agent-session/launch/routing/agent-launch-routing'
 import type { NativeChatLaunchPromptDelivery } from '@/lib/agent-session/launch/prompt/native-chat-launch-prompt-delivery'
@@ -216,6 +214,11 @@ export function buildAgentLaunchRouteInput(
 ): AgentLaunchRoutingInput {
   const { agent, workspace, tuiCustomization } = args
   const { executionHostId, hostCapabilities } = resolveAgentLaunchHost(store, workspace)
+  const startDirectory = agentLaunchStartDirectoryInWorkspace(
+    store,
+    workspace.worktreeId,
+    tuiCustomization?.cwd
+  )
   return {
     agent,
     settings: store.settings,
@@ -238,22 +241,11 @@ export function buildAgentLaunchRouteInput(
       workspace,
       executionHostId
     ),
-    // Only custom cwd forces a terminal; workspace-root cwd follows the same rule as host agent-launch-mode.ts.
-    startsOutsideWorkspaceRoot: tuiCustomization?.cwd?.trim()
-      ? requestsCwdOutsideWorkspaceRootForWorkspace({
-          workspaceId: workspace.worktreeId,
-          requestedCwd: tuiCustomization?.cwd,
-          workspacePath: workspace.worktreeId
-            ? findFirstIndexedWorktree<Worktree>(
-                selectWorktreesByRepo(store) ?? {},
-                workspace.worktreeId
-              )?.path
-            : undefined,
-          resolveFolderWorkspacePath: (folderWorkspaceId) =>
-            selectFolderWorkspaces(store)?.find((entry) => entry.id === folderWorkspaceId)
-              ?.folderPath
-        })
-      : false,
+    // Only a cwd outside the workspace forces a terminal; a subfolder is the chat's launch directory.
+    startsOutsideWorkspaceRoot: startDirectory.kind === 'outside-workspace',
+    ...(startDirectory.kind === 'workspace-subfolder'
+      ? { launchDirectory: startDirectory.launchDirectory }
+      : {}),
     ...hostStructuredAgentsInput(store, executionHostId)
   }
 }

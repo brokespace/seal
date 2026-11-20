@@ -59,6 +59,7 @@ desktop.ini
 
 .oxlintcache
 /.cache/vite/
+/.cache/seal/
 /.cache/vite.lock/
 /.cache/typecheck/
 /.cache/fixtures/
@@ -98,6 +99,27 @@ docs/**
 !docs/readme/**
 !docs/bug-reproductions/
 !docs/bug-reproductions/**
+!docs/live-sessions-*.md
+!docs/home-chat-architecture.md
+!docs/session-recap.md
+!docs/recap-audit/
+!docs/recap-audit/**
+# What the recap suite and its specs write on each run stays local; only the judge's report is kept.
+docs/recap-audit/evidence/**
+!docs/recap-audit/evidence/judge/
+!docs/recap-audit/evidence/judge/report.md
+!docs/project-overview.md
+!docs/design/
+!docs/design/agent-status.md
+!docs/machines.md
+!docs/disk-usage-index.md
+!docs/mcp.md
+!docs/information-architecture.md
+!docs/TESTING-seal-all.md
+!docs/upstream-sync.md
+!docs/design/
+!docs/design/agent-session-architecture.md
+!docs/design/multi-pane-workspace.md
 !docs/STYLEGUIDE.md
 !docs/development.md
 !docs/styleguide/
@@ -106,6 +128,8 @@ docs/**
 !docs/agents-md-refs/**
 !docs/agent-skill-sharing-implementation-checklist.md
 !docs/mobile-terminal-shortcut-bar.md
+!docs/security/
+!docs/security/**
 
 .stably/*
 !.stably/docs/

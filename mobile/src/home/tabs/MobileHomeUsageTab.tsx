@@ -27,7 +27,7 @@ import { useHostClient } from '../../transport/connection/host-client-hooks'
 import type { ConnectionState } from '../../transport/connection/connection-state'
 import type { HostProfile } from '../../host-catalog/host-profile'
 import { useHostDisplay } from '../../host-descriptors/use-host-display'
-import { formatTimeAgo } from '../../worktree/agent-row-display'
+import { usageUpdatedLabel } from '../../accounts/usage/usage-updated-label'
 import { homeListStyles } from '../home-list-styles'
 import { MobileHomeSectionHeading } from '../MobileHomeSectionHeading'
 import { MobileHomeStats } from '../MobileHomeStats'
@@ -175,13 +175,7 @@ function HostUsage(props: {
             title={PROVIDER_TITLES[section.provider]}
             first={props.first && index === 0}
             aside={
-              section.updatedAt == null
-                ? undefined
-                : now - section.updatedAt < 60_000
-                  ? t('home.usage.updatedJustNow', 'Updated just now')
-                  : t('home.usage.updatedAgo', 'Updated {{time}} ago', {
-                      time: formatTimeAgo(section.updatedAt, now)
-                    })
+              section.updatedAt == null ? undefined : usageUpdatedLabel(section.updatedAt, now, t)
             }
           />
           <View style={homeListStyles.group}>
@@ -215,7 +209,7 @@ function UsageCard(props: {
   useMobileColorScheme()
   const [pressed, setPressed] = useState(false)
   const { card } = props
-  const title = card.email ?? t('accounts.screen.default', 'System default')
+  const title = card.email ?? t('accounts.screen.systemLogin', 'System login')
   const subtitle =
     card.email == null
       ? t('accounts.screen.agentLogin', "Use the agent's own login")

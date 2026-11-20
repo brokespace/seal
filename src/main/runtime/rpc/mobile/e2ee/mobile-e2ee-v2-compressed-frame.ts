@@ -9,16 +9,17 @@ import type { RuntimeCapability } from '../../../../../shared/protocol-version'
 import type { DesktopMobileE2EEV2OutboundItem } from './mobile-e2ee-v2-desktop-outbound'
 import type { RpcBinarySendOptions } from '../../transports/rpc-binary-sender'
 
-/** Gzips large text, and binary its sender marked compressible, for clients that read compressed frames. */
+/**
+ * Gzips only frames their sender marked compressible, for clients that read compressed frames.
+ * Unmarked frames (control frames, credential-bearing replies, screencast JPEGs) keep their plain length.
+ */
 export function compressMobileE2EEV2Item(
   item: DesktopMobileE2EEV2OutboundItem,
   clientCapabilities: readonly RuntimeCapability[],
-  options?: RpcBinarySendOptions
+  options?: Pick<RpcBinarySendOptions, 'compressible'>
 ): DesktopMobileE2EEV2OutboundItem {
-  // Why: screencast JPEGs never shrink, so binary is gzipped only when its sender knows it is text-like.
-  const eligible = item.kind === 'text' || options?.compressible === true
   if (
-    !eligible ||
+    options?.compressible !== true ||
     // Clients then read plain frames, as from older hosts.
     compressedFramesDisabled() ||
     item.plaintext.length < COMPRESSED_FRAME_MIN_BYTES ||

@@ -5,7 +5,7 @@ import { runtimeTargetForOwnerEnvironment } from '../../../../runtime/rpc/target
 import { forgetHugeRepoWarningDismissalsForWorktrees } from '@/lib/source-control/warnings/source-control-huge-repo-warning-dismissals'
 import { forgetWorktreeSleepIntent } from '@/lib/workspace/sleep/worktree-sleep-intent'
 import { readIpcErrorDetail } from '@/runtime/errors/ipc-error'
-import { isArchiveHookRemovalError } from '../../../../../../shared/worktree/archive-hook-removal-gate'
+import { isArchiveHookRemovalError } from '../../../../../../shared/worktree/removal/archive-hook-removal-gate'
 import {
   resolveWorktreeOperationRouteResult,
   resolveWorktreeOperationRouteResultForHost
@@ -24,7 +24,7 @@ import {
   classifyWorktreeForceDeleteReason,
   getLockedWorktreeRemovalReason,
   isLockedWorktreeRemovalError
-} from '../../../../../../shared/worktree/removal'
+} from '../../../../../../shared/worktree/removal/removal'
 import '../../../../../../shared/git/branches/preserved-branch-cleanup'
 import { getWorktreeDeleteStateKey } from './worktree-delete-state'
 import { pruneHostedReviewLinkMutationGenerations } from '../metadata/hosted-review-link-mutation'
@@ -303,7 +303,11 @@ export function createRemoveWorktree(
             canForceDelete: forceDeleteReason !== null,
             forceDeleteReason,
             ...(canWaiveArchiveHook ? { canWaiveArchiveHook: true } : {}),
-            ...(locked ? { lockReason: getLockedWorktreeRemovalReason(error) } : {})
+            ...(locked ? { lockReason: getLockedWorktreeRemovalReason(error) } : {}),
+            // Why: a host too old to unlock refuses again; offering it twice would loop.
+            ...(locked && policy.options?.unlockLockedWorktree !== true
+              ? { canUnlockLockedWorktree: true }
+              : {})
           }
         }
       }))

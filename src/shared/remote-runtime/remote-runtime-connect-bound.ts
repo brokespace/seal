@@ -45,10 +45,37 @@ export function isRemoteRuntimeConnectTimeout(error: unknown): boolean {
   return error instanceof Error && error.message === WS_HANDSHAKE_TIMEOUT_MESSAGE
 }
 
+/** Socket error codes worth naming. Only fixed words reach the message: raw error text could carry anything. */
+const CONNECT_FAILURE_CAUSES: Readonly<Record<string, string>> = {
+  ECONNREFUSED: 'nothing is listening there',
+  ECONNRESET: 'the connection was dropped before the server answered',
+  EPIPE: 'the connection was dropped before the server answered',
+  ENOTFOUND: 'the host name did not resolve',
+  EAI_AGAIN: 'the host name did not resolve',
+  EHOSTUNREACH: 'there is no network route to the host',
+  ENETUNREACH: 'there is no network route to the host',
+  ETIMEDOUT: 'the connection timed out'
+}
+
+function connectFailureCause(error: unknown): string | null {
+  if (!(error instanceof Error)) {
+    return null
+  }
+  const code = 'code' in error && typeof error.code === 'string' ? error.code : null
+  if (code && Object.hasOwn(CONNECT_FAILURE_CAUSES, code)) {
+    return CONNECT_FAILURE_CAUSES[code]
+  }
+  // `ws` reports a socket closed before the upgrade as a code-less hang-up.
+  return error.message === 'socket hang up' ? CONNECT_FAILURE_CAUSES.ECONNRESET : null
+}
+
 /** Loss of contact leaves remote work unverifiable; never imply its terminals stopped (ssh-execution-boundary.md). */
 export function remoteRuntimeConnectFailureMessage(error: unknown, endpoint: string): string {
   if (!isRemoteRuntimeConnectTimeout(error)) {
-    return `${REMOTE_RUNTIME_CONNECT_FAILURE_PHRASE}.`
+    const cause = connectFailureCause(error)
+    return cause
+      ? `${REMOTE_RUNTIME_CONNECT_FAILURE_PHRASE} at ${endpointForDisplay(endpoint)}: ${cause}.`
+      : `${REMOTE_RUNTIME_CONNECT_FAILURE_PHRASE}.`
   }
   // Do not name an elapsed bound: wss can rearm the inactivity timer after TCP connects and take roughly twice as long.
   return (

@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 import type { Mock } from 'vitest'
 import { registerSshHandlers, resetSshHandlerStateForTests } from './ssh'
+import { setDirectSshConnectPolicy } from '../../ssh/host-server/ssh-direct-connect-policy'
 import type {
   SshConnectionManagerMock,
   SshIpcMocks,
@@ -140,6 +141,8 @@ export function createSshIpcHarness(mocks: SshIpcMocks): SshIpcHarness {
     powerMonitorOnMock.mockReset()
     powerMonitorOffMock.mockReset()
 
+    // These suites cover the server path; which connects take it has its own tests.
+    setDirectSshConnectPolicy(() => false)
     registerSshHandlers(mockStore as never, () => mockWindow as never)
   }
 

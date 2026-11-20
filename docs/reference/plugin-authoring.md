@@ -1,4 +1,4 @@
-# Writing an Orca plugin
+# Writing a Seal plugin
 
 From an empty folder to a plugin anyone can install from a catalog. The field-by-field rules
 live in the generated references: [manifest](plugin-manifest.md), [catalog](plugin-catalog.md),
@@ -20,7 +20,7 @@ Add the `$schema` line from `orca-gleam-syntax` to your manifest for editor comp
 | `examples/plugins/hello-components`   | `sandboxed-ui`   | The same kind of [components](plugin-declarative-ui.md) panel, bundled first                                              |
 | `examples/plugins/hello-orca`         | `trusted-worker` | A panel, a worker command and events                                                                                      |
 
-Leave `publisher` out. Orca names the publisher after where the plugin comes from, the way a
+Leave `publisher` out. Seal names the publisher after where the plugin comes from, the way a
 [Go module path](https://go.dev/ref/mod#module-path) is its repository path: the owner of the
 repository, lowercased (`acme` for `github.com/Acme/gleam-syntax`), so the plugin installs as
 `acme.gleam-syntax`. Nobody can choose a publisher name that is not theirs.
@@ -32,27 +32,27 @@ repository, lowercased (`acme` for `github.com/Acme/gleam-syntax`), so the plugi
 | A Git URL                         | the URL's owner (`.` and `_` become `-`)                     |
 | A local or development folder     | `local`                                                      |
 
-`publisher` is deprecated: Orca ignores it for catalog and Git installs. Leaving it out needs
-`engines.orca` of at least `>=1.4.246`, because older Orca requires the field and refuses a
-value that differs from the catalog's. To keep supporting older Orca, keep `publisher` and set it
+`publisher` is deprecated: Seal ignores it for catalog and Git installs. Leaving it out needs
+`engines.orca` of at least `>=1.4.246`, because older Seal requires the field and refuses a
+value that differs from the catalog's. To keep supporting older Seal, keep `publisher` and set it
 to the repository owner; `validate:plugin` warns about it either way. An install made before
 1.4.246 keeps its key, approvals and data. A local or development folder that still declares
 `publisher` keeps using it until you remove it.
 
 When copying the Gleam example, also drop its `stablyai` publisher and `orca-` id prefix: both are
-reserved for Orca's own plugins, as are owners named `official`, `anthropic`, `openai`, `github`
-or starting with `orca`.
+reserved for Seal's own plugins, as are owners named `official`, `anthropic`, `openai`, `github`
+or starting with `seal`.
 
 Pick the lowest `execution` profile that covers what you contribute; it decides what the user is
 asked to approve:
 
 - `data`: themes, terminal themes, icon themes, syntaxes, translations. Installs in one click.
-- `declarative`: commands that run Orca actions, shortcuts, VM recipes. Reviewed before they
+- `declarative`: commands that run Seal actions, shortcuts, VM recipes. Reviewed before they
   are enabled.
-- `sandboxed-ui`: panels and custom editors, in a sandboxed frame that talks to Orca only
+- `sandboxed-ui`: panels and custom editors, in a sandboxed frame that talks to Seal only
   through `window.orca` (see [Frames](#frames-windoworca)) and can call only the host methods
   whose surfaces list `panel` or `editor`.
-  Orca's colors reach frame CSS as `--orca-background`, `--orca-foreground`, `--orca-primary`
+  Seal's colors reach frame CSS as `--orca-background`, `--orca-foreground`, `--orca-primary`
   and the rest of its [frame variables](plugin-theme-tokens.md#frame-css-variables), so they never
   collide with a frame's own variables.
 - `trusted-worker`: `main` runs in a separate Node process and can call every host method its
@@ -66,7 +66,7 @@ only when a panel or worker calls the host API.
 ### Frames: `window.orca`
 
 Before any plugin code runs, the frame shell defines a frozen `window.orca`. It is the only
-supported way to talk to Orca; the messages underneath are internal and change without notice.
+supported way to talk to Seal; the messages underneath are internal and change without notice.
 
 ```js
 orca.api // { major: 1, minor: 2 }: the host API this Orca implements
@@ -101,12 +101,12 @@ const { status } = await orca.files.saveAs({
 // shortcut and disk-image types (.exe, .js, .sh, .app, .lnk, .iso…) are refused.
 ```
 
-`orca.locale` is Orca's UI language as a BCP-47 tag (`navigator.language` follows the
-operating system, not Orca). `<input type="file">` opens the system file picker.
+`orca.locale` is Seal's UI language as a BCP-47 tag (`navigator.language` follows the
+operating system, not Seal). `<input type="file">` opens the system file picker.
 
 Methods, their surfaces and their errors are in the [host API reference](plugin-host-api.md).
 Aborting the `signal` rejects the call with `cancelled`. Treat an error `code` you do not know as
-`action_failed`. Params are strict: a field the running Orca does not know is refused with
+`action_failed`. Params are strict: a field the running Seal does not know is refused with
 `invalid_params`, so check `orca.host.has` or `orca.api.minor` before using a newer one.
 
 #### Files and assets
@@ -119,21 +119,21 @@ persist per plugin. The network is closed: anything not in your plugin folder, `
 `blob:` fails to load, whatever your own CSP says, and the frame makes no connections, requests or
 DNS lookups of its own. Links to other pages in your folder navigate the frame; for anything else
 use `orca.shell.openExternal`, which needs a click and, for a web host your plugin has not opened
-before, the person's OK in an Orca prompt that shows the URL (they can always allow that host). A file that is a custom editor's
+before, the person's OK in a Seal prompt that shows the URL (they can always allow that host). A file that is a custom editor's
 `entry` gets the editor API; every other HTML page gets the panel API.
 
 With isolated frames, scripts may be TypeScript or JSX with no build step: `<script type="module"
 src="app.tsx">` loads `app.tsx` transpiled, with its relative imports resolved, as described in
 [No build step](plugin-declarative-ui.md#no-build-step). A panel or custom editor `entry` may itself
-be a `.ts` or `.tsx` module (needs `engines.orca` `>=1.4.246`); Orca then serves a page that loads
-it, with an empty `<div id="root">`. Only components panels get JSX for `orca`; a frame that
+be a `.ts` or `.tsx` module (needs `engines.orca` `>=1.4.246`); Seal then serves a page that loads
+it, with an empty `<div id="root">`. Only components panels get JSX for `seal`; a frame that
 uses JSX must bring its own runtime as relative files.
 
-Browser clients (`orca serve` in a web browser) still load a frame as one sandboxed document
+Browser clients (`seal serve` in a web browser) still load a frame as one sandboxed document
 with an opaque origin and `connect-src 'none'`: inline your scripts and styles, use `data:` URLs
 for images and fonts, and do not rely on storage, workers or WASM loaded by URL there.
 
-A worker's `main` module's **default export** is `activate(orca)`, which Orca calls once when the
+A worker's `main` module's **default export** is `activate(orca)`, which Seal calls once when the
 worker starts; it may be `async`. A named `export function activate` is not called: the worker
 fails to start with an error saying so.
 An optional `export function deactivate()` runs (and is awaited) before the worker stops, for
@@ -150,21 +150,21 @@ export default async function activate(orca: OrcaWorkerApi) {
 export async function deactivate() {}
 ```
 
-Workers get the same calls on the `orca` object passed to `activate(orca)`:
+Workers get the same calls on the `seal` object passed to `activate(orca)`:
 `orca.api`, `orca.host.call(method, params, { signal })`, `orca.host.has(method)`, plus
 `orca.commands.register(id, (args, { signal }) => …)` and `orca.events.on(event, handler)`, which
 both return `{ dispose() }`, and the panel and data APIs in
-[Panels, workers and data](#panels-workers-and-data). A command's `signal` aborts when Orca stops waiting for it.
+[Panels, workers and data](#panels-workers-and-data). A command's `signal` aborts when Seal stops waiting for it.
 `orca.log(message)` writes to `orca plugin logs`. `orca.grantedCapabilities` is the frozen list of
 capability kinds the user approved (such as `['storage:own']`), fixed when the worker starts; the
 host still checks each call. In `agent.status.changed`, `state` and `mainAgent.state` are one of `working`, `blocked`, `waiting`
 and `done`. Every event's payload is in the [host API reference](plugin-host-api.md#events).
 
-A worker command can take over one of Orca's own actions with `"replaces": "<action>"` in
+A worker command can take over one of Seal's own actions with `"replaces": "<action>"` in
 `contributes.commands` (the same actions a declarative `action` may name; `engines.orca`
-`>=1.4.248`). When that action fires from its shortcut, the palette or a menu, Orca runs the
-command instead; if the worker fails or has not answered within 2 seconds, Orca runs its own. To
-wrap Orca's own, the command calls `orca.host.call('commands.run', { action })`, which always
+`>=1.4.248`). When that action fires from its shortcut, the palette or a menu, Seal runs the
+command instead; if the worker fails or has not answered within 2 seconds, Seal runs its own. To
+wrap Seal's own, the command calls `orca.host.call('commands.run', { action })`, which always
 runs the built-in, never a replacement. The
 person sees each replacement before approving the plugin and can switch it back on the plugin's
 page. When two plugins replace the same action, the one installed first does, and the other's log
@@ -190,7 +190,7 @@ prints `{ pluginKey, name, result }`. A handler failure exits `1` with `plugin_r
 the worker's code (`unknown_method`, `timeout`, ...) in `error.data.requestCode`.
 
 A worker's `main` is an ES module: `.js`/`.mjs`, or `.ts`/`.mts` with no build step (needs
-`engines.orca` `>=1.4.246`). Orca transpiles TypeScript files in your plugin folder as Node loads
+`engines.orca` `>=1.4.246`). Seal transpiles TypeScript files in your plugin folder as Node loads
 them, keeping line numbers, so stack traces point at your `.ts` lines; enums and parameter
 properties work too. JSX does not (no `.tsx` worker files). Relative imports resolve as in frames:
 `./util`, `./util.js` and `./util.ts` all find `util.ts`, and `./store` finds `store/index.ts`.
@@ -203,7 +203,7 @@ the worker starts.
 A plugin's panels, custom editors and worker are one program. A panel asks its own worker, the
 worker pushes back, and both read the same storage, settings and secrets (with the same
 capabilities). Every surface spells it the same way: frames on `window.orca`, components panels
-as imports from `orca`, workers on the `orca` from `activate`.
+as imports from `seal`, workers on the `seal` from `activate`.
 
 Declare the contract once, in a file both sides include, and both type-check against it:
 
@@ -261,7 +261,7 @@ await secrets.set('token', value) // secrets:own
 const todos = atom('todos', [], { persist: 'storage' })
 ```
 
-Declare settings the person edits in `contributes.settings`; Orca shows them under the plugin in
+Declare settings the person edits in `contributes.settings`; Seal shows them under the plugin in
 its Settings and checks every value against the declaration:
 
 ```json
@@ -283,7 +283,7 @@ A panel needs no `contributes.events` entry for that; it subscribes while it is 
 To show the workspace's agents, list them once with `agents.list` (`agent:read`), then follow
 `agent.status.changed`. Both name each agent's terminal with `terminalId`, the id
 `workspace.readContext` lists (with each terminal's `title`) and `terminal.sendText` takes; an
-event's `paneKey` is Orca's own pane id. `workspace.changed` (`workspace:read`) carries the new
+event's `paneKey` is Seal's own pane id. `workspace.changed` (`workspace:read`) carries the new
 `workspace.readContext` answer whenever focus moves to another workspace or its terminals open,
 close or are renamed, and once right when a panel or worker subscribes, so a panel never polls
 and never starts out stale.
@@ -307,7 +307,7 @@ export async function setup() {
 
 A custom editor opens files that end in one of its `extensions` (with the dot, such as
 `.excalidraw`) or carry one of its exact `filenames` in the editor tab, beside Source. Syntaxes
-match files the same way. It runs in the same sandboxed frame as a panel (no Node, no file system), and Orca keeps
+match files the same way. It runs in the same sandboxed frame as a panel (no Node, no file system), and Seal keeps
 the buffer, dirty state, saving, the external-change banner, read-only tabs and remote (SSH or
 paired host) files; the frame only gets the document, never a path. Editor and panel plugins are
 trusted code, and an editor can read every file it opens, so install ones you trust.
@@ -315,7 +315,7 @@ trusted code, and an editor can read every file it opens, so install ones you tr
 Set `"frame": "isolated"` (needs `engines.orca` `>=1.4.248`) for an editor that needs the
 desktop app's isolated frame, such as one that loads a large library. Browser clients, and the
 desktop app with isolated frames switched off, then never run it in the fallback frame: the file
-opens in Source with "This editor needs the Orca desktop app". The default, `any`, runs wherever
+opens in Source with "This editor needs the Seal desktop app". The default, `any`, runs wherever
 the client can.
 
 An editor's `window.orca` adds `document`. Most editors need only `session()`, which does the
@@ -334,22 +334,22 @@ onUserEdit((scene) => doc.change(scene)) // a no-op while doc.readOnly
 await doc.flush() // send now; rejects with the refusal's code
 ```
 
-`session()` resolves once Orca has sent the theme, locale and first document, so start the editor
-from it. It keeps one edit in flight and coalesces later changes, moves its baseline only when Orca
+`session()` resolves once Seal has sent the theme, locale and first document, so start the editor
+from it. It keeps one edit in flight and coalesces later changes, moves its baseline only when Seal
 accepts an edit, and never hands your own accepted edits back through `onReplace`. A refused edit
 keeps your draft and rejects `flush()`. On `conflict` it calls `merge(base, outside, mine)` once,
 where `base` is the last accepted value, and sends the result. Without `merge` the outside
 document wins, since an agent may have written the file: the draft is dropped, `onReplace` gets
 the outside value, and `flush()` rejects with `conflict`. Pass `merge` to keep both sides. With
 `merge`, a write to the file on disk while the tab has unsaved edits also reaches the editor:
-Orca calls `merge(base, outside, mine)` with `base` the disk content those edits started from,
+Seal calls `merge(base, outside, mine)` with `base` the disk content those edits started from,
 the tab keeps the merged result unsaved, and its Reload/Overwrite banner is not shown. This
 applies to a local file open in one editor view; elsewhere, without `merge`, or when the editor
-does not answer within a second, that banner decides. It answers Orca's `editor.flush`
+does not answer within a second, that banner decides. It answers Seal's `editor.flush`
 itself before a save. Bytes editors pass both `decode` and `encode`. Check `'session' in
-orca.document` to support older Orca.
+orca.document` to support older Seal.
 
-Orca keeps no undo history for a custom editor: Cmd/Ctrl+Z reaches the frame, and the editor owns
+Seal keeps no undo history for a custom editor: Cmd/Ctrl+Z reaches the frame, and the editor owns
 undo.
 
 The lower-level calls, for an editor that does its own sync:
@@ -367,21 +367,21 @@ the full new content, made against document `baseVersion`; send one only when th
 the document, never on load. `applyEdit` rejects with `conflict` when the file changed outside
 the editor since that version (edit the newer document instead), `too_large` past the size cap,
 and `not_permitted` when `readOnly` is true (an agent transcript, say). `version` rises with each
-document Orca sends, not with your own edits.
+document Seal sends, not with your own edits.
 
-Set `"contentKind": "bytes"` for a binary format such as a spreadsheet. Orca reads the file
+Set `"contentKind": "bytes"` for a binary format such as a spreadsheet. Seal reads the file
 itself (locally, over SSH or from a paired host) and the document's `content` is
 `{ kind: 'bytes', bytes }`, where `bytes` is an `ArrayBuffer`, plus the matched suffix as
 `fileType`. An edit is the whole new file the same way: `content: { kind: 'bytes', bytes }`.
-Orca marks the tab dirty and saves the bytes with the tab's normal save, replacing the file
+Seal marks the tab dirty and saves the bytes with the tab's normal save, replacing the file
 atomically; a save is refused if the file changed on disk since the document's version, and the
-banner offers Reload or Overwrite. Saving to a remote host needs an Orca server new enough to
+banner offers Reload or Overwrite. Saving to a remote host needs a Seal server new enough to
 replace binary files. Source shows the binary placeholder, unsaved bytes are not kept across
 restarts, and bytes tabs don't autosave.
 
 Documents and edits are capped at 64 MiB, text or bytes, on every route (local, SSH and paired
 hosts): a larger file shows "too large to open", and a larger edit is rejected with `too_large`.
-Past 16 MiB the tab notes that the file may take a moment. Orca saves on its own save shortcut pressed
+Past 16 MiB the tab notes that the file may take a moment. Seal saves on its own save shortcut pressed
 inside the frame, never on a call alone.
 
 Theme changes do not reload the frame: the shell updates the `--orca-*` variables and the
@@ -389,9 +389,9 @@ Theme changes do not reload the frame: the shell updates the `--orca-*` variable
 listen with `orca.on('theme', …)`, to follow it.
 
 `orca plugin check` (and `dev watch --check`) checks each custom editor without running it or
-Orca: from the `entry` it follows local `<script src>` files, inline module scripts and relative
+Seal: from the `entry` it follows local `<script src>` files, inline module scripts and relative
 imports, and fails at `file:line:column` on a syntax error (`editor_syntax`), a missing file
-(`editor_missing_file`), an import Orca refuses (`editor_import`) and a file over its limit
+(`editor_missing_file`), an import Seal refuses (`editor_import`) and a file over its limit
 (`editor_too_large`). String `eval` or `Function`, which the frame refuses, is a warning
 (`editor_eval`): the scan can misread rare code. `--json` lists them under `editors`.
 
@@ -421,7 +421,7 @@ From the plugin folder, run:
 orca plugin dev watch .
 ```
 
-It writes the TypeScript typings (`.orca/types`), loads the folder into Orca as a development
+It writes the TypeScript typings (`.orca/types`), loads the folder into Seal as a development
 plugin, and stays running: it prints every line your panels, editors and worker log (console
 errors arrive as `[frame] <file>:<line> <message>`, at the line in your source file), a
 `↻ reloaded` line each time a save reloads the plugin, and status changes such as `errored` or
@@ -432,9 +432,9 @@ to exit at once. With `--json` it prints one JSON object per line, with a `type`
 `log`, `reloaded`, `status`, `approval`, `check`, `shot`, `shot_skipped`, `warning`, `disconnected` or
 `unloaded`, for coding agents. `--check` also runs `orca plugin check` after the load and after each reload and
 prints what each components panel drew or threw, with `file:line:col`; it reports a failure while
-Orca does not run the plugin (pending approval, errored, invalid), even when the panels render
+Seal does not run the plugin (pending approval, errored, invalid), even when the panels render
 (`ok` false, `checkOk` true, and `pluginStatus`). Like `orca plugin check`,
-it runs your code on this machine outside Orca's sandbox, and it needs a local folder. When the first load needs approval and you run it in a terminal, it prints what the plugin
+it runs your code on this machine outside Seal's sandbox, and it needs a local folder. When the first load needs approval and you run it in a terminal, it prints what the plugin
 would be granted (execution, each capability, what it adds) and asks `Approve and load? [y/N]`;
 `y` loads it with that approval and keeps watching. Any other answer, Ctrl-C, `--json`, or
 output that is not a terminal (a coding agent, a pipe) fails like `orca plugin dev load`: it
@@ -444,15 +444,15 @@ Ctrl-C unloads it.
 
 ### See the panel
 
-`orca plugin shot <plugin-key>` saves a PNG of a panel exactly as Orca draws it, cropped to the
+`orca plugin shot <plugin-key>` saves a PNG of a panel exactly as Seal draws it, cropped to the
 panel, to `.orca/shots/<plugin-key>-<panel>.png` (or `--out <file>`): in the plugin folder when
 you run it inside one (the nearest `orca-plugin.json`, up to the repository root), else in the
 current folder. It opens the panel in the
 right sidebar, waits until the current code has drawn (a components panel's first tree, an HTML
 panel's page loaded; up to 15 seconds) and, for a components panel, until its host calls such as
-`plugin.request` have answered and redrawn (at most 3 seconds more), and captures it even while Orca's window is hidden or
+`plugin.request` have answered and redrawn (at most 3 seconds more), and captures it even while Seal's window is hidden or
 behind others, without showing, raising or focusing it. `--width <px>` sizes the panel for that
-capture only. `--theme light|dark` paints Orca in that mode for that capture only, and only while
+capture only. `--theme light|dark` paints Seal in that mode for that capture only, and only while
 its window is hidden or minimized: with the window on screen, the shot keeps the current theme
 rather than repaint the app in front of you, and says so (`themeApplied: false` and a
 `themeReason`). Your width and theme setting are always put back. `--json` prints `{ path, width,
@@ -468,30 +468,30 @@ image to see what it built.
 done"}}]`, whose queries match like the kit's (`text`, `label`, `testId`, `type`, `role`). The
 kit's Slider, Table and Tree verbs work too: `{"slide":Q,"value":7}`, `{"sort":Q,"column":"name"}`,
 `{"selectRows":Q,"keys":["a"]}`, `{"activateRow":Q,"key":"a"}`, `{"loadMore":Q}`, and
-`expand`, `collapse`, `selectItem`, `activateItem` with a `key`. Each act goes through Orca's own
+`expand`, `collapse`, `selectItem`, `activateItem` with a `key`. Each act goes through Seal's own
 control, as your typing or click would, and waits for the panel to redraw and its host calls to
 answer. `actions` in the result has one `{ ok, error? }` per act; the first failure skips the
-rest, the PNG shows the panel at that point, and the command exits 1. Once captured, Orca puts
+rest, the PNG shows the panel at that point, and the command exits 1. Once captured, Seal puts
 the panel's atoms back, persisted ones included, so later shots and you see the panel as it was
 (`restored: true`; false when it reloaded during the acts). What handlers did outside the panel
 is not rolled back: a press whose handler sends `plugin.request('counter.add')` leaves the
 worker's storage changed. It acts only on that
-plugin's panel and only while Orca's window is hidden or minimized, so it never clicks under you;
+plugin's panel and only while Seal's window is hidden or minimized, so it never clicks under you;
 html panels refuse it. An act is not a person's press: a Link's href stays unopened and calls
 that need a gesture (`shell.openExternal`, `files.saveAs`) are refused.
 
 `orca plugin shot <dir> --scenario <name>` shoots the panel in one scenario of its
 `<entry>.check.ts` (see check fixtures) instead of the live panel. The CLI renders that scenario
 the way `orca plugin check` does, with the panel and its worker against a stand-in host, so the
-scenario's data never reaches the plugin's real panel, storage, settings or worker. Orca then
+scenario's data never reaches the plugin's real panel, storage, settings or worker. Seal then
 draws the resulting tree in a preview of its own, apart from the plugin, and captures it; the
 right sidebar is not opened or switched. Like `orca plugin check`, it runs the plugin's code on
-your machine without Orca's sandbox, so use it only on code you trust. Pass the plugin folder,
+your machine without Seal's sandbox, so use it only on code you trust. Pass the plugin folder,
 or a development plugin's key when you run it inside that folder; installed plugins are refused.
 The result adds `replay: true` and `scenario`, `errors` lists what the render reported, and an
 unknown name fails and lists the panel's scenarios. A replay is a still frame: controls whose
-value Orca owns start from the tree's props, images show their placeholder, it takes no `--act`,
-it works only on this machine (no `--environment`), and it needs Orca's window hidden or
+value Seal owns start from the tree's props, images show their placeholder, it takes no `--act`,
+it works only on this machine (no `--environment`), and it needs Seal's window hidden or
 minimized because the preview is drawn inside it. It writes
 `.orca/shots/<plugin-key>-<panel>.<scenario>.png` in the plugin folder unless you pass `--out`.
 
@@ -507,30 +507,30 @@ and has painted, then captures exactly the editor, hidden window included. `--wi
 back afterwards. `--act '<json>'` sends real input to the editor first, in its own CSS pixels
 from its top-left: `[{"click":[200,150]},{"drag":[[200,150],[400,300]]},{"key":"r"}]` (a `key`
 takes a name such as `Enter` and optional `"modifiers":["shift"|"control"|"alt"|"meta"]`), each
-painted before the next, and only while Orca's window is hidden or minimized. A shot never
+painted before the next, and only while Seal's window is hidden or minimized. A shot never
 changes your file: with `--act` it copies the file into a temporary folder, shoots the copy in a
 temporary folder workspace and removes both afterwards (`copy: true` in the result); pass
 `--in-place` to act on the file itself, where edits reach its buffer like your own typing and its
-tab stays open with them. Before each `key`, Orca moves focus into the editor (what was focused,
+tab stays open with them. Before each `key`, Seal moves focus into the editor (what was focused,
 or what the last click or drag hit), so a canvas that keeps focus to itself still gets the key.
 Without `--act` it opens the file itself, leaves its buffer alone, and closes the tab if the shot
 opened it.
 The PNG is always written (`.orca/shots/<plugin-key>-<editor>.png` unless `--out`), but the
 command exits 1 and prints `errors` when the editor threw, was blocked by its content policy, or
 never asked for its document within 5 seconds. `--json` prints `{ path, editorId, filePath, width,
-height, theme, themeApplied, settled, subscribed, errors, acted?, copy? }`. Afterwards Orca shows
+height, theme, themeApplied, settled, subscribed, errors, acted?, copy? }`. Afterwards Seal shows
 the workspace it showed before.
 
-### See what your plugin adds to Orca's chrome
+### See what your plugin adds to Seal's chrome
 
-`orca plugin shot <dir|plugin-key> --status-bar` saves a PNG of Orca's status bar, where your
+`orca plugin shot <dir|plugin-key> --status-bar` saves a PNG of Seal's status bar, where your
 status bar items draw; `--window` saves the whole window. Both capture the hidden window like a
 panel shot, without showing or focusing it, and take `--theme` (put back afterwards) and `--out`.
 They write `.orca/shots/<plugin-key>-status-bar.png` or `-window.png`. On Linux an html panel's
 guest can come out blank in a `--window` shot; shoot the panel itself for it.
 
 When no workspace is showing, a panel shot selects one of this machine's workspaces in the hidden
-window first; it fails only when Orca has none.
+window first; it fails only when Seal has none.
 
 `orca plugin dev watch . --shot ./.orca/shots` opens one panel (the first, or
 `--shot-panel <id>`) in the right sidebar once, then after the load and after each reload that
@@ -541,8 +541,8 @@ sidebar it skips the shot and says so once (`shot_skipped`), and resumes when th
 `orca plugin open <plugin-key> [--panel <id>]` shows a panel to you in the right sidebar, and
 `--editor <file>` opens a file in the plugin's custom editor. It never brings the window forward.
 
-Both need the Orca desktop app with a workspace showing; `orca serve` has no window and refuses
-them. A shot never changes the view, so while Orca shows Settings or another full page it fails
+Both need the Seal desktop app with a workspace showing; `seal serve` has no window and refuses
+them. A shot never changes the view, so while Seal shows Settings or another full page it fails
 with `no_workspace`. With `--environment`, the PNG (at most 5 MiB) comes back to the machine
 that ran the command.
 
@@ -558,10 +558,10 @@ From a terminal (or a coding agent), `orca plugin dev load <dir>` does the same.
 plugin loads at once; anything that runs code fails with `approval_required`, which lists what it
 would be granted and the command to re-run with `--approve <fingerprint>`. `orca plugin logs
 <publisher.id>` prints its logs and `orca plugin dev unload <dir>` removes it.
-`orca plugin install <owner/repo[@ref]>` installs a published plugin the same way, with the Orca
+`orca plugin install <owner/repo[@ref]>` installs a published plugin the same way, with the Seal
 host's own Git credentials for private repositories, and `orca plugin update` keeps it current.
 
-Orca watches development folders and reloads the plugin when its manifest or files change.
+Seal watches development folders and reloads the plugin when its manifest or files change.
 Theme, syntax and translation edits show up as you save. Panels and workers are not bound to
 their files in development, so saving does not ask for approval again; adding a capability or
 moving to a higher execution profile does. Shortcuts and recipes are tied to their files, so
@@ -576,8 +576,8 @@ A running worker restarts on the new code; what it keeps in `storage` is on disk
 the restart, while its in-memory state does not.
 
 For TypeScript, run `orca plugin types <dir>` once (or let `orca plugin dev load` do it): it
-writes Orca's typings and a tsconfig to extend into `.orca/types/`, which ignores itself in Git.
-They cover every surface: the components `orca` module, the global `orca` (`window.orca`) of
+writes Seal's typings and a tsconfig to extend into `.orca/types/`, which ignores itself in Git.
+They cover every surface: the components `seal` module, the global `seal` (`window.orca`) of
 panels and custom editors, and `import type { OrcaWorkerApi } from 'orca/worker'` for a worker's
 `activate(orca)` (in JavaScript, `/** @param {import('orca/worker').OrcaWorkerApi} orca */`).
 `orca.host.call` checks each method's params and result, and only offers the methods your
@@ -588,14 +588,14 @@ never re-reviews the plugin or remounts its frames. An install still hashes ever
 except the root `.git/`, so do not commit them.
 
 A plugin folder holds at most 2,000 files and 50 MiB in total. A panel or custom editor `entry`
-is at most 10 MiB, and each `.ts`, `.tsx`, `.mts` or `.jsx` file Orca transpiles at most 1 MiB;
+is at most 10 MiB, and each `.ts`, `.tsx`, `.mts` or `.jsx` file Seal transpiles at most 1 MiB;
 bundle or split anything larger.
 
 In the desktop app, a panel's or custom editor's `console.error` and `console.warn`, uncaught
 exceptions and unhandled rejections (and a components panel's render or mount errors) also land
 in `orca plugin logs`, as `[frame] <file>:<line> <message>` with the path relative to the plugin
 folder and stack traces shortened the same way. At most 20 such lines per plugin every 10 s are
-kept; past that one notice is logged and the rest are dropped. Requests Orca blocks (anything off the plugin's
+kept; past that one notice is logged and the rest are dropped. Requests Seal blocks (anything off the plugin's
 own files, refused by the frame's network fence or content policy) do not count toward that:
 they are logged once per kind and origin with a count, every 5 s and when the frame closes, such
 as `[frame] blocked font-src https://unpkg.com (x48): plugin frames have no network`. `orca plugin dev inspect
@@ -613,7 +613,7 @@ orca plugin validate path/to/plugin
 scaffolds a plugin that passes these checks, and `orca plugin inspect <dir>` shows what it would be
 allowed to do and its content hash.
 
-This runs the manifest checks Orca runs, strictly: unknown keys, limits, contributions beyond the
+This runs the manifest checks Seal runs, strictly: unknown keys, limits, contributions beyond the
 execution profile, an `engines.orca` too low for the fields used, and that every file the
 manifest names (icon, panel and editor entries, themes, syntaxes, translations, templates)
 exists inside the plugin and fits its size limit. On a catalog it also
@@ -626,7 +626,7 @@ file is valid, `1` when any is invalid or missing, and `2` when no path is given
 `orca plugin` commands exit `0` ok, `1` error (such as a missing path), `2` the plugin is
 invalid (`plugin_invalid`), and `3` approval is needed.
 
-## 4. List it in the Orca plugin directory
+## 4. List it in the Seal plugin directory
 
 1. `orca plugin validate .` passes, and the plugin is committed and pushed to the GitHub
    repository whose owner matches `publisher`.
@@ -638,16 +638,16 @@ invalid (`plugin_invalid`), and `3` approval is needed.
 ## 5. Publish to a catalog
 
 A catalog is a Git repository with `orca-catalog.json` at its root that lists plugins and pins
-each release to an exact commit and file hash, so Orca refuses bytes the catalog did not vouch
-for. Plugins in Orca's official and community catalogs must follow the
+each release to an exact commit and file hash, so Seal refuses bytes the catalog did not vouch
+for. Plugins in Seal's official and community catalogs must follow the
 [plugin listing policy](plugin-listing-policy.md), starting with being free to install and use.
 
 1. Commit the plugin and run `orca plugin release-entry .` in its directory (or
-   `pnpm validate:plugin path/to/plugin` from an Orca checkout). It prints the
+   `pnpm validate:plugin path/to/plugin` from a Seal checkout). It prints the
    release entry for `HEAD`: version, full commit SHA, `contentHash`, execution profile, minimum
-   Orca, contribution summary, capabilities and file types, plus the `source.path` when the plugin
+   Seal, contribution summary, capabilities and file types, plus the `source.path` when the plugin
    is a subdirectory of its repository. Every field must match
-   what Orca finds at install, so paste it rather than writing it by hand. Uncommitted changes are
+   what Seal finds at install, so paste it rather than writing it by hand. Uncommitted changes are
    not part of the entry.
 2. Add or update the plugin's entry in the catalog's `orca-catalog.json`, newest release first:
 
@@ -668,12 +668,12 @@ for. Plugins in Orca's official and community catalogs must follow the
    repository owner, as the official and community catalogs do.
 
    `commit` must be a full 40-character SHA. A tag or branch name is refused by validation and
-   skipped by Orca. Keep the previous release listed when you raise `engines.orca`, so older
-   Orca still has something to install.
+   skipped by Seal. Keep the previous release listed when you raise `engines.orca`, so older
+   Seal still has something to install.
 
    **One repository can hold many plugins.** Put each in its own directory, such as
    `plugins/gleam-syntax/orca-plugin.json`, and add `"path": "plugins/gleam-syntax"` to its
-   `source`; validating that directory prints the `path` to use. Orca installs only that
+   `source`; validating that directory prints the `path` to use. Seal installs only that
    directory, and its `contentHash` covers only its files, so commits to sibling plugins never
    change it. Moving a plugin to another directory counts as a different repository.
 
@@ -682,12 +682,12 @@ for. Plugins in Orca's official and community catalogs must follow the
 4. Users add the catalog under Settings → Plugins → ⋯ → **Catalog sources…** with its Git URL and ref.
 
 Users approve a plugin once per level of access. An update from the same repository that asks
-for nothing new, code changes included, installs without asking again and stays enabled. Orca
+for nothing new, code changes included, installs without asking again and stays enabled. Seal
 asks again, listing what is new, when an update adds a capability, raises the execution profile,
 adds a command, shortcut, panel or event subscription, ships virtual machine recipes, or comes from
 a different repository.
 
-With **Update plugins automatically** on (the default), Orca installs such updates for enabled
+With **Update plugins automatically** on (the default), Seal installs such updates for enabled
 catalog plugins by itself, checking at startup and every 6 hours. A release installs only once it
 has been listed for 12 hours, or at once from the official catalog, so a takedown has time to land.
 Only pinned catalog releases (a `releases` entry with its commit and content hash) install by
@@ -700,19 +700,19 @@ plugin shows **Update needs review**.
 ## Planned contribution points
 
 These `contributes` keys are reserved: a manifest may list them only as empty arrays until
-their format ships. Each is planned as declared data that Orca renders and enforces, not
+their format ships. Each is planned as declared data that Seal renders and enforces, not
 arbitrary plugin UI:
 
 - `taskSources`: issue and task providers such as Asana, Linear or Jira, filled by a worker.
 - `connections`: account providers with a host-run sign-in.
 - `agentHarnesses`: new coding-agent harnesses described as data.
 - `sidebarCards`: declarative left-sidebar cards whose values a worker updates.
-- `mcpServers`: MCP server definitions offered to the agents Orca launches.
+- `mcpServers`: MCP server definitions offered to the agents Seal launches.
 - `skills`: agent skills shipped as files.
-- `hooks`: agent lifecycle hooks for the agents Orca launches.
+- `hooks`: agent lifecycle hooks for the agents Seal launches.
 
 `skills`, `mcpServers` and `hooks` will mean what they mean in agent-plugin formats such as
-Claude Code's. Orca does not reserve `agents`, because those formats use it for subagent files.
+Claude Code's. Seal does not reserve `agents`, because those formats use it for subagent files.
 
 See [the manifest reference](plugin-manifest.md#planned-contribution-points) for details.
 
@@ -732,11 +732,11 @@ Experimental; these may still change without a new format:
 
 - the `agent.status.changed` payload: `paneKey` is not yet a terminal id `terminal.sendText`
   accepts;
-- the worker process model: Node version, lifecycle and the channel to Orca. Only
+- the worker process model: Node version, lifecycle and the channel to Seal. Only
   `activate(orca)` and `orca.api`, `orca.host`, `orca.commands`, `orca.events` and `orca.log` are
   promised,
   and workers may be stopped at any time;
-- language-pack keys, which change when Orca's source moves or its English copy changes; packs
+- language-pack keys, which change when Seal's source moves or its English copy changes; packs
   get best-effort coverage per release;
 - `pnpm validate:plugin` output; only its exit codes (`0` valid, `1` invalid, `2` usage, see
   [Validate](#3-validate)) are stable;

@@ -1,5 +1,6 @@
 import type { RelayDrainMessage } from '../control-channel/relay-control-protocol'
 import type { RelayControlOrigin } from './relay-control-origin'
+import { clampTimerDelayMs } from '../../../../shared/timer-delay'
 
 export class RelayOriginRetirement {
   readonly draining = new Set<RelayControlOrigin>()
@@ -23,7 +24,7 @@ export class RelayOriginRetirement {
     }
     this.timers.set(
       origin,
-      setTimeout(() => this.close(origin), graceMs)
+      setTimeout(() => this.close(origin), clampTimerDelayMs(graceMs))
     )
   }
   maybeClose(origin: RelayControlOrigin): void {

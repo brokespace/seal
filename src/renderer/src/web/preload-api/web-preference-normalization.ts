@@ -10,11 +10,8 @@ import {
   carriedChatUiLaunchSettings
 } from '../../../../shared/native-chat/native-chat-providers'
 import { normalizeAutoRenameBranchFromWorkDefaultOn } from '../../../../shared/auto-rename-branch-from-work-settings'
-import {
-  getDefaultSettings,
-  normalizeAgentActivityDisplayMode,
-  normalizeWorktreeCardProperties
-} from '../../../../shared/constants'
+import { getDefaultSettings, normalizeAgentActivityDisplayMode } from '../../../../shared/constants'
+import { normalizeWorktreeCardProperties } from '../../../../shared/worktree/row-display/card-properties'
 import {
   normalizeContextualTourIds,
   type ContextualTourId
@@ -98,6 +95,7 @@ export function mergeHostWebUIState(
     sidebarOpen: local.sidebarOpen,
     activityBarPosition: local.activityBarPosition,
     showAgentModels: local.showAgentModels !== false,
+    hideSidebarWorkspaces: local.hideSidebarWorkspaces !== false,
     agentsVisibleHostIds: local.agentsVisibleHostIds,
     agentsFilterRepoIds: local.agentsFilterRepoIds,
     agentsHideWorkspacesFromOtherDevices: local.agentsHideWorkspacesFromOtherDevices === true,

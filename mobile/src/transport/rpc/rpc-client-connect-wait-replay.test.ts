@@ -1,22 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { connect } from './direct-rpc-connect'
 
-vi.mock(
-  '../encryption/direct-e2ee-framing-policy',
-  () => import('./legacy-direct-framing-test-policy')
-)
+vi.mock('./direct-socket-framing', () => import('./direct-socket-framing-test-double'))
 
 vi.mock('../encryption/e2ee', () => ({
-  generateKeyPair: () => ({
-    publicKey: new Uint8Array(32),
-    secretKey: new Uint8Array(32)
-  }),
-  deriveSharedKey: () => new Uint8Array(32),
-  publicKeyFromBase64: () => new Uint8Array(32),
-  publicKeyToBase64: () => 'client-public-key',
-  encrypt: (plaintext: string) => `encrypted:${plaintext}`,
-  decrypt: (raw: string) => raw.replace(/^encrypted:/, ''),
-  decryptBytes: (bytes: Uint8Array) => bytes
+  publicKeyFromBase64: () => new Uint8Array(32)
 }))
 
 vi.mock('../connection/mobile-runtime-capability-negotiation', () => ({
@@ -127,7 +115,3 @@ describe('mobile rpc-client connect-wait replay', () => {
     }
   })
 })
-
-// Exercise the hosted page's JSON boundary and the installed shell's real direct sender together.
-
-// The fake is provider/network I/O only; page, JSON parser, host, logical scope and direct wait are production.

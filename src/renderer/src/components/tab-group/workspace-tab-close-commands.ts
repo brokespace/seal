@@ -108,7 +108,8 @@ export function createWorkspaceTabCloseCommands({
       if (!plan.closesLocally || plan.localCloseReason === 'cleanup') {
         return
       }
-    } else if (item.contentType === 'simulator') {
+    } else if (item.contentType === 'simulator' || item.contentType === 'external-agent-session') {
+      // An external session's tab only leaves the strip; its process is not Seal's to stop.
       closeUnifiedTab(item.id)
     } else {
       // Why: a custom editor frame may still hold edits the dirty check must see.

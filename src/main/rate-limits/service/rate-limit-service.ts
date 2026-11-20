@@ -32,6 +32,7 @@ import {
 import type { InactiveClaudeAccount } from '../providers/claude/claude-managed-account-usage'
 import type { RateLimitState } from '../../../shared/rate-limit-types'
 import type { NetworkProxySettings } from '../../../shared/network-proxy'
+import type { KeptUsageReadings } from './kept-usage-readings'
 
 export class RateLimitService extends RateLimitServiceAccountRefresh {
   setCodexHomePathResolver(resolver: CodexHomePathResolver): void {
@@ -125,6 +126,11 @@ export class RateLimitService extends RateLimitServiceAccountRefresh {
     this.networkProxySettingsResolver = resolver
   }
 
+  /** Where each login's last good reading outlives a restart. */
+  setKeptReadings(keptReadings: KeptUsageReadings | null): void {
+    this.keptReadings = keptReadings
+  }
+
   setInactiveClaudeAccountsResolver(resolver: () => InactiveClaudeAccount[]): void {
     this.inactiveClaudeAccountsResolver = resolver
     this.inactiveClaudeAccountsGeneration += 1
@@ -203,6 +209,7 @@ export class RateLimitService extends RateLimitServiceAccountRefresh {
     this.detachWindowListeners?.()
     this.detachWindowListeners = null
     this.mainWindow = null
+    this.keptReadings?.flush()
   }
 
   getState(): RateLimitState {
@@ -227,6 +234,7 @@ export class RateLimitService extends RateLimitServiceAccountRefresh {
         this.inactiveCodexCache,
         this.inactiveCodexFetching
       ),
+      systemLoginUsage: { ...this.systemLoginUsage },
       antigravityAccounts: this.antigravityAccounts
     }
   }

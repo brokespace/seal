@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Platform, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
+import { MobileNativeChatHistoryRetentionContext } from './mobile-native-chat-history-retention-context'
 
 const AT_TAIL_SLOP = 80
 
@@ -204,6 +205,9 @@ export function useMobileNativeChatTailFollow(args: {
   }, [scopeKey, jumpToTail])
 
   useEffect(() => clearUserScrollSettle, [clearUserScrollSettle])
+
+  const retainHistory = useContext(MobileNativeChatHistoryRetentionContext)
+  useEffect(() => (following ? undefined : retainHistory?.()), [following, retainHistory])
 
   return {
     listProps: { ref: attachList },

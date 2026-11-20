@@ -63,7 +63,6 @@ export async function resolveLocalServeRuntime(
   }
 }
 
-/** Electron serve binds every interface (`exposeNetworkByDefault`); orcad does it on request. */
 export function serveWithOrcad(
   selection: Extract<ServeRuntimeSelection, { kind: 'orcad' }>,
   args: ServeOrcaAppArgs,

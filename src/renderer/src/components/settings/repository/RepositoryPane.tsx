@@ -24,6 +24,8 @@ import { RepositorySidebarVisibilitySection } from './RepositorySidebarVisibilit
 import { RepositoryRemoveProjectSection } from './RepositoryRemoveProjectSection'
 import type { SettingsProjectRemovalScope } from '../navigation/settings-project-list'
 import { matchesSettingsSearch } from '../search/settings-search'
+import { RepositoryAgentConfigSection } from '../agent-config/RepositoryAgentConfigSection'
+import { RepositorySealAccountsSection } from './RepositorySealAccountsSection'
 import { useAppStore } from '@/store/index'
 import { getRepositoryIconSectionId } from './repository-settings-targets'
 import { RepositoryIconPicker } from './identity/RepositoryIconPicker'
@@ -38,6 +40,7 @@ import { RepositoryWindowsRuntimeSection } from './runtime/RepositoryWindowsRunt
 import { matchesRepositoryIdentitySearch } from './identity/repository-identity-search'
 import { RepositoryWorktreeDefaultsSection } from './worktrees/RepositoryWorktreeDefaultsSection'
 import { RepositoryJiraProjectSection } from './RepositoryJiraProjectSection'
+import { RepositoryWorkspaceCleanupSection } from './workspace-cleanup/RepositoryWorkspaceCleanupSection'
 import { getProjectRuntimeSessionSummary } from './runtime/repository-runtime-session-summary'
 import { getRepoOwnerWorktreeVisibilityDefaults } from '../../../store/slices/worktrees/listing/worktree-visibility-defaults-by-host'
 import {
@@ -47,11 +50,12 @@ import {
 
 type RepositoryPaneRepoUpdate = Omit<
   Partial<Repo>,
-  'sourceControlAi' | 'externalWorktreeVisibility' | 'ghAccount'
+  'sourceControlAi' | 'externalWorktreeVisibility' | 'ghAccount' | 'workspaceCleanupPolicy'
 > & {
   sourceControlAi?: Repo['sourceControlAi'] | null
   externalWorktreeVisibility?: Repo['externalWorktreeVisibility'] | null
   ghAccount?: GhAccountBinding | null
+  workspaceCleanupPolicy?: Repo['workspaceCleanupPolicy'] | null
 }
 
 const EMPTY_WSL_DISTROS: string[] = []
@@ -162,11 +166,8 @@ export function RepositoryPane({
     [clearCopiedTemplateResetTimer]
   )
 
-  const updateSelectedRepoHookSettings = (nextSettings: RepoHookSettings) => {
-    updateSelectedRepo(repo.id, {
-      hookSettings: nextSettings
-    })
-  }
+  const updateSelectedRepoHookSettings = (hookSettings: RepoHookSettings) =>
+    updateSelectedRepo(repo.id, { hookSettings })
 
   const handleCopyTemplate = async () => {
     // Make missing-orca.yaml migration a one-click copy of the expected shared-template shape.
@@ -205,6 +206,7 @@ export function RepositoryPane({
       <RepositoryHooksSection
         key="hooks"
         repo={repo}
+        gitRepo={repo}
         yamlHooks={yamlHooks}
         hasHooksFile={hasHooksFile}
         hooksInspectionReady={hooksInspectionReady}
@@ -357,6 +359,12 @@ export function RepositoryPane({
         ) : null}
       </SettingsGroup>
     ) : null,
+    <RepositoryWorkspaceCleanupSection
+      key={`workspace-cleanup:${selectedHostId}:${repo.id}`}
+      repo={repo}
+      updateRepo={updateSelectedRepo}
+      forceVisible={forceFullPaneForRepoMatch}
+    />,
     hooksSection,
     forceFullPaneForRepoMatch ||
     matchesSettingsSearch(searchQuery, [getRepositoryFormatterSearchEntry(t)]) ? (
@@ -388,6 +396,8 @@ export function RepositoryPane({
     !isFolder && (forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, mcpEntries)) ? (
       <McpConfigSection key={`mcp-configs:${selectedHostId}:${repo.id}`} repo={repo} />
     ) : null,
+    <RepositorySealAccountsSection key={`seal-accounts:${repo.id}`} repo={repo} />,
+    <RepositoryAgentConfigSection key={`agent-config:${selectedHostId}:${repo.id}`} repo={repo} />,
     forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, [sidebarVisibilityEntry]) ? (
       <RepositorySidebarVisibilitySection
         key="sidebar-visibility"

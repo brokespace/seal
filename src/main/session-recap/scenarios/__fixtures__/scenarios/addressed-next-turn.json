@@ -1,0 +1,64 @@
+{
+  "id": "addressed-next-turn",
+  "title": "An ask the agent skips in one turn and does in the next",
+  "categories": ["addressed-later-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "After the second turn nothing is listed as asked but not addressed: the rate-limit test the user asked for was written, so it shows under what the agent did.",
+  "steps": [
+    {
+      "user": "Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add a test for it."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": { "file_path": "/srv/shop/src/routes/login.ts" },
+        "output": "export async function login(req, res) { /* ... */ }"
+      }
+    },
+    { "edit": "/srv/shop/src/routes/login.ts" },
+    {
+      "agent": "I added a rate limiter to /login: 5 attempts per minute per IP, returning 429 after that. It lives in src/routes/login.ts."
+    },
+    { "status": "your-turn" },
+    { "advance": 3000 },
+    {
+      "label": "after turn 1",
+      "check": [
+        { "in": "asked", "has": "rate limit", "why": "the ask is recorded" },
+        { "in": "ignored", "has": "test", "why": "the test was asked for and not written yet" }
+      ]
+    },
+    { "user": "ok. anything left?" },
+    { "edit": "/srv/shop/test/login-rate-limit.test.ts" },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": { "command": "pnpm test test/login-rate-limit.test.ts" },
+        "output": "1 passed"
+      }
+    },
+    {
+      "agent": "One thing was left: the test. I wrote test/login-rate-limit.test.ts, which makes 6 attempts from one IP and expects the 6th to get a 429. It passes."
+    },
+    { "status": "your-turn" },
+    { "advance": 3000 },
+    {
+      "label": "right after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "test",
+          "why": "the test now exists, so the ask is addressed the moment the turn ends"
+        }
+      ]
+    },
+    { "advance": 240000 },
+    {
+      "label": "after the next automatic pass",
+      "check": [
+        { "in": "ignored", "lacks": "test", "why": "the test now exists, so the ask is addressed" },
+        { "in": "did", "has": "test", "why": "the test is work the agent did" }
+      ]
+    }
+  ]
+}

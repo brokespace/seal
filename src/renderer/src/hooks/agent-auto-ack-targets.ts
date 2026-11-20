@@ -4,6 +4,7 @@ import { isStructuredTab } from '../../../shared/agent-session/view/structured-a
 import type { Tab, TabGroup, TabGroupLayoutNode } from '../../../shared/tab-types'
 import { collectTabGroupLayoutGroupIds } from '../../../shared/workspace-layout/tab-groups/tab-group-moves'
 import { isPresenceConfirmed } from './agent-auto-ack-presence'
+import { splitViewWorkspacesOnView } from '@/components/split-view/split-view-workspaces-on-view'
 import {
   selectFloatingWorkspacePanelVisible,
   type FloatingWorkspacePanelVisibilityState
@@ -48,18 +49,26 @@ function resolveWorkspaceAutoAckTargets(
   return targets
 }
 
+/** The workspaces the main area shows: every split-view pane's, or the active one in single view. */
+function mainAreaWorkspaceIds(state: AutoAckTargetState): string[] {
+  const inPanes = splitViewWorkspacesOnView(state.activeView)
+  if (inPanes) {
+    return [...inPanes.keys()]
+  }
+  return state.activeView === 'terminal' && state.activeWorktreeId ? [state.activeWorktreeId] : []
+}
+
 /** Pair on-screen targets with workspaces; floating-panel visibility owns its gate because it overlays every view and never becomes global activeTabId. */
 export function resolveAutoAckTabTargets(state: AutoAckTargetState): AutoAckTabTarget[] {
   // The floating pane is on top when two worktrees claim the same tab ID.
   const targets = selectFloatingWorkspacePanelVisible(state)
     ? resolveWorkspaceAutoAckTargets(state, FLOATING_TERMINAL_WORKTREE_ID)
     : []
-  if (state.activeView !== 'terminal' || !state.activeWorktreeId) {
-    return targets
-  }
-  for (const target of resolveWorkspaceAutoAckTargets(state, state.activeWorktreeId)) {
-    if (!targets.some((existing) => existing.tabId === target.tabId)) {
-      targets.push(target)
+  for (const worktreeId of mainAreaWorkspaceIds(state)) {
+    for (const target of resolveWorkspaceAutoAckTargets(state, worktreeId)) {
+      if (!targets.some((existing) => existing.tabId === target.tabId)) {
+        targets.push(target)
+      }
     }
   }
   return targets
@@ -69,9 +78,7 @@ export function onScreenWorkspaceIds(state: AutoAckTargetState): string[] {
   const workspaceIds = selectFloatingWorkspacePanelVisible(state)
     ? [FLOATING_TERMINAL_WORKTREE_ID]
     : []
-  if (state.activeView === 'terminal' && state.activeWorktreeId) {
-    workspaceIds.push(state.activeWorktreeId)
-  }
+  workspaceIds.push(...mainAreaWorkspaceIds(state))
   return workspaceIds
 }
 

@@ -1,3 +1,4 @@
+import { isAgentSessionSurfaceTab } from '../../../../shared/tab-types'
 import type { SplitTerminalPaneDetail } from '@/constants/terminal'
 import { requestBackgroundTerminalWorktreeMount } from '@/components/terminal/background-terminal-worktree-mount'
 import {
@@ -120,7 +121,8 @@ export function routeRuntimeTerminalSplitRequest(request: RuntimeTerminalSplitRe
     command: request.command,
     sourceLeafId: request.sourceLeafId,
     telemetrySource: request.telemetrySource,
-    newLeafId: request.newLeafId
+    newLeafId: request.newLeafId,
+    ...(request.activate === false ? { activate: false } : {})
   }
   if (hasRegisteredRuntimeTerminalTab(request.tabId, worktreeId)) {
     dispatchTerminalPaneSplitRequest(detail)
@@ -206,7 +208,7 @@ export function registerTerminalUiRoutingIpcBridge(unsubs: (() => void)[]): void
       revealWorkspaceSurface(store, worktreeId)
       store.focusGroup(worktreeId, tab.groupId)
       store.activateTab(tab.id)
-      if (tab.contentType === 'agent-session') {
+      if (isAgentSessionSurfaceTab(tab.contentType)) {
         store.setActiveTabType('agent-session', worktreeId)
       } else if (browserTarget) {
         // Why: browser tabs need their own active-page state, not the editor file activation path.

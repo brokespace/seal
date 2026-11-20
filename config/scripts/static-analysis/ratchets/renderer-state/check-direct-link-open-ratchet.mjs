@@ -10,7 +10,7 @@ const HEADER = [
   '# Direct system-browser opens (shell.openUrl / window.open) per renderer file.',
   '# This is a RATCHET: counts may only go DOWN. Open web links with openAppHttpLink',
   '# (src/renderer/src/lib/browser/navigation/app-http-link-open.ts). Only sign-in, API-token and star-Orca',
-  '# pages, explicit "open in default browser" actions, Orca installer recovery, port',
+  '# pages, explicit "open in default browser" actions, Seal installer recovery, port',
   '# opens that route themselves, chat links whose owner is unresolved and windows',
   '# without a workspace browser stay here.',
   '# Prune after a fix: pnpm check:direct-link-open-ratchet --prune'

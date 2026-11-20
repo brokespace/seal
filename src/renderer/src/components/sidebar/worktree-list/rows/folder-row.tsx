@@ -8,7 +8,7 @@ import type {
 } from '../../../../../../shared/worktree/lineage-types'
 import type { Worktree } from '../../../../../../shared/worktree/types'
 import { getWorktreeHostIdentity } from '../../../../../../shared/worktree/host-qualified-identity'
-import { isActiveSidebarWorkspace } from '../../../../../../shared/sidebar-list/active-workspace'
+import { isActiveSidebarWorkspace } from '../../../../../../shared/sidebar-list/selection/active-workspace'
 
 import {
   type FolderWorkspacePathStatus,
@@ -37,6 +37,7 @@ export type FolderWorkspaceRowContext = {
   settings: AppState['settings']
   activeWorktreeId: string | null
   activeWorkspaceExecutionHostId: AppState['activeWorkspaceExecutionHostId']
+  marksActiveCard: boolean
   currentWorktreeId: string | null
   selectedWorktreeIds: ReadonlySet<string>
   repoMap: Map<string, Repo>
@@ -158,7 +159,9 @@ export function renderFolderWorkspaceOption(args: {
           isActive={isActiveWorktree}
           isMultiSelected={ctx.selectedWorktreeIds.has(folderWorktreeIdentity)}
           // A child-active folder looks active without the active card's side effects.
-          isActiveSurface={lineage?.childIsActive === true || isActiveWorktree}
+          isActiveSurface={
+            ctx.marksActiveCard && (lineage?.childIsActive === true || isActiveWorktree)
+          }
           isCurrentWorktree={ctx.currentWorktreeId === folderWorktree.id}
           contentIndent={cardContentIndent}
           flushSurface
@@ -171,6 +174,7 @@ export function renderFolderWorkspaceOption(args: {
           hostContextLabel={row.hostContextLabel}
           lineageChildCount={row.lineageChildCount}
           lineageChildWorktreeIds={row.lineageChildWorktreeIds}
+          lineageDescendantIdentities={row.lineageDescendantIdentities}
           lineageCollapsed={row.lineageCollapsed}
           lineageChildren={lineage?.children}
           lineageChildrenStyle={

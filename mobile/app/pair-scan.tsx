@@ -14,7 +14,6 @@ import { CameraView, useCameraPermissions } from 'expo-camera'
 import { useRouter } from 'expo-router'
 import { ChevronLeft, Clipboard as ClipboardIcon, QrCode } from 'lucide-react-native'
 import { decodePairingUrl, parsePairingCode } from '../src/pairing/pairing'
-import { getPairingScanErrorMessage } from '../src/pairing/pairing-scan-error-message'
 import {
   startPreProfilePairing,
   type PreProfilePairingAttempt
@@ -95,7 +94,7 @@ export default function PairScanScreen() {
       const offer = decodePairingUrl(data)
       if (!offer) {
         setStatus('error')
-        setErrorMessage(getPairingScanErrorMessage(data, t))
+        setErrorMessage(t('app.pairScan.invalidQrCode', 'Not a valid Orca QR code'))
         processingRef.current = false
         return
       }
@@ -304,7 +303,7 @@ export default function PairScanScreen() {
           )}
           placeholder={t(
             'app.pairScan.pasteCodePlaceholder',
-            'orca://pair?code=... or paste the code'
+            'seal://pair?code=... or paste the code'
           )}
           onSubmit={handlePasteSubmit}
           onCancel={() => setPasteVisible(false)}
@@ -418,7 +417,7 @@ export default function PairScanScreen() {
         )}
         placeholder={t(
           'app.pairScan.pasteCodePlaceholder',
-          'orca://pair?code=... or paste the code'
+          'seal://pair?code=... or paste the code'
         )}
         onSubmit={handlePasteSubmit}
         onCancel={() => setPasteVisible(false)}

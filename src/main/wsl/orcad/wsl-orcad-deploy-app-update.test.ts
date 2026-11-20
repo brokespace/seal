@@ -302,7 +302,7 @@ describe('deployAndLaunchWslOrcad across an app update (E1)', () => {
       const { admitRecord } = mocks.deploy.mock.calls[0][0]
       expect(admitRecord(rolledBack, '1.5.0+ab')).toMatch(/rolled back from 1\.5\.0\+ab/)
       expect(admitRecord(activeOld, '1.5.0+ab')).toBeNull()
-      expect(admitRecord(newer, '1.5.0+ab')).toMatch(/Orca 2\.0\.0 last ran/)
+      expect(admitRecord(newer, '1.5.0+ab')).toMatch(/Seal 2\.0\.0 last ran/)
     })
 
     const rejected = {

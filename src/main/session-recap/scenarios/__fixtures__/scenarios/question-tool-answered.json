@@ -1,0 +1,68 @@
+{
+  "id": "question-tool-answered",
+  "title": "The user answers through the agent's question tool",
+  "categories": ["question-answered", "agent-surface"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "No question is open, the workflow is done, and the region the user picked is recorded as a decision.",
+  "steps": [
+    {
+      "user": "Set up the staging deploy."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/.github/workflows/ci.yml"
+        },
+        "output": "// .github/workflows/ci.yml"
+      }
+    },
+    {
+      "agent": "I need one choice from you before I can write the workflow."
+    },
+    {
+      "question": {
+        "text": "Which region should staging deploy to?",
+        "options": ["eu-west-1", "us-east-1"],
+        "answer": "eu-west-1"
+      }
+    },
+    {
+      "edit": "/srv/shop/.github/workflows/staging.yml"
+    },
+    {
+      "agent": "The staging workflow is in .github/workflows/staging.yml. It deploys on every push to main."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "questions",
+          "max": 0,
+          "why": "the user answered"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "decisions",
+          "has": "eu-west-1",
+          "why": "the region the user picked is recorded"
+        },
+        {
+          "in": "did",
+          "has": "staging|workflow",
+          "why": "the workflow is recorded as done"
+        }
+      ]
+    }
+  ]
+}

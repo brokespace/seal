@@ -80,4 +80,63 @@ describe('selected-host active workspace identity', () => {
     expect(state.activeWorkspaceExecutionHostId).toBe(RUNTIME_HOST)
     expect(getExecutionHostIdForWorktree(state, SAME_WORKTREE_ID)).toBe(RUNTIME_HOST)
   })
+
+  // The Files tab reads the selection; reopening a same-id workspace must follow its shown chat's machine.
+  it('selects the copy the shown tab runs on when activation names no host', () => {
+    const local = worktree('/same/repo', 'local')
+    const runtime = worktree('/same/repo', RUNTIME_HOST)
+    useAppStore.setState({
+      repos: [
+        {
+          id: SAME_REPO_ID,
+          path: local.path,
+          displayName: 'local',
+          badgeColor: '#000',
+          addedAt: 1,
+          executionHostId: 'local'
+        },
+        {
+          id: SAME_REPO_ID,
+          path: runtime.path,
+          displayName: 'runtime',
+          badgeColor: '#000',
+          addedAt: 2,
+          executionHostId: RUNTIME_HOST
+        }
+      ],
+      worktreesByRepo: { [SAME_REPO_ID]: [local, runtime] },
+      unifiedTabsByWorktree: {
+        [SAME_WORKTREE_ID]: [
+          {
+            id: 'chat-on-runtime',
+            entityId: 'chat-on-runtime',
+            groupId: 'group-1',
+            worktreeId: SAME_WORKTREE_ID,
+            executionHostId: RUNTIME_HOST,
+            contentType: 'agent-session',
+            label: 'chat',
+            customLabel: null,
+            color: null,
+            sortOrder: 0,
+            createdAt: 1
+          }
+        ]
+      },
+      groupsByWorktree: {
+        [SAME_WORKTREE_ID]: [
+          {
+            id: 'group-1',
+            worktreeId: SAME_WORKTREE_ID,
+            activeTabId: 'chat-on-runtime',
+            tabOrder: ['chat-on-runtime']
+          }
+        ]
+      },
+      activeGroupIdByWorktree: { [SAME_WORKTREE_ID]: 'group-1' },
+      refreshGitHubForWorktreeIfStale: () => undefined
+    })
+
+    useAppStore.getState().setActiveWorktree(SAME_WORKTREE_ID)
+    expect(useAppStore.getState().activeWorkspaceExecutionHostId).toBe(RUNTIME_HOST)
+  })
 })

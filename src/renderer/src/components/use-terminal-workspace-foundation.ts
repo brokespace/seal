@@ -16,6 +16,7 @@ import { usePairedRuntimeParkingEnvironmentIds } from '@/store/slices/runtime-st
 import { createTerminalWorktreeTopologyProjection } from './terminal-pane/parking/retention/terminal-hidden-worktree-retention'
 import { isMainTerminalSideEffectAuthorityForPty } from './terminal-pane/pty-transport/output/terminal-side-effect-facts-handler'
 import { selectFolderWorkspaces } from '@/store/workspaces/catalog/workspace-record-fields'
+import { useVisibleWorkspacePanes } from './split-view/visible-workspace-panes'
 
 export function useTerminalWorkspaceFoundation() {
   const terminalTopologyProjectionRef = useRef<WorktreeTabBucketProjection<
@@ -71,6 +72,10 @@ export function useTerminalWorkspaceFoundation() {
     [workspaceSurfaceIds]
   )
   const activeView = useAppStore((state) => state.activeView)
+  const { visibleWorkspacePanes, splitViewShowing } = useVisibleWorkspacePanes(
+    activeView,
+    renderedActiveWorktreeId
+  )
   // Root subscriptions track mount/parking transitions; LiveTerminalTabBar alone consumes title-only updates.
   const tabsByWorktree = useAppStore((state) =>
     terminalTopologyProjectionRef.current!.project(state.tabsByWorktree)
@@ -112,6 +117,8 @@ export function useTerminalWorkspaceFoundation() {
     renderedActiveWorktreeId,
     activeWorktreeDeferralHostId,
     activeView,
+    visibleWorkspacePanes,
+    splitViewShowing,
     tabsByWorktree,
     pendingStartupByTabId,
     terminalParkingEnabled,

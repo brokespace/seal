@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { useLiveSessionClock } from '@/components/live-sessions/live-session-clock'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Progress } from '@/components/ui/progress'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import {
   contextUsageRingReadout,
-  formatContextTokenCount,
-  keyContextUsageRows,
-  type NativeChatContextUsageSummary
-} from '../../../../../shared/native-chat/native-chat-context-usage-summary'
+  isContextUsageMeasured,
+  type NativeChatContextUsageState
+} from '../../../../../shared/native-chat/native-chat-context-usage-state'
+import { contextUsageStateText, NativeChatContextUsageCard } from './NativeChatContextUsageCard'
+import type { NativeChatContextUsageRingInput } from './native-chat-context-usage-ring-input'
 
 const RING_SIZE = 16
 const RING_STROKE = 2
@@ -63,52 +65,76 @@ function useContextCardOpen(): {
   return { open, setOpen, setOpenAfterHover }
 }
 
-/** Deferred rows sit outside the window, so they show tokens rather than a share of it. */
-function ContextUsageRowList({
-  rows,
-  className
-}: {
-  rows: ReturnType<typeof keyContextUsageRows>
-  className: string
-}): React.JSX.Element {
+const RING_TONE: Partial<Record<NativeChatContextUsageState, string>> = {
+  near: 'text-status-warning',
+  critical: 'text-destructive'
+}
+/** Raw amber is too faint for small text on a light canvas, so the words take the text token. */
+const STATE_TEXT_TONE: Partial<Record<NativeChatContextUsageState, string>> = {
+  near: 'text-status-warning-text'
+}
+/** Short enough that "Compacted" clears close to the end of its minute. */
+const CLOCK_TICK_MS = 10_000
+
+function ContextUsageArc({ filled }: { filled: number }): React.JSX.Element {
   return (
-    <ul className={cn('space-y-1 text-xs', className)}>
-      {rows.map(({ key, row }) => (
-        <li key={key} className="flex items-baseline justify-between gap-3">
-          <span
-            className={cn(
-              'min-w-0 truncate',
-              row.deferred ? 'text-muted-foreground' : 'text-foreground'
-            )}
-          >
-            {row.name}
-          </span>
-          <span className="shrink-0 tabular-nums text-muted-foreground">
-            {row.deferred ? formatContextTokenCount(row.tokens) : `${row.percentage}%`}
-          </span>
-        </li>
-      ))}
-    </ul>
+    <svg
+      width={RING_SIZE}
+      height={RING_SIZE}
+      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+      aria-hidden="true"
+      className="shrink-0 -rotate-90"
+    >
+      <circle
+        cx={RING_SIZE / 2}
+        cy={RING_SIZE / 2}
+        r={RING_RADIUS}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={RING_STROKE}
+        className="opacity-25"
+      />
+      <circle
+        cx={RING_SIZE / 2}
+        cy={RING_SIZE / 2}
+        r={RING_RADIUS}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={RING_STROKE}
+        strokeLinecap="round"
+        strokeDasharray={RING_CIRCUMFERENCE}
+        className="transition-[stroke-dashoffset] duration-300 ease-out motion-reduce:transition-none"
+        style={{ strokeDashoffset: RING_CIRCUMFERENCE * (1 - filled / 100) }}
+      />
+    </svg>
   )
 }
 
-/** Composer ring for context-window usage; hover, click, tap, or Enter shows the provider's breakdown. */
+/** Composer ring for context-window usage and compaction; hover, click, tap, or Enter shows the breakdown. */
 export function NativeChatContextUsageRing({
-  usage
+  usage,
+  note
 }: {
-  usage: NativeChatContextUsageSummary
+  usage: NativeChatContextUsageRingInput
+  /** Shown last in the card, for what only the surface holding the ring can explain. */
+  note?: React.ReactNode
 }): React.JSX.Element {
   const t = useTranslate()
-  const { filled, critical, used, window } = contextUsageRingReadout(usage)
-  const label = t(
-    'components.native-chat.contextUsage.label',
-    'Context {{used}} of {{window}} tokens, {{percent}}% used',
-    { used, window, percent: String(usage.percentage) }
-  )
+  const now = useLiveSessionClock(CLOCK_TICK_MS)
+  const readout = contextUsageRingReadout(usage, { compacting: usage.compacting === true, now })
+  const { state } = readout
+  const stateText = contextUsageStateText(state, t)
+  const measured = isContextUsageMeasured(usage)
+  const usageLabel = measured
+    ? t(
+        'components.native-chat.contextUsage.label',
+        'Context {{used}} of {{window}} tokens, {{percent}}% used',
+        { used: readout.used, window: readout.window, percent: String(usage.percentage) }
+      )
+    : t('seal.contextIndicator.empty', 'Context usage appears after the first reply.')
+  const label =
+    stateText === null ? usageLabel : [usageLabel, stateText].join(measured ? ', ' : ' ')
   const { open, setOpen, setOpenAfterHover } = useContextCardOpen()
-  const rows = keyContextUsageRows(usage.rows)
-  const counted = rows.filter(({ row }) => !row.deferred)
-  const deferred = rows.filter(({ row }) => row.deferred)
   return (
     <div
       className="flex"
@@ -133,9 +159,10 @@ export function NativeChatContextUsageRing({
             aria-expanded={open}
             data-native-chat-context-usage={usage.percentage}
             data-native-chat-context-usage-estimated={usage.estimated ? 'true' : undefined}
+            data-native-chat-context-state={state}
             className={cn(
-              'flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:size-11',
-              critical && 'text-destructive'
+              'relative flex h-7 min-w-7 items-center justify-center gap-1.5 rounded-md px-1.5 outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:h-11 pointer-coarse:min-w-11',
+              RING_TONE[state] ?? 'text-muted-foreground hover:text-accent-foreground'
             )}
             // A read-only readout: clicking it must not pull focus out of the composer.
             onMouseDown={(event) => event.preventDefault()}
@@ -145,38 +172,26 @@ export function NativeChatContextUsageRing({
               setOpen(true)
             }}
           >
-            <svg
-              width={RING_SIZE}
-              height={RING_SIZE}
-              viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-              aria-hidden="true"
-              className="-rotate-90"
-            >
-              <circle
-                cx={RING_SIZE / 2}
-                cy={RING_SIZE / 2}
-                r={RING_RADIUS}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={RING_STROKE}
-                className="opacity-25"
-              />
-              <circle
-                cx={RING_SIZE / 2}
-                cy={RING_SIZE / 2}
-                r={RING_RADIUS}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={RING_STROKE}
-                strokeLinecap="round"
-                strokeDasharray={RING_CIRCUMFERENCE}
-                strokeDashoffset={RING_CIRCUMFERENCE * (1 - filled / 100)}
-              />
-            </svg>
+            {state === 'compacting' ? (
+              <LoadingSpinner className="size-4 shrink-0" />
+            ) : (
+              <ContextUsageArc filled={readout.filled} />
+            )}
+            {stateText === null ? null : (
+              <span
+                data-composer-label
+                data-native-chat-context-text=""
+                // Anchored inside the ring, so the hidden copy a narrow toolbar keeps cannot widen the composer.
+                className={cn('right-0 text-xs whitespace-nowrap', STATE_TEXT_TONE[state])}
+              >
+                {stateText}
+              </span>
+            )}
           </button>
         </PopoverTrigger>
         <PopoverContent
           aria-label={label}
+          data-native-chat-context-card=""
           side="top"
           align="end"
           sideOffset={8}
@@ -185,37 +200,13 @@ export function NativeChatContextUsageRing({
           // Closing on pointer leave or Escape would otherwise focus the ring and strand typing.
           onCloseAutoFocus={(event) => event.preventDefault()}
         >
-          <div className="p-4">
-            <div className="flex items-baseline justify-between gap-3 text-sm">
-              <span className="font-medium text-foreground">
-                {t('components.native-chat.contextUsage.title', 'Context')}
-              </span>
-              <span className="tabular-nums text-muted-foreground">
-                {used}/{window}
-              </span>
-            </div>
-            <Progress value={filled} aria-label={label} className="mt-2 h-1.5" />
-            {counted.length > 0 ? <ContextUsageRowList rows={counted} className="mt-3" /> : null}
-            {deferred.length > 0 ? (
-              <div className="mt-3 border-t border-border pt-3">
-                <p className="text-2xs text-muted-foreground">
-                  {t(
-                    'components.native-chat.contextUsage.deferredNote',
-                    'Loaded on demand. Not counted in the used total.'
-                  )}
-                </p>
-                <ContextUsageRowList rows={deferred} className="mt-2" />
-              </div>
-            ) : null}
-            {usage.estimated ? (
-              <p className="mt-3 text-2xs text-muted-foreground">
-                {t(
-                  'components.native-chat.contextUsage.estimated',
-                  'Estimated from the last response.'
-                )}
-              </p>
-            ) : null}
-          </div>
+          <NativeChatContextUsageCard
+            usage={usage}
+            readout={readout}
+            label={label}
+            now={now}
+            note={note}
+          />
         </PopoverContent>
       </Popover>
     </div>

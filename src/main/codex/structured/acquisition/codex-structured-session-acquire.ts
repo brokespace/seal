@@ -92,6 +92,7 @@ export async function acquireCodexStructuredSession(input: {
     acquisitionId: acquisitionGeneration,
     deps,
     primaryThreadId: () => primaryThreadId,
+    autoCompact: () => acquisition.autoCompact,
     dispatchEchoes,
     subagentExecutions,
     prompts: acquisition.prompts

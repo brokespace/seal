@@ -66,6 +66,7 @@ export function fakeClaude(
     contextUsage?: unknown
     holdInit?: boolean
     initDelayMs?: number
+    rewakeHookMayHold?: boolean
     settings?: unknown
     replayUuid?: string | null
     replayUuids?: (string | null)[]
@@ -137,6 +138,7 @@ export function fakeClaude(
       closeCount: 0,
       pid: 4321,
       closed: false,
+      rewakeHookMayHold: config.rewakeHookMayHold,
       initialization,
       pauseReading: () => {},
       resumeReading: () => {},

@@ -1,0 +1,76 @@
+{
+  "id": "addressed-in-the-middle-of-a-long-turn",
+  "title": "Three asks done in one long turn; the middle one is reported mid-turn",
+  "categories": ["addressed-same-turn", "multiple-asks", "tool-heavy"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "All three are done, including the sortable audit log the agent reported in the middle of its turn. Nothing is listed as not addressed.",
+  "steps": [
+    {
+      "user": "Go through the admin area: fix the broken user filter, make the audit log sortable, and export invoices as PDF."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/src/admin/users.tsx"
+        },
+        "output": "// src/admin/users.tsx"
+      }
+    },
+    {
+      "edit": "/srv/shop/src/admin/users.tsx"
+    },
+    {
+      "agent": "First, the user filter. The admin user list read its filter from the query string but compared the role with a strict equals against a lower-cased value, while the roles in the database are capitalised, so every role filter matched nothing. I normalise both sides now and added a test that filters by Admin, Staff and Support. The filter also kept its old value when you switched between the Active and Suspended tabs, which made the list look empty after a search; it resets on a tab switch now. I checked the three role filters and the two status filters by hand against the staging data and the counts match the database. The user filter works again."
+    },
+    {
+      "edit": "/srv/shop/src/admin/audit-log.tsx"
+    },
+    {
+      "edit": "/srv/shop/src/routes/admin/audit.ts"
+    },
+    {
+      "agent": "Second, the audit log. The table rendered rows in whatever order the API returned them and the column headers were plain text. I made the When, Who and Action headers clickable, with an arrow showing the direction, and the sort is done by the API so it also works across pages: GET /admin/audit takes sort and order parameters now, validated against the three column names. Clicking a header twice flips the order. The default stays newest first. I added an index on audit_log(created_at) because sorting by When on the full table took four seconds without it, and the migration for it is 0051. The audit log is sortable by all three columns and the sort survives paging."
+    },
+    {
+      "edit": "/srv/shop/src/admin/invoice.tsx"
+    },
+    {
+      "edit": "/srv/shop/src/routes/admin/invoice-pdf.ts"
+    },
+    {
+      "agent": "Third, the invoice export. There was no PDF path at all, only CSV, so I added one. The invoice page has an Export PDF button next to Export CSV. It calls GET /admin/invoices/:id/pdf, which renders the same template the email uses through the headless renderer that already produces the shipping labels, so there is no new dependency. The PDF has the company header, the billing address, the line items with tax per line, the totals block and the payment reference; long invoices break across pages with the table header repeated on each page. File names follow invoice-<number>.pdf. I checked three invoices by eye against their HTML versions, including one with 140 line items and one with a refund line, and the totals match to the cent. There is a test that renders a fixture invoice and checks the page count and that the total appears in the text layer. Rendering takes about 300ms for a normal invoice and 2 seconds for the 140-line one, so the button shows a spinner while it waits. I also added the PDF route to the admin permission map so only staff with the invoices permission can call it, and a 404 for invoices that belong to another tenant, with a test for each. Invoices export as PDF from the invoice page."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "audit|sort",
+          "why": "the audit log was made sortable mid-turn"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "audit|sort",
+          "why": "the sortable audit log is recorded as done"
+        },
+        {
+          "in": "did",
+          "has": "pdf",
+          "why": "the PDF export is recorded as done"
+        }
+      ]
+    }
+  ]
+}

@@ -38,6 +38,17 @@ export function getSshTargetRegistryStore(): SshConnectionStore | null {
   return sshStore
 }
 
+/** "Move anyway". Read by the export on the next connect; cleared once the host moves. False when the target is gone. */
+export function allowManagedServerMoveLeavingBehind(sshTargetId: string): boolean {
+  if (!sshStore?.getTarget(sshTargetId)) {
+    return false
+  }
+  sshStore.updateTarget(sshTargetId, {
+    managedServerLeaveBehind: { confirmedAt: new Date().toISOString() }
+  })
+  return true
+}
+
 export function setSshTargetRegistryHandlers(handlers: {
   connect: ConnectSshTarget | null
   getState: ((targetId: string) => SshConnectionState | undefined) | null

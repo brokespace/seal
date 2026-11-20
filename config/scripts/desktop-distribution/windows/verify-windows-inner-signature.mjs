@@ -118,7 +118,7 @@ export function formatSignatureSummary(signature) {
 export function validateExecutablePath(executablePath) {
   if (typeof executablePath !== 'string' || executablePath.trim() === '') {
     throw new Error(
-      'Usage: node config/scripts/desktop-distribution/windows/verify-windows-inner-signature.mjs <Orca.exe>'
+      'Usage: node config/scripts/desktop-distribution/windows/verify-windows-inner-signature.mjs <Seal.exe>'
     )
   }
 

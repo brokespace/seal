@@ -8,6 +8,7 @@ import {
   coerceWorktreeCardVisibleTitle,
   getWorktreeCardTitleDisplay
 } from '../identity/worktree-card-title-display'
+import { getWorktreeDeleteErrorToShow } from '../../workspace-actions/deletion/worktree-delete-error-display'
 import { useWorkspaceDeleteModifierPressed } from '../../workspace-actions/deletion/workspace-delete-quick-action'
 import type { WorktreeCardProps } from '../controller/worktree-card-model'
 import type { useWorktreeCardFoundation } from '../controller/use-worktree-card-foundation'
@@ -105,6 +106,8 @@ export function useWorktreeCardLinkedDetails({
   const legacyCardTitleDisplay = coerceWorktreeCardVisibleTitle(worktree.displayName)
   const visibleCardTitle = newCardStyle ? cardTitleDisplay : legacyCardTitleDisplay
   const isDeleting = deleteState?.isDeleting ?? false
+  // Why: a refused delete leaves only a toast, so the row keeps saying it failed until the next attempt.
+  const deleteFailure = isDeleting ? null : getWorktreeDeleteErrorToShow(worktree, deleteState, t)
   const isQueuedForDeletion = deleteState?.phase === 'queued'
   const deleteLabel = isQueuedForDeletion
     ? t('auto.components.sidebar.WorktreeCard.ef18787206', 'Queued for deletion')
@@ -118,6 +121,7 @@ export function useWorktreeCardLinkedDetails({
     jiraIssueDisplay,
     visibleCardTitle,
     isDeleting,
+    deleteFailure,
     isQueuedForDeletion,
     deleteLabel,
     deleteModifierPressed

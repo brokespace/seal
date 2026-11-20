@@ -29,6 +29,8 @@ export type ClaudeJournalTranslatorDeps = {
   onBackgroundTaskJournalFailure?: (error: Error) => void
   account?: () => AgentSessionAccountKind | undefined
   model?: () => string | undefined
+  /** Claude said this session's login failed; the host may check the account behind it. */
+  onLoginFailure?: (text: string) => void
   goalBackgroundWork?: () => ClaudeGoalBackgroundWork
   /** True when this acquisition's pending startup took a turnless failure result and will fail with it. */
   acceptStartupFailure?: (message: Record<string, unknown>) => boolean

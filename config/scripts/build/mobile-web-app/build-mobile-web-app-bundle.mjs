@@ -26,6 +26,10 @@ import {
 import { MOBILE_WEB_PAGE_ROUTES } from './mobile-web-page-routes.mjs'
 import { reactNativeSvgWebPlugin } from './react-native-svg-web-plugin.mjs'
 import {
+  readShippedCatalogText,
+  sealBrandCopyEsbuild
+} from '../../../seal/brand-copy/seal-brand-esbuild-plugin.mjs'
+import {
   ROUTE_ENTRY_NAMESPACE,
   entryStaticClosure,
   isScriptOutput,
@@ -313,7 +317,8 @@ export function mobileWebAppBuildOptions(
       ),
       lucideBarrelPlugin,
       reactNativeSvgWebPlugin,
-      hairlineDevicePixelPlugin
+      hairlineDevicePixelPlugin,
+      sealBrandCopyEsbuild()
     ],
     resolveExtensions: [
       '.web.tsx',
@@ -474,7 +479,7 @@ export async function readLocaleCatalogs(directory = localeCatalogDir) {
     names.map(async (name) => {
       // Minify: the host sends and the phone keeps the parsed object, not the source layout.
       const bytes = Buffer.from(
-        JSON.stringify(JSON.parse(await readFile(join(directory, name), 'utf8'))),
+        JSON.stringify(JSON.parse(await readShippedCatalogText(join(directory, name)))),
         'utf8'
       )
       const sha256 = sha256Hex(bytes)
@@ -548,8 +553,8 @@ export async function buildMobileWebAppScripts(routes) {
     : esbuild.build(mobileWebAppBuildOptions(routes, sharedModules, anchoredLazyModules))
 }
 
-export async function bundleMobileWebApp({ appDir = defaultAppDir } = {}) {
-  const routes = await collectMobileWebAppRoutes(appDir)
+export async function bundleMobileWebApp({ appDir = defaultAppDir, nativeOnlyRouteDirs } = {}) {
+  const routes = await collectMobileWebAppRoutes(appDir, undefined, nativeOnlyRouteDirs)
   await assertRoutesCarryNoSynchronousExports(routes)
   const result = await buildMobileWebAppScripts(routes)
   assertNoZodLocaleTables(result.metafile)
@@ -610,6 +615,8 @@ export async function buildMobileWebAppBundle({
   appDir,
   outDir = defaultOutDir,
   pageRoutes = MOBILE_WEB_PAGE_ROUTES,
+  // A phone check of Seal's hub screens bundles the subtree the shipped page leaves to native.
+  nativeOnlyRouteDirs,
   // Only the shipped tree pays for brotli-11; tests and verify's scratch builds read raw assets.
   brotli = false
 } = {}) {
@@ -622,7 +629,7 @@ export async function buildMobileWebAppBundle({
   ] = await Promise.all([
     readDesktopVersion(),
     readProtocolWindow(),
-    bundleMobileWebApp({ appDir }),
+    bundleMobileWebApp({ appDir, nativeOnlyRouteDirs }),
     readLocaleCatalogs(),
     readFile(join(projectDir, 'src/shared/styles/scrollbar-sleek.css'), 'utf8').then((style) =>
       // The shared desktop stylesheet can be checked out as CRLF on Windows.
@@ -648,7 +655,7 @@ export async function buildMobileWebAppBundle({
     '<meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
     // Empty favicon prevents repeated unmanifested /favicon.ico requests/403s; WebView needs no tab icon asset.
     '<link rel="icon" href="data:," />\n' +
-    `<title>Orca</title>\n${MOBILE_WEB_APP_ROOT_RESET}\n${MOBILE_WEB_APP_NATIVE_PARITY_STYLE}\n<style id="orca-scrollbars">${scrollbarStyle}</style>\n</head>\n<body>\n<div id="root"></div>\n` +
+    `<title>Seal</title>\n${MOBILE_WEB_APP_ROOT_RESET}\n${MOBILE_WEB_APP_NATIVE_PARITY_STYLE}\n<style id="orca-scrollbars">${scrollbarStyle}</style>\n</head>\n<body>\n<div id="root"></div>\n` +
     `<script type="module" src="/${scriptAsset.path}"></script>\n</body>\n</html>\n`
   const indexBytes = Buffer.from(html, 'utf8')
   const indexAsset = {

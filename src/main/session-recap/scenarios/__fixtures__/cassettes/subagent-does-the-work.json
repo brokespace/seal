@@ -1,0 +1,14 @@
+[
+  {
+    "key": "1d61af11ddb36fadf725a68e05c9e274",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Audit our npm dependencies for known vulnerabilities and tell me what needs upgr\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Audit our npm dependencies for known vulnerabilities and tell me what needs upgrading.\n\n[m2] AGENT: The audit found 3 high-severity advisories and no critical ones: lodash (upgrade to 4.17.21), axios (to 1.7.4) and minimist (to 1.2.8).\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Audit npm dependencies for vulnerabilities\",\n  \"goal\": \"Audit npm dependencies and identify necessary upgrades\",\n  \"standing\": \"Audit complete with high-severity vulnerabilities found in lodash, axios, and minimist packages.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [{\n      \"text\": \"Identify high-severity vulnerabilities in lodash, axios, and minimist packages\",\n      \"state\": \"done\",\n      \"ref\": \"m2\"\n    }],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [{\n      \"text\": \"Upgrade lodash to 4.17.21\",\n      \"ref\": \"m2\"\n    }, {\n      \"text\": \"Upgrade axios to 1.7.4\",\n      \"ref\": \"m2\"\n    }, {\n      \"text\": \"Upgrade minimist to 1.2.8\",\n      \"ref\": \"m2\"\n    }],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": [\"firstRequest\"]\n}",
+    "neurons": 11.6917
+  }
+]

@@ -1,22 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { connect } from './direct-rpc-connect'
 
-vi.mock(
-  '../encryption/direct-e2ee-framing-policy',
-  () => import('./legacy-direct-framing-test-policy')
-)
+vi.mock('./direct-socket-framing', () => import('./direct-socket-framing-test-double'))
 
 vi.mock('../encryption/e2ee', () => ({
-  generateKeyPair: () => ({
-    publicKey: new Uint8Array(32),
-    secretKey: new Uint8Array(32)
-  }),
-  deriveSharedKey: () => new Uint8Array(32),
-  publicKeyFromBase64: () => new Uint8Array(32),
-  publicKeyToBase64: () => 'client-public-key',
-  encrypt: (plaintext: string) => `encrypted:${plaintext}`,
-  decrypt: (raw: string) => (raw === 'undecryptable' ? null : raw.replace(/^encrypted:/, '')),
-  decryptBytes: (bytes: Uint8Array) => bytes
+  publicKeyFromBase64: () => new Uint8Array(32)
 }))
 
 // Capability ordering has dedicated coverage; keep connection tests focused on socket behavior.
@@ -90,8 +78,6 @@ describe('mobile rpc-client connection timeout', () => {
     vi.useRealTimers()
     globalThis.WebSocket = originalWebSocket
   })
-
-  // Foreground recovery must heal Android sessions left half-open after suspension (#5049).
 
   // Transient auth rejection must not force re-pairing while the desktop still has valid credentials (#5200).
   describe('auth rejection retry (issue #5200)', () => {

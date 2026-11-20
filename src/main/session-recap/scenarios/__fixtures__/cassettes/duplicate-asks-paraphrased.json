@@ -1,0 +1,38 @@
+[
+  {
+    "key": "52613e751887fc7fafe55bfce7611d2a",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Please add input validation to the signup form.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Please add input validation to the signup form.\n\n[m2] AGENT: Which fields matter most? I'd validate email format and password length first.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": null,\n  \"goal\": \"Add input validation to the signup form.\",\n  \"standing\": \"I asked which fields to prioritize and suggested email format and password length.\",\n  \"add\": {\n    \"asked\": [{\"text\": \"Which signup form fields to validate first?\", \"ref\": \"m2\"}],\n    \"did\": []\n  }\n}",
+    "neurons": 6.3537
+  },
+  {
+    "key": "b9074119e16b7fc632d0c21acb42abb9",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":\"Add input validation to the signup form.\",\"standing\":\"I asked which fields to prioritize and suggested email format and password length.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Which signup form fields to validate first?\"}],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: all of them. the signup form needs to validate every field before submit\n\n[m2] AGENT: Understood. I'll validate every field.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [{\"text\": \"Validate all signup form fields\", \"ref\": \"m1\"}],\n    \"did\": [{\"text\": \"Plan to validate all fields\", \"state\": \"in-progress\", \"ref\": \"m2\"}],\n    \"decisions\": [{\"text\": \"Validate every signup form field\", \"ref\": \"m2\"}]\n  },\n  \"resolve\": [\"a1\"]\n}",
+    "neurons": 7.0207
+  },
+  {
+    "key": "bd7da0144873065ff674e17fefd3e840",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":\"Add input validation to the signup form.\",\"standing\":\"I asked which fields to prioritize and suggested email format and password length.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Which signup form fields to validate first?\"},{\"id\":\"a2\",\"text\":\"Validate all signup form fields\"}],\"did\":[{\"id\":\"w3\",\"text\":\"Plan to validate all fields\",\"state\":\"in-progress\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[{\"id\":\"d4\",\"text\":\"Validate every signup form field\"}]}\n</recap>\n<new_messages>\n[m1] USER: so did you add the validation on signup yet?\n\n[m2] AGENT: Yes, it is in now: every signup field is validated before submit (email format, password length, name required, terms checked), with inline errors.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [\n    {\"id\": \"w3\", \"state\": \"done\"}\n  ],\n  \"resolve\": [\"a1\", \"a2\"]\n}",
+    "neurons": 5.2759
+  }
+]

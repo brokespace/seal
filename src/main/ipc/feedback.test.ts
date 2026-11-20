@@ -15,6 +15,10 @@ vi.mock('electron', () => ({
   },
   net: { fetch: (...args: unknown[]) => fetchMock(...args) }
 }))
+vi.mock('../upstream-service-policy', () => ({
+  isUpstreamFeedbackEnabled: () => true,
+  SEAL_ISSUES_URL: 'https://example.test/issues'
+}))
 import { registerFeedbackHandlers, submitFeedback } from './feedback'
 
 function okResponse(): Response {

@@ -1,0 +1,40 @@
+{
+  "id": "declined-as-out-of-reach",
+  "title": "The agent cannot reach what the ask needs, says so, and does the part it can",
+  "categories": ["declined", "multiple-asks"],
+  "surfaces": ["claude-cli", "chat-journal"],
+  "expected": "The README note is done. Rotating the key is answered with a reason it cannot be done from the session and is not listed as overlooked.",
+  "steps": [
+    {
+      "user": "Rotate the production Stripe key and update the secret in Vault. Also add a line to the README saying keys rotate every 90 days."
+    },
+    {
+      "edit": "/srv/shop/README.md"
+    },
+    {
+      "agent": "The README now says keys rotate every 90 days. I can't rotate the Stripe key or touch Vault: this session has no credentials for either, and I am not going to ask for production secrets in a chat. Nothing was rotated. The steps for you are in docs/runbooks/rotate-keys.md."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "stripe|rotate the|vault",
+          "why": "the agent said it cannot rotate the key and why; it did not overlook it"
+        },
+        {
+          "in": "did",
+          "has": "readme|90 days",
+          "state": "done",
+          "why": "the README line is recorded as done"
+        }
+      ]
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import type {
   WorktreeStatusDropAtIndexArgs
 } from './drop-commit-context'
 import { commitWorktreePointerDrop } from './pointer-commit'
+import { swallowClickAfterNextRelease } from './header-drag-click-swallow'
 import type { WorktreePointerDrag } from './row-state'
 import { addAppKeyListener, removeAppKeyListener } from '@/lib/keyboard/app-keyboard-router'
 
@@ -79,12 +80,16 @@ export function useWorktreePointerDragWindowEvents(args: {
     }
 
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape' || !worktreePointerDragRef.current) {
+      const drag = worktreePointerDragRef.current
+      if (event.key !== 'Escape' || !drag) {
         return
       }
       event.preventDefault()
       event.stopPropagation()
       clearWorktreeDrag()
+      if (drag.active) {
+        swallowClickAfterNextRelease(drag.sourceRow)
+      }
     }
 
     addAppKeyListener('keydown', handleKeyDown)

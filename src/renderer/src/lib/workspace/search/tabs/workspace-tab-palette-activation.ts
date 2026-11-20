@@ -7,6 +7,7 @@ import type { AppState } from '@/store/types'
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
 import { activateAndRevealWorkspace } from '../../activation/worktree-activation'
 import { activateStructuredAgentSessionTab } from '../../../agent-session/structured-agent-session-tab-activation'
+import { activateExternalAgentSessionTab } from '@/components/live-sessions/open/external-agent-session-tab'
 import { clearClientHostedBrowserRowSelection } from '../../../../runtime/browser/client-hosting/client-hosted-browser-row-state'
 import { isEditorTabContentType } from '@/store/slices/editor/tabs/editor-tab-content-type'
 import {
@@ -123,6 +124,12 @@ export function activateWorkspaceTabPaletteResult(
     return { status: 'failed', reason: finalFailure }
   }
 
+  if (result.contentType === 'external-agent-session') {
+    clearClientHostedBrowserRowSelection()
+    return activateExternalAgentSessionTab(result.worktreeId, result.tabId)
+      ? { status: 'activated' }
+      : { status: 'failed', reason: 'missing-tab' }
+  }
   if (result.contentType === 'agent-session') {
     // Same path as clicking the chat's tab: drops a paired-device placeholder over it, focuses the
     // composer and tells the chat's host.

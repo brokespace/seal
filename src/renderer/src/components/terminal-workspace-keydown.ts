@@ -23,7 +23,7 @@ import {
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
 import { translate } from '@/i18n/i18n'
 import { getKeybindingContext } from './terminal-workspace-model'
-import { isAgentTerminalPreviewTarget } from './dashboard-popout/agent-terminal-preview-target'
+import { isAgentTerminalPreviewTarget } from './dashboard/terminal-preview/agent-terminal-preview-target'
 import { resolveTerminalAgentTabShortcut } from './terminal-agent-tab-shortcut'
 import { getDetectionTargetIdentityForWorktree } from '@/lib/agent-session/launch/inventory/agent-detection-target-inventory'
 import {
@@ -32,6 +32,7 @@ import {
 } from './agent-tab-shortcut-launch'
 import { handleTerminalWorkspaceEditorShortcut } from './terminal-workspace-editor-shortcuts'
 import type { TerminalActivationController } from './use-terminal-activation-actions'
+import { isSplitViewShowing } from './split-view/split-view-showing'
 
 export function handleTerminalWorkspaceKeyDown(
   event: KeyboardEvent,
@@ -57,6 +58,14 @@ export function handleTerminalWorkspaceKeyDown(
   const context = getKeybindingContext(event.target)
   const floatingWorkspaceFocused =
     isEventTargetInsideFloatingWorkspacePanel(event.target) || isFloatingWorkspacePanelFocused()
+  // A session or project pane has focus: the workspace beside it is not what the keys are for.
+  if (
+    !floatingWorkspaceFocused &&
+    isSplitViewShowing() &&
+    useAppStore.getState().activeView !== 'terminal'
+  ) {
+    return
+  }
   const matchShortcut = (actionId: KeybindingActionId): boolean =>
     keybindingMatchesAction(actionId, event, shortcutPlatform, keybindings, {
       context,

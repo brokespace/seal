@@ -1,0 +1,55 @@
+{
+  "id": "addressed-next-turn",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Add rate limiting to the /login endpoint, 5 attempts per minute per IP"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 4: the agent says the rate limiter is on /login at 5 attempts per minute per IP"
+        },
+        "right after turn 2": {
+          "is": "done",
+          "why": "step 4: the agent says the rate limiter is on /login at 5 attempts per minute per IP"
+        },
+        "after the next automatic pass": {
+          "is": "done",
+          "why": "step 4: the agent says the rate limiter is on /login at 5 attempts per minute per IP"
+        }
+      }
+    },
+    {
+      "quotes": ["add a test for it"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 4: the turn ends with the limiter added and the test never mentioned"
+        },
+        "right after turn 2": {
+          "is": "done",
+          "why": "steps 9-11: the agent writes test/login-rate-limit.test.ts and it passes"
+        },
+        "after the next automatic pass": {
+          "is": "done",
+          "why": "steps 9-11: the agent writes test/login-rate-limit.test.ts and it passes"
+        }
+      }
+    },
+    {
+      "quotes": ["anything left?"],
+      "at": {
+        "right after turn 2": {
+          "is": "done",
+          "why": "step 11: the agent answers that the test was the one thing left"
+        },
+        "after the next automatic pass": {
+          "is": "done",
+          "why": "step 11: the agent answers that the test was the one thing left"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

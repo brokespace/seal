@@ -20,14 +20,15 @@ export function createDesktopConnectorCloud(
   userDataPath: string,
   isFenced: () => boolean
 ): ConnectorCloud | null {
+  const environment = getAppEnvironment()
+  const origin = resolveConnectorOrigin(process.env, environment.isPackaged())
   const auth = getOrcaCloudAuthConfig()
-  if (!auth.configured) {
+  if (!origin || !auth.configured) {
     return null
   }
-  const environment = getAppEnvironment()
   return new ConnectorCloud({
     userDataPath,
-    origin: resolveConnectorOrigin(process.env, environment.isPackaged()),
+    origin,
     isFenced,
     account: () => connectorAccount(userDataPath),
     mintFor: (account) => desktopConnectorTokenMint(auth.config, userDataPath, account),

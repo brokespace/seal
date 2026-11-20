@@ -79,7 +79,7 @@ export async function withCliAgentLaunchRecovery<T>(
         nextSteps,
         cause:
           error instanceof Error
-            ? error.message.replace(/\bRestart Orca and try again\./g, '')
+            ? error.message.replace(/\bRestart (?:Seal|Orca) and try again\./g, '')
             : String(error)
       }
     )

@@ -54,6 +54,8 @@ export type WorktreePointerDrag = {
   previewOffsetX: number
   previewOffsetY: number
   workspaceBoardDragPreviewRequested: boolean
+  /** Ends what the drag asked of the main area: pointer pass-through and the pane drop preview. */
+  endSplitViewDrag: (() => void) | null
   frameId: number | null
   reorderIntent: { dropIndex: number; pointerY: number; startedAt: number } | null
   latestBoardDropTarget: WorkspaceKanbanCardTrackedDropTarget | null

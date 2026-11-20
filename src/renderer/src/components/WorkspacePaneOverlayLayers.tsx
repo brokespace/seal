@@ -3,6 +3,7 @@ import TerminalPaneOverlayLayer from './terminal-pane/mounting/TerminalPaneOverl
 import { RetainedBrowserPaneOverlayLayer } from './browser-pane/assemble-chrome/BrowserPaneOverlayLayer'
 import EmulatorPaneOverlayLayer from './emulator-pane/EmulatorPaneOverlayLayer'
 import StructuredAgentSessionPaneOverlayLayer from './native-chat/pane/routing/StructuredAgentSessionPaneOverlayLayer'
+import ExternalAgentSessionPaneOverlayLayer from './live-sessions/chat/ExternalAgentSessionPaneOverlayLayer'
 import AiVaultSessionDropLayer from './tab-group/AiVaultSessionDropLayer'
 import type { HiddenTerminalPrewarm } from './terminal-pane/controller/terminal-pane-types'
 
@@ -11,6 +12,7 @@ export function WorkspacePaneOverlayLayers({
   worktreeId,
   worktreePath,
   isVisible,
+  isFocused = isVisible,
   shouldMeasureHiddenWorktree,
   hiddenTerminalPrewarm = null,
   shouldColdParkTerminalPanes,
@@ -25,6 +27,8 @@ export function WorkspacePaneOverlayLayers({
   worktreeId: string
   worktreePath: string
   isVisible: boolean
+  /** The workspace the keyboard and commands act on; several can be visible in split view. */
+  isFocused?: boolean
   shouldMeasureHiddenWorktree: boolean
   hiddenTerminalPrewarm?: HiddenTerminalPrewarm | null
   shouldColdParkTerminalPanes: boolean
@@ -43,6 +47,7 @@ export function WorkspacePaneOverlayLayers({
         worktreeId={worktreeId}
         worktreePath={worktreePath}
         isWorktreeActive={isVisible}
+        isWorktreeFocused={isFocused}
         coldParkTerminalPanes={shouldColdParkTerminalPanes}
         isForceParked={isForceParked}
         shouldMeasureHiddenWorktree={shouldMeasureHiddenWorktree}
@@ -55,6 +60,7 @@ export function WorkspacePaneOverlayLayers({
       <RetainedBrowserPaneOverlayLayer
         worktreeId={worktreeId}
         isWorktreeActive={isVisible}
+        isWorktreeFocused={isFocused}
         mountEligible={mountRetainedBrowserOverlay}
       />
       {mountEmulatorOverlay ? (
@@ -63,6 +69,12 @@ export function WorkspacePaneOverlayLayers({
       <StructuredAgentSessionPaneOverlayLayer
         worktreeId={worktreeId}
         isWorktreeActive={isVisible}
+        isWorktreeFocused={isFocused}
+      />
+      <ExternalAgentSessionPaneOverlayLayer
+        worktreeId={worktreeId}
+        isWorktreeActive={isVisible}
+        isWorktreeFocused={isFocused}
       />
       <AiVaultSessionDropLayer worktreeId={worktreeId} enabled={isVisible} />
     </>

@@ -1,0 +1,66 @@
+{
+  "id": "addressed-with-no-prose",
+  "title": "A turn that does the work with tools and says nothing",
+  "categories": ["addressed-implicitly", "tool-heavy"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "Formatting and committing are recorded as done from the commands the agent ran; nothing is listed as not addressed.",
+  "steps": [
+    {
+      "user": "Set up prettier for the repo."
+    },
+    {
+      "edit": "/srv/shop/.prettierrc"
+    },
+    {
+      "agent": "Prettier is set up: .prettierrc, a format script, and the pre-commit hook."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "user": "now run it over src/ and commit the result"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm format"
+        },
+        "output": "148 files formatted"
+      }
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "git commit -am 'Format src with prettier'"
+        },
+        "output": "[main 4c1e9aa] Format src with prettier\n 148 files changed, 2210 insertions(+), 2198 deletions(-)"
+      }
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "format|commit",
+          "why": "running the formatter and committing is recorded as done"
+        }
+      ]
+    }
+  ]
+}

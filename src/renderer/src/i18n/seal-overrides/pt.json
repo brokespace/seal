@@ -1,0 +1,36 @@
+{
+  "auto": {
+    "web": {
+      "WebConnect": {
+        "27393856e4": "seal://pair?code=..."
+      },
+      "runtimeAuth": {
+        "hostOutdated": "Este servidor Seal não oferece suporte à criptografia exigida por este cliente web. Atualize o Seal no servidor e recarregue esta página. Se o servidor já estiver atualizado, a chave de identidade dele mudou: pareie este navegador novamente."
+      }
+    },
+    "components": {
+      "settings": {
+        "RuntimeHostAccessForm": {
+          "accessLinkPlaceholder": "seal://pair?code=..."
+        }
+      },
+      "sidebar": {
+        "AddRemoteHostDialog": {
+          "pairingCodePlaceholder": "seal://pair?code=..."
+        }
+      },
+      "mobile": {
+        "MobileHero": {
+          "installHeading": "Instale o Seal Mobile.",
+          "installLead": "O Seal Mobile não está na App Store nem no Google Play. Compile e instale a partir do repositório do Seal e depois continue para o passo 2 para ver o QR de pareamento.",
+          "installGuide": "Abrir guia de instalação"
+        }
+      }
+    }
+  },
+  "runtime": {
+    "remoteServerPairingErrors": {
+      "invalidPairingCode": "Código de pareamento inválido. Era esperada uma URL seal://pair?... ou dados de pareamento sem URL."
+    }
+  }
+}

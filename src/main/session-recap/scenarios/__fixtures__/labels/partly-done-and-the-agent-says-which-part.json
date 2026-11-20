@@ -1,0 +1,17 @@
+{
+  "id": "partly-done-and-the-agent-says-which-part",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Add unit tests for the three parsers: csv, json and yaml"],
+      "at": {
+        "after the turn": {
+          "is": "partly",
+          "why": "step 5: csv and json have tests but the agent says the yaml tests are not written"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

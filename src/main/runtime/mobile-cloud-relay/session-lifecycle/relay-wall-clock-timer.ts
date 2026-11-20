@@ -1,4 +1,5 @@
 import { subscribeSystemPowerLifecycle } from '../../../power/system-power-lifecycle'
+import { clampTimerDelayMs } from '../../../../shared/timer-delay'
 
 type SubscribeResume = (onResume: () => void) => () => void
 
@@ -57,7 +58,7 @@ export class RelayWallClockTimer {
     if (this.timer) {
       clearTimeout(this.timer)
     }
-    this.timer = setTimeout(() => this.fire(), delayMs)
+    this.timer = setTimeout(() => this.fire(), clampTimerDelayMs(delayMs))
   }
 
   private fire(): void {

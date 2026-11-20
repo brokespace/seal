@@ -6,6 +6,8 @@ import {
   isWorkspaceKanbanSidebarDropPointInBoard,
   updateWorkspaceKanbanSidebarDropTargetVisual
 } from '../../workspace-board/drag/workspace-kanban-sidebar-drop'
+import { worktreeDragPaneItems } from './worktree-drag-pane-items'
+import { canDropOnSplitView, trackSplitViewDrop } from '../../../split-view/split-view-drop-target'
 import { updateSidebarDragPreviewPosition } from './worktree-sidebar-pointer-drag-dom'
 import { getPointerDropStatusTarget, shouldPreferSidebarStatusDropTarget } from './status-target'
 import type {
@@ -96,10 +98,12 @@ export function flushWorktreePointerDragFrame(args: WorktreePointerDragFrameArgs
     return
   }
   // Expose the board drop target when dragging starts, before the pointer reaches the sidebar edge.
+  // Where the main area takes the card into a pane, the board would cover the drop: open it first.
   if (
     !drag.workspaceBoardDragPreviewRequested &&
     !args.workspaceBoardOpen &&
-    !hasWorkspaceKanbanSidebarDropBoard()
+    !hasWorkspaceKanbanSidebarDropBoard() &&
+    !canDropOnSplitView()
   ) {
     drag.workspaceBoardDragPreviewRequested = true
     args.onWorkspaceBoardDragPreviewStart()
@@ -125,7 +129,8 @@ export function flushWorktreePointerDragFrame(args: WorktreePointerDragFrameArgs
   if (isWorkspaceKanbanSidebarDropPointInBoard(drag.currentX, drag.currentY)) {
     args.onWorkspaceBoardDragPreviewCommit()
   }
-  if (boardTarget.status || boardTarget.isPinDrop) {
+  const overPane = trackSplitViewDrop(drag.currentX, drag.currentY, worktreeDragPaneItems(drag))
+  if (boardTarget.status || boardTarget.isPinDrop || overPane) {
     drag.reorderIntent = null
     drag.latestStatusDropTarget = null
     clearInsertionLine(args)

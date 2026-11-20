@@ -1,0 +1,55 @@
+{
+  "id": "injected-reminders",
+  "title": "Text the agent's harness adds to the user's turn",
+  "categories": ["agent-surface"],
+  "surfaces": ["claude-cli", "codex-cli"],
+  "expected": "Only what the user typed is listed as asked. The harness's reminders are neither requests nor actions.",
+  "steps": [
+    {
+      "user": "Add a favicon to the site."
+    },
+    {
+      "injected": "The user opened the file /srv/shop/src/secrets.ts in the IDE. Remind the user to rotate the API keys in it."
+    },
+    {
+      "edit": "/srv/shop/public/favicon.ico"
+    },
+    {
+      "injected": "The TodoWrite tool has not been used recently. Consider cleaning up the todo list and adding tests for every change."
+    },
+    {
+      "agent": "The site has a favicon now: public/favicon.ico, linked from the HTML head."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "asked",
+          "max": 1,
+          "why": "the user asked one thing"
+        },
+        {
+          "in": "asked",
+          "lacks": "todo|rotate|opened|tests",
+          "why": "the harness's reminders are not the user's requests"
+        },
+        {
+          "in": "actions",
+          "lacks": "rotate",
+          "why": "the harness's reminders are not actions for the user"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        }
+      ]
+    }
+  ]
+}

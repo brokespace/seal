@@ -31,9 +31,15 @@ import {
   shouldUseNativeContextMenu
 } from './worktree-context-menu-policy'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/overlay-interaction/close-all-context-menus'
+import {
+  openItemsInSplitView,
+  workspaceSplitViewItem
+} from '@/components/split-view/split-view-commands'
+import { SplitViewPlacementMenu } from '@/components/split-view/SplitViewPlacementMenu'
 
 export default function WorktreeContextMenuView({ model }: { model: WorktreeContextMenuModel }) {
   const {
+    activeContextWorktrees,
     children,
     contentClassName,
     contextMenuOpenedAtRef,
@@ -51,6 +57,7 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
     handleSleepSubtreeWithVm,
     handleTogglePin,
     handleToggleRead,
+    showsUnread,
     hasAnyContextLineage,
     isDeleting,
     isMultiContext,
@@ -164,14 +171,24 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
           )}
           {!isMultiContext && (
             <DropdownMenuItem onSelect={handleToggleRead} disabled={isDeleting}>
-              {worktree.isUnread ? <BellOff className="size-3.5" /> : <Bell className="size-3.5" />}
-              {worktree.isUnread
+              {showsUnread ? <BellOff className="size-3.5" /> : <Bell className="size-3.5" />}
+              {showsUnread
                 ? t('auto.components.sidebar.WorktreeContextMenu.8dacff1fe0', 'Mark Read')
                 : t('auto.components.sidebar.WorktreeContextMenu.f50603c6b2', 'Mark Unread')}
             </DropdownMenuItem>
           )}
           <WorktreeContextMenuDeleteItems model={model} />
           <DropdownMenuSeparator />
+          <SplitViewPlacementMenu
+            menuKind="dropdown"
+            intent="open"
+            onPlace={(zone) =>
+              openItemsInSplitView(
+                activeContextWorktrees.map((target) => workspaceSplitViewItem(target)),
+                zone
+              )
+            }
+          />
           {!isMultiContext && (
             <>
               <DropdownMenuItem onSelect={handleRename} disabled={isDeleting}>

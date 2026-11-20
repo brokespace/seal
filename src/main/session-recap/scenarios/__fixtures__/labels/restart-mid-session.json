@@ -1,0 +1,34 @@
+{
+  "id": "restart-mid-session",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Add a 'reorder' button to past orders"],
+      "at": {
+        "after the restart": {
+          "is": "done",
+          "why": "step 3: the agent says the reorder button is on each past order"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says the reorder button is on each past order"
+        }
+      }
+    },
+    {
+      "quotes": ["track clicks on it in analytics", "add the tracking now"],
+      "at": {
+        "after the restart": {
+          "is": "open",
+          "why": "step 3: the agent says analytics tracking is not wired up yet"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 11: the agent says reorder clicks now send a reorder_clicked event"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

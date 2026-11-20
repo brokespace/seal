@@ -48,6 +48,7 @@ import {
 } from './file-explorer-row-action-visibility'
 import { copyFileToOsClipboard, downloadRemoteFile } from './file-explorer-row-file-transfer'
 import { fileExplorerNodeTabRelativePath } from '../tree/file-explorer-directory-listing'
+import { useFileExplorerWorktreeId } from './file-explorer-mount'
 
 const isMac = navigator.userAgent.includes('Mac')
 
@@ -103,7 +104,7 @@ export function FileExplorerRowContextMenu({
 }: FileExplorerRowContextMenuProps): React.JSX.Element {
   const t = useTranslate()
   const openMarkdownPreview = useAppStore((s) => s.openMarkdownPreview)
-  const activeWorktreeId = useAppStore((s) => s.activeWorktreeId)
+  const activeWorktreeId = useFileExplorerWorktreeId()
   const copyPathShortcutLabel = useShortcutLabel('fileExplorer.copyPath')
   const copyRelativePathShortcutLabel = useShortcutLabel('fileExplorer.copyRelativePath')
   const findInFolderShortcutLabel = useShortcutLabel('sidebar.search.toggle')
@@ -115,9 +116,9 @@ export function FileExplorerRowContextMenu({
   )
   const showCopyFileAction = shouldShowCopyFileAction(node, connectionId, selectionSize)
   const revealOwner = useAppStore((s) =>
-    getWorkspaceFileRevealOwner(s, s.activeWorktreeId, {
+    getWorkspaceFileRevealOwner(s, activeWorktreeId, {
       connectionId,
-      runtimeEnvironmentId: runtimeEnvironmentIdOrLocalUnlessTwin(s, s.activeWorktreeId)
+      runtimeEnvironmentId: runtimeEnvironmentIdOrLocalUnlessTwin(s, activeWorktreeId)
     })
   )
   const revealBlocked = isRevealOrEditorOpenBlocked(revealOwner)

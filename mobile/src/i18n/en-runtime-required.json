@@ -9,18 +9,6 @@
       "messages_other": "{{count}} messages"
     }
   },
-  "agents": {
-    "desktops": {
-      "agents_one": "{{count}} agent",
-      "agents_other": "{{count}} agents",
-      "needsYou_one": "{{count}} needs you",
-      "needsYou_other": "{{count}} need you"
-    },
-    "list": {
-      "workers_one": "{{count}} worker",
-      "workers_other": "{{count}} workers"
-    }
-  },
   "app": {
     "terminalSettings": {
       "restoreAfterMinutes_one": "After {{count}} minute",
@@ -77,8 +65,7 @@
       "moreCount_one": "{{count}} more",
       "moreCount_other": "{{count}} more",
       "queuedCount_one": "{{count}} queued message",
-      "queuedCount_other": "{{count}} queued messages",
-      "foldNeedsAttention": "{{more}}, a message needs attention"
+      "queuedCount_other": "{{count}} queued messages"
     },
     "subagentGroup": {
       "ran_one": "Ran {{count}} subagent",

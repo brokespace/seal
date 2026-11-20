@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import type { TabGroupLayoutNode } from '../../../shared/tab-types'
 import type { ActivityTerminalPortalTarget } from './activity/activity-terminal-portal'
 import {
@@ -12,6 +12,8 @@ import {
 import TabGroupSplitLayout from './tab-group/TabGroupSplitLayout'
 import { WorkspacePaneOverlayLayers } from './WorkspacePaneOverlayLayers'
 import type { TerminalPrewarmStage } from './terminal/terminal-worktree-prewarm'
+import { useWorkspaceSurfacePaneSlot } from './split-view/use-workspace-surface-pane-slot'
+import { WorkspaceFileTreePanel } from './workspace-file-tree/WorkspaceFileTreePanel'
 
 export const WorktreeSplitSurface = React.memo(function WorktreeSplitSurface({
   worktreeId,
@@ -19,6 +21,8 @@ export const WorktreeSplitSurface = React.memo(function WorktreeSplitSurface({
   layout,
   focusedGroupId,
   isVisible,
+  isFocused,
+  paneId,
   shouldMeasureHiddenWorktree,
   prewarmStage,
   shouldColdParkTerminalPanes,
@@ -31,7 +35,12 @@ export const WorktreeSplitSurface = React.memo(function WorktreeSplitSurface({
   worktreePath: string
   layout: TabGroupLayoutNode
   focusedGroupId?: string
+  /** On screen: the single view's workspace, or the active chip of a visible split-view pane. */
   isVisible: boolean
+  /** The workspace the keyboard and commands act on. */
+  isFocused: boolean
+  /** The split-view pane whose slot this surface is laid over; null fills the area. */
+  paneId: string | null
   shouldMeasureHiddenWorktree: boolean
   /** Hover intent: mount, then lay out, then render the revealable terminals while hidden. */
   prewarmStage: TerminalPrewarmStage | null
@@ -49,8 +58,14 @@ export const WorktreeSplitSurface = React.memo(function WorktreeSplitSurface({
     needsBrowserGuestPaint
   })
 
+  const surfaceRef = useRef<HTMLDivElement>(null)
+  const slotPaneId = isVisible ? paneId : null
+  const paneFocusHandlers = useWorkspaceSurfacePaneSlot(surfaceRef, slotPaneId, worktreeId)
+
   return (
     <div
+      ref={surfaceRef}
+      {...paneFocusHandlers}
       className={
         isVisible
           ? 'absolute inset-0 flex'
@@ -61,17 +76,22 @@ export const WorktreeSplitSurface = React.memo(function WorktreeSplitSurface({
       inert={!isVisible}
       aria-hidden={!isVisible}
       data-workspace-surface-id={worktreeId}
+      data-workspace-surface-pane-id={slotPaneId ?? undefined}
     >
+      <WorkspaceFileTreePanel worktreeId={worktreeId} isVisible={isVisible} paneId={slotPaneId} />
       <TabGroupSplitLayout
         layout={layout}
         worktreeId={worktreeId}
         focusedGroupId={focusedGroupId}
         isWorktreeActive={isVisible}
+        isWorktreeFocused={isFocused}
+        inSplitViewPane={slotPaneId !== null}
       />
       <WorkspacePaneOverlayLayers
         worktreeId={worktreeId}
         worktreePath={worktreePath}
         isVisible={isVisible}
+        isFocused={isFocused}
         shouldMeasureHiddenWorktree={shouldMeasureHiddenWorktree}
         hiddenTerminalPrewarm={prewarmStage === 'mount' ? null : prewarmStage}
         shouldColdParkTerminalPanes={shouldColdParkTerminalPanes}

@@ -1,104 +1,58 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { WebRuntimeConnectionAuth } from './web-runtime-connection-auth'
-import { tokenOnlyCredentialSource } from './web-runtime-credential-source'
-import { resetWebE2EEV2HostLatchForTests, webE2EEFramingPolicy } from './web-e2ee-v2-host-latch'
 import type { PairedRuntimeConnection } from '../../../shared/remote-runtime/pairing/paired-runtime-connection'
-import { E2EE_V2_TOKEN_CAPABILITIES_RUNTIME_CAPABILITY } from '../../../shared/remote-runtime/pairing/device-key-capability'
 
-const hostPublicKeyB64 = Buffer.alloc(32, 7).toString('base64')
 const connection: PairedRuntimeConnection = {
   endpoint: 'ws://192.168.1.20:6768',
-  hostPublicKeyB64,
+  hostPublicKeyB64: Buffer.alloc(32, 7).toString('base64'),
   credential: { kind: 'token', deviceToken: 'token' }
 }
 const plan = { kind: 'legacy-token', deviceToken: 'token' } as const
 
-function plainHttpAuth(options: { reconnect?: boolean } = {}): WebRuntimeConnectionAuth {
-  return new WebRuntimeConnectionAuth(connection, {
-    ...options,
-    credential: tokenOnlyCredentialSource('token', { tryV2Token: true }),
-    retryLater: () => {}
-  })
+function tokenAuth(pairing = connection): WebRuntimeConnectionAuth {
+  return new WebRuntimeConnectionAuth(pairing, { retryLater: () => {} })
 }
 
 beforeEach(() => {
-  const storage = new Map<string, string>()
   vi.stubGlobal('window', {
     atob: (value: string) => Buffer.from(value, 'base64').toString('binary'),
-    btoa: (value: string) => Buffer.from(value, 'binary').toString('base64'),
-    localStorage: {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => storage.set(key, value)
-    }
+    btoa: (value: string) => Buffer.from(value, 'binary').toString('base64')
   })
-  resetWebE2EEV2HostLatchForTests()
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('web token sockets and E2EE v2', () => {
-  it('sends a plain-http token over v2 and falls back once a host refuses the v2 hello', () => {
-    const auth = plainHttpAuth()
-    expect(auth.createHandshake(plan).framing).toBe('v2')
-
-    auth.socketClosed(4001)
-
-    expect(auth.createHandshake(plan).framing).toBe('legacy')
-  })
-
-  it('retries with legacy when a v2 host refuses capabilities on token auth', async () => {
-    const auth = plainHttpAuth()
+describe('web sockets and E2EE v2', () => {
+  it('stops on a host that refuses the hello and never sends it an older one', () => {
+    const auth = tokenAuth()
     auth.createHandshake(plan)
 
-    await expect(
-      auth.rejected({ kind: 'rejected', type: 'e2ee_error', errorCode: 'bad_auth' })
-    ).resolves.toEqual({ kind: 'retry' })
-    expect(auth.createHandshake(plan).framing).toBe('legacy')
+    expect(auth.socketClosed(4001)).toMatchObject({
+      code: 'unauthorized',
+      reason: 'host-outdated'
+    })
+
+    const nextHello = JSON.parse(auth.createHandshake(plan).helloText())
+    expect(nextHello).toMatchObject({ type: 'e2ee_hello', v: 2 })
+    expect(nextHello).not.toHaveProperty('publicKeyB64')
   })
 
-  function latchedHostAfterRefusal(): WebRuntimeConnectionAuth {
-    webE2EEFramingPolicy(hostPublicKeyB64).noteV2Authenticated()
-    const auth = plainHttpAuth()
-    expect(auth.createHandshake(plan).framing).toBe('v2')
-    auth.socketClosed(4001)
-    // The next socket only reads the host's status over legacy framing.
-    expect(auth.createHandshake(plan).framing).toBe('legacy')
-    return auth
-  }
+  it('leaves any other close before the ready to the reconnect loop', () => {
+    const auth = tokenAuth()
+    auth.createHandshake(plan)
 
-  async function checkStatus(auth: WebRuntimeConnectionAuth, capabilities: string[]) {
-    const reconnect = vi.fn()
-    const call = vi.fn(async () => ({
-      id: 'status',
-      ok: true as const,
-      result: { capabilities },
-      _meta: { runtimeId: 'r' }
-    }))
-    expect(auth.checkLatchedHostIfPlanned({ begin: () => {}, call, reconnect })).toBe(true)
-    await vi.waitFor(() => expect(reconnect).toHaveBeenCalledOnce())
-    expect(call).toHaveBeenCalledWith('status.get')
-  }
-
-  it('keeps a latched host on v2 when its own status shows it is current', async () => {
-    const auth = latchedHostAfterRefusal()
-    await checkStatus(auth, [E2EE_V2_TOKEN_CAPABILITIES_RUNTIME_CAPABILITY])
-
-    expect(auth.createHandshake(plan).framing).toBe('v2')
-    expect(
-      new WebRuntimeConnectionAuth(connection, { retryLater: () => {} }).createHandshake(plan)
-        .framing
-    ).toBe('v2')
+    expect(auth.socketClosed(1006)).toBeNull()
+    expect(auth.socketClosed()).toBeNull()
   })
 
-  it('releases a latched host only when its own status shows it was downgraded', async () => {
-    const auth = latchedHostAfterRefusal()
-    await checkStatus(auth, [])
-
-    expect(auth.createHandshake(plan).framing).toBe('legacy')
-    expect(
-      auth.checkLatchedHostIfPlanned({ begin: vi.fn(), call: vi.fn(), reconnect: vi.fn() })
-    ).toBe(false)
+  it('refuses a pairing whose host key is a low-order point', () => {
+    expect(() =>
+      tokenAuth({
+        ...connection,
+        hostPublicKeyB64: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+      })
+    ).toThrow('low-order')
   })
 })

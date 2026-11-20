@@ -1,0 +1,43 @@
+{
+  "id": "declined-then-replaced-by-what-the-agent-offered",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Upgrade React to 19"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 4: the agent says React is on 19.0 and all 212 tests pass"
+        },
+        "after turn 3": {
+          "is": "done",
+          "why": "step 4: the agent says React is on 19.0 and nothing later reopens it"
+        }
+      }
+    },
+    {
+      "quotes": ["turn off the eslint rule about hook deps"],
+      "at": {
+        "after turn 2": {
+          "is": "declined",
+          "why": "step 8: the agent advises against turning the rule off, gives the reason and leaves it on"
+        },
+        "after turn 3": {
+          "is": "withdrawn",
+          "why": "step 12: the user gives up on turning the rule off and asks for the warnings to be fixed instead"
+        }
+      }
+    },
+    {
+      "quotes": ["fix the warnings"],
+      "at": {
+        "after turn 3": {
+          "is": "done",
+          "why": "step 16: the agent says all six warnings are fixed and lint is clean"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

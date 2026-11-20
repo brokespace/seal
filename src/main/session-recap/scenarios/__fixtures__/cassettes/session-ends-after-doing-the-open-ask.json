@@ -1,0 +1,26 @@
+[
+  {
+    "key": "01f15aa19cf0667ffec3260847192cf5",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Write the release notes for 3.2 and add a rollback section to the runbook.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Write the release notes for 3.2 and add a rollback section to the runbook.\n\n[m2] AGENT: The 3.2 release notes are in docs/release-notes/3.2.md. I have not written the rollback section yet.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Release notes 3.2 and rollback runbook\",\n  \"goal\": \"Create 3.2 release notes and add a rollback section to the runbook\",\n  \"standing\": \"Release notes exists. Add a rollback section to the runbook.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\n        \"text\": \"Opened existing 3.2 release notes\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": []\n}",
+    "neurons": 8.8957
+  },
+  {
+    "key": "cedd023ea15c7ac3dd8556bab6dd2861",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Release notes 3.2 and rollback runbook\",\"goal\":\"Create 3.2 release notes and add a rollback section to the runbook\",\"standing\":\"Release notes exists. Add a rollback section to the runbook.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Opened existing 3.2 release notes\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: add the rollback section, then we're done\n\n[m2] AGENT: The runbook has a rollback section now: how to pin the previous image, revert migration 0051, and verify. That is everything.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"resolve\": [\"w1\"],\n  \"add\": {\n    \"asked\": [{\"text\": \"Add rollback section\", \"ref\": \"m1\"}],\n    \"did\": [{\"text\": \"Added rollback section to runbook\", \"ref\": \"m2\"}]\n  }\n}",
+    "neurons": 6.0958000000000006
+  }
+]

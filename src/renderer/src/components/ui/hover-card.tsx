@@ -6,6 +6,7 @@ import { useControllableState } from 'radix-ui/internal'
 import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/lib/class-names'
+import { noteHoverLayerEscape } from '@/lib/overlay-interaction/hover-layer-escape'
 
 const HoverCardInteractionContext = React.createContext({
   dismiss: () => {},
@@ -97,6 +98,7 @@ function HoverCardContent({
   variant,
   align = 'center',
   sideOffset = 4,
+  onEscapeKeyDown,
   ...props
 }: React.ComponentProps<typeof HoverCardPrimitive.Content> &
   VariantProps<typeof hoverCardContentVariants>) {
@@ -113,6 +115,10 @@ function HoverCardContent({
           className
         )}
         {...props}
+        onEscapeKeyDown={(event) => {
+          onEscapeKeyDown?.(event)
+          noteHoverLayerEscape(event)
+        }}
       />
     </HoverCardPrimitive.Portal>
   )

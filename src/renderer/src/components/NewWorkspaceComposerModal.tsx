@@ -11,16 +11,11 @@ import type {
 import { DirectWorkItemSetupDialog } from './new-workspace/setup/DirectWorkItemSetupDialog'
 import { agentChoicePending } from '@/lib/agent-session/launch/inventory/host-chat-program'
 import type { AgentLaunchSurface } from '@/lib/agent-session/launch/routing/agent-session-launch-plan'
-import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import React, { Suspense, useCallback, useRef, useState } from 'react'
 import { useAppStore } from '@/store/index'
 import { lazyWithRetry } from '@/app-shell/startup/lazy-with-retry'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { NewWorkspaceComposerHeader } from './new-workspace/composer/NewWorkspaceComposerHeader'
 import NewWorkspaceComposerCard from '@/components/NewWorkspaceComposerCard'
 import AgentSettingsDialog, {
   restoreAgentSettingsInvoker
@@ -34,8 +29,6 @@ import {
   resolveQuickWorkspaceAgentSelection
 } from '@/lib/workspace/creation/quick-workspace-agent-selection'
 import { useAgentsOfferedForLaunch } from '@/lib/agent-session/launch/inventory/host-chat-program-acquisition'
-import { shouldAllowComposerEnterSubmitTarget } from '@/lib/workspace/creation/new-workspace-enter-guard'
-import { isScreenSubmitShortcut } from '@/lib/keyboard/screen-submit-shortcut'
 import type { TuiAgent } from '../../../shared/agent-launch/catalog/tui-agent'
 import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
@@ -43,7 +36,9 @@ import { getWorkspaceComposerInitialFocusTarget } from '@/lib/workspace/creation
 import '@/components/sidebar/workspace-creation/folder/folder-workspace-source-repos'
 import { getFolderWorkspacePrimaryActionLabel } from '@/components/sidebar/workspace-creation/folder/folder-workspace-source-selection'
 import { useAgentMenuObservation } from '@/components/tab-bar/use-new-tab-agent-menu-rows'
-import { addAppKeyListener, removeAppKeyListener } from '@/lib/keyboard/app-keyboard-router'
+import { useAgentSessionDialog } from './new-workspace/agent-session/use-agent-session-dialog'
+import { initialComposerAgent } from './new-workspace/agent-session/last-session-agent-preference'
+import { useComposerSubmitShortcut } from './new-workspace/composer/use-composer-submit-shortcut'
 
 // Keep Add Project’s clone/SSH machinery outside the composer entry render, matching App loading.
 const HostedAddRepoDialog = lazyWithRetry(
@@ -161,8 +156,8 @@ function QuickTabBody({
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
   const agentSettingsInvoker = useRef<HTMLButtonElement | null>(null)
   // User picks outrank newly detected preferences. Derive from an override so detection stays current without an effect-driven extra commit.
-  const [quickAgentOverride, setQuickAgentOverride] = useState<TuiAgent | null | undefined>(
-    modalData.recovery?.agent
+  const [quickAgentOverride, setQuickAgentOverride] = useState<TuiAgent | null | undefined>(() =>
+    initialComposerAgent(modalData)
   )
   // The picker rows' workspace when known, so the offered list and the rows read one host.
   const launchWorkspace =
@@ -210,9 +205,22 @@ function QuickTabBody({
     quickAgentPick.agent === quickAgent && quickAgentPick.contextKey === observation.contextKey
       ? quickAgentPick.draft
       : undefined
-  const quickAgentSurface = quickAgentPick.agent === quickAgent ? quickAgentPick.surface : undefined
+  const session = useAgentSessionDialog({
+    enabled: modalData.agentSession === true,
+    agent: quickAgent,
+    cardProps,
+    executionHostId: launchWorkspace.executionHostId
+  })
+  // A chosen account applies to terminal launches only, so it overrides the picked surface.
+  const quickAgentSurface = session.account
+    ? 'terminal'
+    : quickAgentPick.agent === quickAgent
+      ? quickAgentPick.surface
+      : undefined
   const launchSelection = observation.selectionFor(quickAgent, quickAgentSurface)
-  const createDisabled = formDisabled || !launchSelection.ready
+  const createDisabled =
+    (session.startsInProject ? session.projectStartDisabled : formDisabled) ||
+    !launchSelection.ready
 
   const handleQuickAgentChange = useCallback(
     (
@@ -229,6 +237,21 @@ function QuickTabBody({
 
   const handleCreate = useCallback(async (): Promise<void> => {
     if (createDisabled) {
+      return
+    }
+    const launchDraft =
+      pickerDraft && session.account
+        ? { ...pickerDraft, surface: 'terminal' as const }
+        : pickerDraft
+    const prepared = await session.prepareStart({
+      choice: launchSelection.choice,
+      draft: launchDraft,
+      entry: quickAgentPick.entry
+    })
+    if (prepared !== 'create-worktree') {
+      if (prepared === 'started' && !isSubmissionCancelled()) {
+        onClose()
+      }
       return
     }
     await submitQuick(quickAgent, {
@@ -267,7 +290,7 @@ function QuickTabBody({
         })
       },
       ...quickWorkspacePickerInputs(
-        pickerDraft,
+        launchDraft,
         quickAgentPick.entry,
         launchSelection.choice?.executionHostId
       )
@@ -281,7 +304,9 @@ function QuickTabBody({
     quickAgentPick,
     isSubmissionCancelled,
     modalData,
-    cardProps
+    cardProps,
+    session,
+    onClose
   ])
   const {
     addProjectOpen,
@@ -300,59 +325,30 @@ function QuickTabBody({
     (option) => option.id === cardProps.selectedProjectId
   )
   const isFolderWorkspaceTarget = selectedProjectOption?.kind === 'project-group'
-  const primaryActionLabel = isFolderWorkspaceTarget
+  const createActionLabel = isFolderWorkspaceTarget
     ? getFolderWorkspacePrimaryActionLabel(t)
     : cardProps.selectedRepoIsGit
       ? t('auto.components.NewWorkspaceComposerModal.createWorktree', 'Create worktree')
       : t('auto.components.NewWorkspaceComposerModal.createWorkspace', 'Create workspace')
+  const startSessionLabel = t('components.newAgentSession.start', 'Start session')
+  const primaryActionLabel = session.startsInProject ? startSessionLabel : createActionLabel
 
   // Let Radix own Escape for the topmost layer. This dialog auto-focuses input, so page-style blur-first handling swallowed its first Escape.
   const nestedDialogOpen = agentSettingsOpen || addProjectOpen || nestedDialogCount > 0
-  useEffect(() => {
-    if (!active || nestedDialogOpen) {
-      // Nested dialogs own input; never submit the underlying composer through this capture handler.
-      return
-    }
-    const onKeyDown = (event: KeyboardEvent): void => {
-      // Creation uses the screen submit chord, outside configurable app commands.
-      if (!isScreenSubmitShortcut(event)) {
-        return
-      }
-      const target = event.target
-      if (!(target instanceof HTMLElement)) {
-        return
-      }
-      if (!shouldAllowComposerEnterSubmitTarget(target, composerRef.current)) {
-        return
-      }
-      if (createDisabled || composerRef.current?.hasAttribute('data-sparse-preset-editing')) {
-        return
-      }
-      event.preventDefault()
-      void handleCreate()
-    }
-    addAppKeyListener('keydown', onKeyDown)
-    return () => removeAppKeyListener('keydown', onKeyDown)
-  }, [active, composerRef, createDisabled, handleCreate, nestedDialogOpen])
+  useComposerSubmitShortcut({
+    enabled: active && !nestedDialogOpen,
+    composerRef,
+    createDisabled,
+    onSubmit: handleCreate
+  })
 
   return (
     <>
-      <DialogHeader className="gap-1">
-        <DialogTitle className="text-base font-semibold">
-          {isFolderWorkspaceTarget
-            ? t(
-                'auto.components.sidebar.FolderWorkspaceComposerDialog.title',
-                'Create Folder Workspace'
-              )
-            : primaryActionLabel}
-        </DialogTitle>
-        <DialogDescription className="sr-only">
-          {t(
-            'components.newWorkspace.createDescription',
-            'Choose the project and workspace name. Select an agent if you want to start one.'
-          )}
-        </DialogDescription>
-      </DialogHeader>
+      <NewWorkspaceComposerHeader
+        agentSession={session.enabled}
+        folderWorkspace={isFolderWorkspaceTarget}
+        createActionLabel={primaryActionLabel}
+      />
       <NewWorkspaceComposerCard
         contextualTourSource={modalData.contextualTourSource}
         // Keep focus rings and the Advanced hover highlight inside the scroll padding.
@@ -372,6 +368,7 @@ function QuickTabBody({
         // Chips list offered agents, keeping a pick whose chat is still being learned.
         detectedAgentIds={chipAgentIds}
         createDisabled={createDisabled}
+        {...session.cardProps}
         agentSurfaceRows={
           cardProps.agentRows
             ? {
@@ -384,6 +381,9 @@ function QuickTabBody({
             : undefined
         }
         primaryActionLabel={primaryActionLabel}
+        {...(session.enabled
+          ? { primaryActionText: t('components.newAgentSession.startShort', 'Start') }
+          : {})}
         onOpenAgentSettings={(invoker) => {
           agentSettingsInvoker.current = invoker
           setAgentSettingsOpen(true)

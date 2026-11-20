@@ -13,6 +13,19 @@ import type { AgentSessionSlashCommand } from '../../../../../../shared/agent-se
 import type { StructuredAgentContextUsage } from '../../../../../../shared/agent-session/structured-agent-session-context-usage'
 import type { NativeChatComposerErrorDetail } from '../controls/native-chat-composer-error-detail'
 import type { NativeChatSideChat } from '../../messages/actions/use-native-chat-side-chat'
+import type { ExecutionHostId } from '../../../../../../shared/execution-host'
+
+/** Where a session runs, as its registry record says. */
+export type NativeChatComposerSessionPlace = {
+  executionHostId: ExecutionHostId
+  /** The machine's name in the registry; this computer goes by its own. */
+  machine: string
+  cwd: string | null
+  /** The cwd's last path segment. */
+  project: string | null
+  /** The workspace the registry linked the session to, under this window's id. */
+  worktreeId: string | null
+}
 
 export type NativeChatStructuredComposerTransport = {
   capturePresentation: CaptureStructuredAgentSessionPresentation
@@ -49,6 +62,11 @@ export type NativeChatStructuredComposerTransport = {
   /** The session's context usage; null until the journal can state it. */
   contextUsage?: StructuredAgentContextUsage | null
   worktreeId?: string
+  /**
+   * A session Seal does not host: the footer shows where its record says it runs, never the tab's
+   * workspace. Null while the registry lists no record.
+   */
+  sessionPlace?: NativeChatComposerSessionPlace | null
   /** Present only where the host can set this session's goal. */
   threadGoal?: { setObjective: (objective: string) => Promise<boolean> }
   /** `/btw`; absent where Orca can't fork this chat, so the command stays the agent's. */

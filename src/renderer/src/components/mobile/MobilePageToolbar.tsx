@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTranslate } from '@/i18n/use-translate'
+import { PageHeader } from '@/components/page-layout/PageLayout'
 
 type MobilePageToolbarProps = {
   showMobileButton: boolean
@@ -26,32 +27,29 @@ export function MobilePageToolbar({
       )
 
   return (
-    <div className="mp-page-toolbar">
-      <div className="mp-page-toolbar-primary">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={showMobileButton ? 'default' : 'secondary'}
-              size="sm"
-              className="mp-sidebar-toggle-btn"
-              onClick={onToggleMobileSidebarButton}
-              aria-label={sidebarToggleLabel}
-            >
-              {sidebarToggleLabel}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={6}>
-            {sidebarToggleTooltip}
-          </TooltipContent>
-        </Tooltip>
-      </div>
+    <PageHeader title={t('auto.components.sidebar.SidebarNav.1b5c41caee', 'Orca Mobile')}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant={showMobileButton ? 'outline' : 'secondary'}
+            size="sm"
+            onClick={onToggleMobileSidebarButton}
+            aria-label={sidebarToggleLabel}
+          >
+            {sidebarToggleLabel}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" sideOffset={6}>
+          {sidebarToggleTooltip}
+        </TooltipContent>
+      </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
-            className="mp-page-toolbar-close size-7 shrink-0 rounded-full"
+            className="size-7 shrink-0 rounded-full"
             onClick={onClose}
             aria-label={t(
               'auto.components.mobile.MobilePageToolbar.9883b58693',
@@ -65,6 +63,6 @@ export function MobilePageToolbar({
           {t('auto.components.mobile.MobilePageToolbar.ad2284a9e2', 'Close · Esc')}
         </TooltipContent>
       </Tooltip>
-    </div>
+    </PageHeader>
   )
 }

@@ -1,6 +1,6 @@
 import { mobileNativeChatMarkdownImageBlock } from './mobile-native-chat-markdown-image-block'
 import { useCallback, useContext, useEffect, useState } from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native'
 import { INLINE_TEXT_SELECTION } from '../../../components/inline-text-selection'
 import { MobileNativeChatMarkdown } from './MobileNativeChatMarkdown'
 import {
@@ -14,9 +14,10 @@ import { withoutPendingNativeChatVisualDirectiveTail } from '../../../../../src/
 import { MobileNativeChatRowOverlaysContext } from './mobile-native-chat-row-overlays'
 import { MobileNativeChatMarkdownRowKeyContext } from './mobile-native-chat-disclosure-store'
 import {
+  hostChatImageRef,
   isRenderableImageUri,
   readHostChatImage,
-  type MobileNativeChatImageSource
+  type MobileNativeChatRowImageSource
 } from '../visual/mobile-native-chat-image-preview'
 import {
   CHAT_PROSE_SCALE,
@@ -28,7 +29,7 @@ import type { MobileNativeChatVisualRender } from '../visual/mobile-native-chat-
 import { useMobileColorScheme } from '../../../theme/use-mobile-color-scheme'
 import { useMobileTranslation } from '../../../i18n/use-mobile-translation'
 import { nativeChatHostStatusCopy } from './native-chat-notice-copy'
-import { pressedStyle } from '../../../theme/mobile-theme'
+import { colors, pressedStyle } from '../../../theme/mobile-theme'
 
 export function Prose({
   rowKey,
@@ -114,7 +115,7 @@ export function Prose({
   return null
 }
 
-// Host paths cannot load on the phone; the chat's host reads them, and a refused read stays a placeholder.
+// Host paths and host-only URLs cannot load on the phone; the chat's host reads them, and a refused read stays a placeholder.
 function ImageAttachment({
   block,
   fontScale,
@@ -129,9 +130,9 @@ function ImageAttachment({
   const { openImage, imageSource } = useContext(MobileNativeChatRowOverlaysContext)
   const direct = block.url ?? block.path
   const renderable = isRenderableImageUri(direct) ? direct : null
-  const hostPath = !renderable && imageSource && block.path ? block.path : null
+  const hostPath = !renderable && imageSource ? hostChatImageRef(imageSource, block) : null
   const [hostRead, setHostRead] = useState<{
-    source: MobileNativeChatImageSource
+    source: MobileNativeChatRowImageSource
     path: string
     uri: string | null
   } | null>(null)
@@ -152,12 +153,18 @@ function ImageAttachment({
   const uri = renderable ?? read?.uri
   const label = block.alt ?? t('chat.nativeChatProse.attachedImage', 'Attached image')
   if (hostPath && !read) {
-    return <View style={styles.imageThumb} accessibilityLabel={label} />
+    return (
+      <View style={[styles.imageThumb, styles.imageThumbLoading]} accessibilityLabel={label}>
+        <ActivityIndicator size="small" color={colors.textMuted} />
+      </View>
+    )
   }
   if (!uri) {
+    // A URL only the host reads names nothing to the reader.
+    const shownUrl = hostPath ? undefined : block.url
     return (
       <Text style={[styles.imageRef, { fontSize: TEXT_SIZE * fontScale }]}>
-        🖼 {block.alt ?? block.path ?? block.url ?? t('chat.nativeChatProse.image', 'image')}
+        🖼 {block.alt ?? block.path ?? shownUrl ?? t('chat.nativeChatProse.image', 'image')}
       </Text>
     )
   }

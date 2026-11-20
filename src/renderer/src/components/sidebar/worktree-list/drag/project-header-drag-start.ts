@@ -15,6 +15,7 @@ import {
   type ProjectHeaderDragSession
 } from './project-header-drag-contract'
 import type { Repo } from '../../../../../../shared/repo-types'
+import { canDropOnSplitView } from '../../../split-view/split-view-drop-target'
 
 export function createProjectHeaderDragSession(args: {
   event: PointerEvent<HTMLElement>
@@ -43,8 +44,8 @@ export function createProjectHeaderDragSession(args: {
   )
   const sidebarRepoHeaderIds =
     rootProjectHeaderKeys ?? args.sidebarRepoHeaderIdsByBucket.get(bucketKey) ?? []
-  // A lone project cannot move within its bucket; preserve the collapse click instead.
-  if (sidebarRepoHeaderIds.length <= 1) {
+  // A lone project cannot move within its bucket; unless a pane can take it, keep the collapse click.
+  if (sidebarRepoHeaderIds.length <= 1 && !canDropOnSplitView()) {
     return null
   }
   const container = args.getScrollContainer()
@@ -74,6 +75,7 @@ export function createProjectHeaderDragSession(args: {
     startX: args.event.clientX,
     startY: args.event.clientY,
     latestPointerY: args.event.clientY,
-    promoted: false
+    promoted: false,
+    paneDrop: null
   }
 }

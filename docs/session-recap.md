@@ -1,0 +1,451 @@
+# Session recap
+
+A rolling recap of each agent session: a stable title for its row, and an overview you read when
+you come back to it. It runs on the same utility model, summarizer host, cache folder and registry
+sync as the one-line status summaries ([AI session summaries](./TESTING-seal-all.md)); there is no
+second pipeline.
+
+The model that writes it is chosen in Settings > Session summaries & recaps: any provider Seal has
+an account for, by default the one the summaries use. See
+[Model providers for session summaries and recaps](./summaries-providers.md). The figures below are
+for the default, Cloudflare Workers AI.
+
+## The problem
+
+Brian runs many agent sessions across machines and returns to each one hours or days later. By
+then he has forgotten:
+
+- what the session was for, and why he started it;
+- what he asked along the way, and which of those the agent never got to;
+- what the agent asked _him_ that he never answered;
+- what he was supposed to do himself as a result (run a command, review a PR, set a secret);
+- what was decided, and what was touched.
+
+The transcript has all of it, but as hundreds of messages and tool calls. The one-line summary
+only describes the last stop. The session's label is its first prompt, which stops describing the
+session after the first turn.
+
+## User stories
+
+1. **Recognize it in a list.** "I look at Active agents and each row says what that session is
+   about, not what I typed first. If I named it myself, my name stays."
+2. **Remember it on open.** "I open a session and, without scrolling, see what it's for, where it
+   stands, and what changed since I last looked."
+3. **See what's on me.** "Rows that have a question for me, or something I still have to do, carry
+   a badge. I can tick those off, and they stay ticked on my phone too."
+4. **Catch what was missed.** "I can see requests of mine the agent skipped, and questions it
+   asked that I never answered."
+5. **Go to the source.** "Every line in the recap takes me to the message it came from."
+6. **Trust the cost.** "It never burns through the free Workers AI allocation, and when it can't
+   run it says so instead of showing something stale as if it were fresh."
+
+## What the recap contains
+
+| Section               | What it holds                                                                                   | Made by        |
+| --------------------- | ----------------------------------------------------------------------------------------------- | -------------- |
+| Title                 | Up to six words naming the session. Used as its label (see precedence).                         | model, guarded |
+| Goal and why          | One sentence: what he wants and the purpose behind it.                                          | model          |
+| Where it stands       | One or two sentences on the current state.                                                      | model          |
+| Since you last looked | What the agent did, decided or left aside after his previous visit, newest first.               | host, no model |
+| Open questions        | Questions the agent put to him that are still unanswered. Can be ticked or dismissed.           | model          |
+| Action items          | Things he must do himself: said he would, or the agent told him to. Can be ticked or dismissed. | model          |
+| Not addressed         | Requests of his the judge found still waiting once the agent's turn was over (see below).       | judge, host    |
+| What I asked          | Each of his requests, condensed to a line, oldest first.                                        | model          |
+| What the agent did    | Work items, each `done`, `in-progress` or `blocked`.                                            | model          |
+| Decisions             | Choices made, by either side.                                                                   | model          |
+| Files, PRs and links  | Files the agent edited, pull requests and URLs mentioned.                                       | host, no model |
+
+Two sections cost nothing. _Files, PRs and links_ is read off the transcript's edit tool calls
+(their paths only) and the URLs in the prose. _Since you last looked_ compares each item's arrival
+time with the previous visit. Both are exact, which a model would not be.
+
+_Since you last looked_ lists only the agent's side (work, decisions, requests left aside).
+Questions and action items that arrived in the same window are not repeated there: they stay in
+their own lists, where they can be ticked, and carry a "New" mark.
+
+## Information model
+
+```ts
+type SessionRecap = {
+  version: 1
+  title: string | null
+  titleChangedAt: number | null
+  goal: string | null
+  standing: string | null
+  asked: RecapItem[]
+  did: RecapItem[] // each carries `state`
+  questions: RecapItem[]
+  ignored: RecapItem[]
+  actions: RecapItem[]
+  decisions: RecapItem[]
+  references: RecapReference[]
+  updatedAt: number
+  coveredFrom: number // transcript byte offset the recap starts at (0 = whole session)
+  coveredTo: number // transcript byte offset it has read up to
+  nextItemId: number
+  degraded?: true // the host wrote the newest requests down itself; the model has yet to read them
+  anchor?: { sessionId: string; at: number } // where reading stopped: see "Forks and resumes"
+}
+
+type RecapItem = {
+  id: string // `q3`: stable for the life of the session
+  text: string
+  messageId: string | null // the transcript message it came from (`o<byte offset>`)
+  at: number // when it entered the recap
+  state?: 'done' | 'in-progress' | 'blocked'
+}
+
+type RecapReference = {
+  kind: 'file' | 'pr' | 'link'
+  label: string
+  target: string
+  messageId: string | null
+  at: number
+}
+```
+
+Stored beside it, per session and owned by the user rather than the model:
+
+```ts
+type RecapMarks = Record<string /* item id */, 'done' | 'dismissed'>
+lookedAt: number | null // this visit
+previousLookedAt: number | null // the visit before: what "since you last looked" measures from
+```
+
+What rides on every `LiveSession` in the registry (and so reaches every client through the sync
+that already carries `summary`):
+
+```ts
+recap?: { title: string | null; rev: number; questions: number; actions: number; updating?: true }
+```
+
+`questions` and `actions` count only unticked, undismissed items, so the badge is right without
+fetching the recap. `rev` rises on every change, including a tick on another device; a client
+holding an older `rev` fetches the recap again. Nothing else is pushed.
+
+### Why item ids are the host's
+
+The model never rewrites the recap. It returns a **delta**: items to add, items to update by id,
+ids to resolve. The host assigns ids, so an item keeps its id for as long as it exists. That is
+what lets a tick survive the next recompute, and it keeps every untouched line byte-for-byte the
+same, so nothing flickers. A delta is also a fraction of the output tokens of a full rewrite, and
+output is the expensive side (36.4 neurons per 1k tokens against 5.5 for input).
+
+### Title precedence
+
+1. The name he set in Seal (`customTitle`).
+2. The name he set in the agent itself (Claude's `/rename`, a `custom-title` transcript record;
+   surfaced as `titleNamed`).
+3. The recap title.
+4. The provider's title (its own summary, else the first prompt), then the project.
+
+The recap never writes to 1 or 2 and is never stored in their place. One function,
+`liveSessionLabel`, decides this for desktop, mobile and notifications.
+
+**Stability.** The title is only considered when a recap pass runs (never per message). The model
+is told to return `null` unless the session's purpose changed. The host then refuses a
+replacement that shares half or more of its significant words with the current title (a
+rephrasing), and refuses any change within 10 minutes of the last one. A session that pivots gets
+a new title once; one that keeps working on the same thing keeps its title.
+
+## When it is recomputed
+
+Always incrementally: the previous recap, compacted, plus the messages since `coveredTo`. The
+transcript is never re-read from the start. `session-recap-pass-schedule.ts` decides when;
+`session-recap-engine.ts` does the pass.
+
+| Trigger                                                                     | Rule                                                                                                                                                                                                                                                                                                                     |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The turn ends (`waiting-input`, `your-turn`, `idle`, `done`, `errored`)     | One pass 2.5 seconds after the stop, once the transcript has settled. Turns that end within 20 seconds of the last turn-end pass share the next one. It never waits for a pass made while the session worked. On an agent CLI provider, which starts a process per request, turn-end passes are 4 minutes apart instead. |
+| The session is working (`working`, `running-shell`)                         | From 4 minutes into the turn, and 4 minutes after any pass, one pass as soon as the agent has written 1,200 characters of new prose (checked at most once a minute, on new activity). After 10 minutes without a pass, any new prose is enough. A turn that ends sooner gets only its turn-end pass.                     |
+| The turn is parked (`waiting-subagent`, `waiting-task`, `needs-permission`) | The turn is not over, and the agent has said what it will for now: one pass 2.5 seconds after it parks, taking whatever it said, and at most one every 4 minutes while it stays parked.                                                                                                                                  |
+| The session ends                                                            | A session this host watched run gets one last pass as it ends. History that a scan lists and nobody watched is recapped when someone opens it.                                                                                                                                                                           |
+| A pass failed                                                               | Tried again after 30 seconds, then 2 minutes, then 10 minutes, and after that at the next turn end. While the provider is paused (a rate limit), the retry waits for the pause to end instead.                                                                                                                           |
+| He opens the session, or comes back to the window or app                    | If the recap is behind, one pass now. While a turn runs, at most one a minute; after a pass that just failed, not before the first retry delay.                                                                                                                                                                          |
+| Refresh recap                                                               | A pass now. When nothing is new it rebuilds from the recent history instead (ticks kept by matching text). A rebuild whose replies cannot be read leaves the recap it would have replaced.                                                                                                                               |
+| The transcript shrank (rewritten)                                           | Start over from the recent history.                                                                                                                                                                                                                                                                                      |
+
+A pass made before the turn is over (working or parked) says so in its request: the agent's last
+message is unfinished, work in it is recorded as in progress, never done, and _where it stands_
+says what the agent is doing now. Whether the turn is over is the registry's status when the pass
+runs, not the kind of pass. The turn-end pass that follows settles it. While the agent has written
+too little, the check asks no model and leaves `coveredTo` where it was.
+
+**Behind.** A recap is out of date when the session's last activity is later than both the
+recap's last change and the last pass that read the transcript to its end. A pass that reads new
+rows and finds nothing to say (a compaction, a hook) leaves the recap as it was, and the recap is
+not behind for that.
+
+### Forks and resumes
+
+`coveredTo` is a byte offset into one transcript file. A fork or a resume continues the
+conversation in a new file, where that offset means nothing. The recap therefore also keeps
+`anchor`: the session id the offset belongs to and the time of the last message read. When the
+recap has moved to another session id, the pass pages back through the new transcript to the last
+message at or before that time and reads only what follows, so what was copied over is not read
+twice and what was said since is not skipped.
+
+## Not addressed: the judge
+
+The model that writes the recap does not decide what was left undone. After each pass a second
+step (`session-recap-requests.ts`) keeps one request per _What I asked_ item and asks a judge
+where each unsettled one stands. Everything else is code.
+
+- **One model, no fallback to another.** The judge is Cloudflare Clef, a decision model,
+  whichever provider writes the recap. When it fails, times out or the host has no account for
+  it, the request stays "Open". No other model is asked: the thresholds below belong to Clef
+  alone.
+- **Two accounts for the one model** (`utility-model/clef-decisions.ts`). Clef is asked on
+  OpenRouter when the host has an OpenRouter key (`cloudflare/clef`, at
+  `POST /api/alpha/decisions`), and on the Workers AI account (`@cf/cloudflare/clef`) when it
+  has none, when OpenRouter fails, or when OpenRouter's share of the day is spent. OpenRouter
+  also lists copies of Clef on other hosts, some quantized; the request allows Cloudflare's own
+  host only (`provider.only`), so the answers are the ones the thresholds were measured on. The
+  question book and the cache are the same on both. Any other judge on the host asks through
+  the same client: `getUtilityModelHost().clef.decide(model, { body })`, where `model` is `clef`
+  or `clef-flash` and `body` holds the `state` and the typed `questions`.
+- **The OpenRouter key** is the one Settings > Accounts > OpenRouter saves; on a host with no
+  Settings it is `OPENROUTER_API_KEY` in the environment, or `apiKey` in
+  `~/.config/seal/openrouter.json`.
+- **One question per criterion.** Clef is sent the request and the conversation after it, and
+  answers five yes/no questions with a probability each: done, did part, declined, withdrawn,
+  left undone (`session-recap-judge-questions.ts`). Each has its own threshold, measured on
+  labelled sessions (done 0.38, did part 0.95, declined 0.93, withdrawn 0.29, left undone 0.57).
+  Code combines them in a fixed order: withdrawn, declined, done, did part, left undone. The
+  thresholds are pinned to the model and to a hash of the wording; with other wording the judge
+  does not run.
+- **An explicit verdict before "Not addressed".** A request is listed only when the judge said
+  it was left undone and nothing else fired, the agent's turn is over, the reader saw the whole
+  conversation up to where the recap reads, and the session has not moved on since. In every
+  other case, a failed call included, it is "Open", or "In progress" while the turn runs.
+- **The turn's state is the registry's, not the model's.** A turn is running while the session
+  is `working`, `running-shell`, `waiting-subagent`, `waiting-task` or `needs-permission`, and
+  when the user's message is the last thing said.
+- **What the judge reads** (`session-recap-conversation.ts`): his message, then one line per
+  thing said or done after it. See _Reading and chunking the transcript_ for what a line may
+  hold. A conversation longer than 24,000 characters keeps its start and its end, and a
+  request judged on a cut conversation is never listed as not addressed.
+- **Cache and log.** An answer is kept under a hash of the model, the wording, the request and
+  the conversation (`session-recaps/judge-answers.json`), so nothing unchanged is paid for
+  twice. Every call is logged with its model, hash, tokens, cost, time and outcome, and with
+  nothing of the conversation (`session-recaps/judge-calls.json`, the last 500).
+- **Limits.** At most six requests are judged per pass, newest first. Done and withdrawn are
+  final; a request more than twenty of his messages old is never listed as not addressed.
+
+The stored recap keeps the read step's own `ignored` list untouched. What clients receive in
+`ignored` is the list above, derived when the recap is read, from `requests`.
+
+## Reading and chunking the transcript
+
+What reaches the model that writes the recap is conversation prose only: his messages and the
+agent's own text. Each message is stripped of code blocks and terminal escapes, passed through
+the app's redactor, and clipped (his messages to 1,500 characters; an agent turn, merged into one
+entry, to 1,800 with its end favoured, where the outcome and any question sit).
+
+The judge step, which decides whether a request of his was dealt with, is also shown what the
+agent did after it, one line per tool call: the path of a file it edited or used a tool on, the
+command line it ran (clipped to 120 characters, credentials replaced by `redactRecapCommand`), and
+the prompt and final report of a subagent it started. What tools print, the contents of files and
+reasoning are never sent, to either step.
+
+- **Incremental pass.** Read forward from `coveredTo` (`readTranscriptForward`, the reader the
+  chat view tails with). Typically one turn: a few hundred tokens.
+- **First pass.** Page backward from the end (`transcriptPage`) until 3 chunks' worth of prose
+  is collected or the start is reached (`session-recap-reading.ts`). Older history is left out
+  and `coveredFrom` says so; the UI states that the recap covers recent history only. The first
+  prompt still informs the goal: it is the provider title the registry already holds.
+- **Chunks.** 24,000 characters of prose each (about 6.9k tokens), processed oldest to newest,
+  each call carrying the rolling recap forward. At most 3 chunks a pass, for a first pass on its
+  own as for one he asked for, so a long session's first recap is the one Refresh would write.
+  Anything beyond that is dropped from the old end, never from the new.
+- **Rows that ask for nothing.** Some rows on the user's side of a transcript are not requests:
+  the agent's own record of an interrupt (`[Request interrupted by user]`), a `!` command he ran
+  in the agent's shell, and a turn that holds only an image. They are left out of the digest, so
+  none becomes a _What I asked_ line that nothing could ever address.
+- **Where a request comes from.** A request is his, so it belongs to one of his messages. The
+  model cites the agent's reply, or no message, for about a quarter of them. The host moves such
+  a request to the user message that reply answers, or to the chunk's only one
+  (`session-recap-request-sources.ts`). The judge needs that message to know which conversation
+  follows the request; a request with none stays "Open".
+
+The context window (131k tokens) is never the constraint; the daily allocation is.
+
+## Neuron budget
+
+Rates ([Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/)):
+`glm-4.7-flash` 5,500 neurons per M input tokens and 36,400 per M output; the fallback
+`gemma-4-26b-a4b-it` 9,091 and 27,273; the judge, `clef`, 21,818 per M input tokens and nothing
+for output. Free allocation: 10,000 neurons a day, shared with the
+status summaries. Tokens are estimated at 3.5 characters each.
+
+| Call                                      | Input tokens                     | Output tokens | Neurons |
+| ----------------------------------------- | -------------------------------- | ------------- | ------- |
+| Typical update (one turn)                 | 450 system + 600 recap + 600 new | 250           | ~18     |
+| Update while working (1,200+ characters)  | 450 system + 600 recap + 500 new | 250           | ~18     |
+| Full chunk (first pass, long gap)         | 450 + 900 + 6,900                | 700           | ~71     |
+| Worst case (repair retry of a full chunk) | 2 x 8,250 + 600                  | 2 x 1,000     | ~167    |
+| Status summary, for comparison            | 600                              | 30            | ~4.4    |
+| One judged request (typical)              | 450 questions + 400 conversation | 0             | ~19     |
+
+A day of 150 turns across all sessions is about 2,700 neurons of recaps plus 660 of summaries,
+and the judge adds about 19 for each request it has not already answered. A pass runs at every
+turn end, so a busy day goes past the free allocation: the tiers sit above it on purpose, and the
+last one is about $0.22 a day beyond the allowance. A session that works without stopping adds at
+most 15 passes an hour, about 270 neurons. The host keeps its own tally (per UTC day, persisted,
+`session-recap-budget.ts`) and enforces three tiers, each leaving room for the next:
+
+- **Passes inside a turn stop at 5,000 neurons** of recap work a day. After that a session is
+  recapped when its turn ends.
+- **Passes at a turn's end stop at 20,000 neurons**. Rows keep their last recap and the panel
+  says updates resume tomorrow.
+- **Passes he asks for** (open, Refresh) run until 30,000.
+- **One tally per provider.** The read step is counted against the provider it runs on, and the
+  judge against the account that answered it: OpenRouter or Workers AI. The judge's calls stop
+  with the tier of the pass they follow on each account's own tally, so when OpenRouter's is
+  spent Workers AI is asked, and the judge rests when both are. Clef costs the same on
+  Cloudflare's host either way, so one rate counts both. A model with no Workers AI rate is
+  counted at the dearest one (9.09 neurons per 1k input tokens, 36.4 per 1k output), so the caps
+  hold on every provider.
+- A 429 or a spent allocation pauses every utility request to that provider through its
+  `UtilityModelService`, as it does for summaries; the recap shows the same "paused until" note,
+  and the pass that failed runs again when the pause ends.
+
+Recaps can be turned off on their own (Settings > Session summaries & recaps) without losing the
+one-line summaries, and can run on a different provider or model than the summaries.
+
+## Structured output
+
+`glm-4.7-flash` is not on Workers AI's JSON Mode list and the fallback model differs, so the
+schema is enforced by the host, not the API:
+
+1. The prompt gives the delta's shape and asks for one JSON object and nothing else.
+2. The reply is read leniently: code fences and stray prose around the object are dropped, and
+   section lists written beside `add` instead of inside it are read from where they are.
+3. It is validated with zod. A wrong field or item is discarded on its own; the reply fails only
+   when it is not an object or holds nothing recognizable. Text is clipped, `ref`s that name no
+   message in the chunk become unlinked items, ids that name no item are ignored.
+4. On failure, **one retry** that shows the model its reply and the error.
+5. On a second failure, **the next model** is asked the same request, with the same one retry
+   (`session-recap-model-read.ts`). The service cannot do this on its own: only the caller knows
+   the text it got was unusable, so it names the models to pass over (`avoid`).
+6. When no model's reply can be read, the pass **fails and nothing moves**: no item is written
+   and `coveredTo` stays where it was. The scheduler tries it again.
+7. When the next pass cannot be read either, the **host writes the requests down itself**: his
+   messages become "What I asked" lines (their first line), files and links are still collected,
+   and the recap is marked degraded so the panel can say so. The cursor is still held, so the
+   span stays the model's to read. The first pass the model can write reads it again; its
+   request for a message takes the id of the host's line for that message, so a tick or a
+   verdict on it stays, and the degraded mark goes.
+
+A failure of the provider itself (network, auth, rate limit) is different: nothing advances, the
+panel shows why, and the retries above apply. Inside the provider's service, a model that times
+out or answers with a server error is that model's failure and not the provider's: it is rested
+for a minute and the fallback model answers the same request
+(`utility-model-service.ts`). None of this applies to the judge, which is one model: its only
+second try is the same model on the host's other account.
+
+```jsonc
+{
+  "title": "Recap panel for agent sessions", // or null to keep
+  "goal": "…", // or null to keep
+  "standing": "…",
+  "add": {
+    "asked": [{ "text": "…", "ref": "m3" }],
+    "did": [{ "text": "…", "state": "in-progress", "ref": "m4" }],
+    "questions": [],
+    "ignored": [],
+    "actions": [],
+    "decisions": []
+  },
+  "update": [{ "id": "w2", "state": "done" }],
+  "resolve": ["q1", "t3"]
+}
+```
+
+## Where it runs and how it syncs
+
+- `SessionSummariesHost` owns it, next to the status summaries: the same provider abstraction
+  (`UtilityModelClient`: fallback model, pause on 429), same availability check, same settings
+  store, same registry decorator and `republish`.
+- State lives in `<userData>/session-recaps/` through `LiveSessionJsonStore` (atomic, mode 600),
+  the store annotations use. It follows a session through a resume (`replacedBy`), as
+  annotations do.
+- Clients read and change it over three runtime RPC methods, used alike by the desktop renderer
+  and the phone: `sessionRecap.get`, `sessionRecap.refresh`, `sessionRecap.mark`.
+- **A session has one recap, kept by the host that runs it.** A Seal server recaps every session
+  in its registry as it stops. A desktop paired to it makes none for those sessions. The row's
+  brief arrives with the server's own record of the session, over the watch the desktop lists a
+  server's sessions from, and the desktop forwards a read, a Refresh or a tick to the server over
+  the same three methods (`server-session-recaps.ts`). That holds for a server that makes no
+  recaps too (recaps off, or no utility model on it): its sessions then have none, and the
+  recap's state says `unavailable`, and `unavailableReason` says why (`recaps-off`,
+  `provider-not-set-up` with the provider, `provider-unchecked`). A server from before the judge
+  still answers; nothing it lists is shown as not addressed. A server from before the reason
+  sends none: the panel reads that server's `sessionSummaries.status` for it instead.
+- A tick on the phone bumps `rev` on the session; the registry stream delivers it to the desktop,
+  which fetches the recap again. No new channel.
+
+## UI
+
+Desktop, inside the session view (`LiveSessionPane`):
+
+- **Recap button** in the header, before Subagents and Tasks, with the number of open questions,
+  open action items and requests not addressed in the attention colour.
+- **Recap bar** under the header, one line: where it stands (else the goal), "N new" when
+  something arrived since he last looked, the same three counts, and "Updated 5m ago", or
+  "Checking the last turn…" while a turn that ended is still unread. It is what he sees on open
+  without doing anything. The whole bar is a button that opens and closes the panel.
+- **Recap panel**, a right-side panel with the chrome Subagents and Tasks use
+  (`LiveSessionSidePanel`). Top to bottom: a note when the recap is not fresh; goal; where it
+  stands; since you last looked; questions for you and your action items (checkbox for done, X to
+  dismiss; settled ones fold under "N done or dismissed", where they can be unticked or brought
+  back); requests; what the agent did (in progress, blocked, then done); decisions; files, PRs and
+  links. The footer has "Updated 5m ago", "recent history only" when older history was left out,
+  and Refresh recap.
+- **Requests**, one section for everything the user asked for. Each row is the request, a chip
+  with where it stands, and the judge's answer that put it there ("Judged done in part · 96%").
+  Order: Not addressed, Partly done, Open and In progress, Declined; then Done, Withdrawn and
+  Dismissed behind "N done, withdrawn or dismissed". An unsettled row has Mark done and Dismiss;
+  a row the user ticked has Not done, a dismissed one Bring back. All four go through
+  `sessionRecap.mark`, and the user's mark stands over the judge's status. A verdict of the
+  judge's own cannot be undone from the row. A recap from a host that keeps no `requests` lists
+  what was asked as plain rows.
+- **The open panel follows the session's row.** The view it read is re-read against the row's
+  status and last activity (`recapViewOnSession`), with the host's own rule, so a turn that starts
+  turns "Not addressed" into "In progress" at once, and a turn that ended but is not read yet
+  shows "Checking the last turn" and calls nothing not addressed.
+- **Unanswered asks.** A Refresh or a tick the host does not answer says so at the top of the
+  panel and the sheet until the next try, and a tick that was never saved is taken back.
+- **Jumping.** Every item with a message behind it is a button. It closes any subagent transcript
+  and reveals the message through the chat list's own navigation (`revealMessage`), which pages
+  older history in until the message is loaded and lands on it the way the turn rail does. A PR or
+  link also has an open-in-browser button.
+- **Badge** on session rows: open questions, open action items and requests not addressed, in the
+  attention colour, absent at zero. The button, the bar, the badge and the phone take their counts
+  from one function, `recapAttention`.
+
+Mobile, over the same RPC and the same synced session:
+
+- The same badge on session rows, and the same label precedence.
+- A recap banner above the transcript: the headline and the counts. Tapping it opens a
+  sheet with the same sections, the same Requests rows and actions, ticks, dismissals and Refresh. Tapping an item closes the sheet
+  and scrolls the transcript to its message, loading earlier pages (up to 12) until it is there.
+- Opening the session, and bringing the app back to the foreground, count as a visit.
+
+Both clients read a recap through `session-recap-view.ts` (what is new, what is open, the order
+of work, the request rows with their order, fold and actions), so they cannot disagree about what
+a recap says. Neither reads `recap.ignored`; that list is for clients from before the judge.
+
+States: writing the first recap; up to date; out of date ("the session has moved on"); updating;
+paused (rate limit) with the time it resumes; budget spent for today; failed with the provider's
+reason; degraded (the model's reply was unusable); recaps off or no utility model on this host,
+where the bar and the phone's banner are absent and the panel states the exact reason
+(`unavailableReason`, also set for an unreadable transcript, an unknown session and a server that
+did not answer, with its message). Where the cause is a setting, the panel holds it: the recap
+switch, or the provider and model rows, applied on the host that keeps the recap, which for a
+server's session is that server.
+
+## Not in this version
+
+- Resolved questions and finished action items leave the list rather than moving to a history.
+- The recap is not searchable and is not fed back to the agent.

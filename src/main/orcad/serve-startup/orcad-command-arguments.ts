@@ -25,7 +25,9 @@ Options:
                            would accept them.
   --json                   Print the one-line server readiness JSON to stdout.
   --no-pairing             Do not create a client pairing offer at startup.
-  --mobile-pairing         Create a mobile-scoped pairing offer with a QR code.
+  --mobile-pairing         Create a mobile-scoped pairing offer with a QR code. On a
+                           loopback bind the phone pairs through Relay; with a network
+                           --bind it pairs over that network.
   --grant-desktop-control  Allow desktop control in the default runtime offer;
                            cannot combine with --no-pairing or --mobile-pairing.
   --recipe-json            Print only the VM recipe line; requires --project-root.

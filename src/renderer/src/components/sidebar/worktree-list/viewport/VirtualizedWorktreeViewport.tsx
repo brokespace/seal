@@ -22,7 +22,7 @@ import { useWorktreeDragRuntime } from '../drag/use-runtime'
 import { useWorktreeDragSession } from '../drag/use-session'
 import { useWorktreeDocumentDrop } from '../drag/use-document-drop'
 import { useWorktreeLineageDropCommit } from '../drag/use-lineage-drop-commit'
-import { withKeyboardPreview } from '../navigation/use-keyboard'
+import { useActiveCardMark } from './use-active-card-mark'
 import { useWorktreeViewportKeyboardNavigation } from './use-keyboard-navigation'
 import { useWorktreeRowGeometry } from './use-row-geometry'
 import { useWorktreeListVirtualizer } from './use-virtualizer'
@@ -36,13 +36,13 @@ import { buildWorktreeVirtualRowContext } from './virtual-row-context'
 import type { RepoHeaderProjectActions } from '../rows/repo-header-project-actions'
 import { getRepoOwnerWorktreeVisibilityDefaults } from '../../../../store/slices/worktrees/listing/worktree-visibility-defaults-by-host'
 import { renderWorktreeVirtualRow } from '../rows/virtual-row-dispatch'
+import { SidebarScrollSectionSlots } from '../../sidebar-scroll-sections'
+import { SIDEBAR_KEYBOARD_SECTION_PROPS } from '../../sidebar-section-keyboard-handoff'
+import { cn } from '@/lib/class-names'
+import { toRowBoxVirtualItem } from './virtual-rows'
+import { getScrollSectionMargin } from './scroll-section-insets'
 
 const EMPTY_HOST_OPTIONS: NonNullable<VirtualizedWorktreeViewportProps['hostOptions']> = []
-
-const WORKTREE_SIDEBAR_SCROLL_STYLE: React.CSSProperties = {
-  // Why: TanStack Virtual owns scroll correction; native overflow anchoring fights it and causes jumps.
-  overflowAnchor: 'none'
-}
 
 export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewport(
   props: VirtualizedWorktreeViewportProps
@@ -93,6 +93,7 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
       getWorktreeVisibilityDefaults: (repo) =>
         getRepoOwnerWorktreeVisibilityDefaults(repo, settings, worktreeVisibilityDefaultsByHost),
       onOpenRepoSettings: handleOpenRepoSettings,
+      onOpenProjectOverview: (repo) => useAppStore.getState().openProjectOverview(repo),
       onOpenWorktreeVisibility: handleOpenWorktreeVisibility,
       onCreateGroupFromRepo: handleCreateGroupFromRepo,
       onMoveProjectToGroup: handleMoveProjectToGroup,
@@ -114,21 +115,19 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
   )
 
   const reveal = useSidebarRevealHighlight()
-  const scrollSuppression = useWorktreeSidebarScrollSuppression(scrollRef)
+  const scrollSuppression = useWorktreeSidebarScrollSuppression(scrollRef, scrollElement)
   const { markDirectScrollInput } = scrollSuppression
   const programmaticScrollMarks = useMemo(() => createProgrammaticScrollMarks(), [])
 
   const { handleContainerKeyDown, handleContainerKeyUp, handleContainerBlur, keyboardPreview } =
     useWorktreeViewportKeyboardNavigation({ props, scrollRef, markDirectScrollInput })
 
-  const rowProps = useMemo(
-    () => withKeyboardPreview(props, keyboardPreview),
-    [keyboardPreview, props]
-  )
+  const { rowProps, marksActiveCard } = useActiveCardMark(props, keyboardPreview)
 
   const renderRows = rows
   const { projection, activeFamilyRoots, firstHeaderIndex } = useLineageRowProjection({
     ...rowProps,
+    activeWorktreeId: marksActiveCard ? rowProps.activeWorktreeId : null,
     newCardStyle
   })
 
@@ -153,7 +152,9 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
     firstHeaderIndex,
     scrollRef,
     scrollOffsetRef,
-    programmaticScrollMarks
+    programmaticScrollMarks,
+    scrollElement,
+    scrollAnchorRef
   })
   const rowGeometry = useWorktreeRowGeometry({ rows, projection, virtualization, scrollRef })
 
@@ -319,26 +320,13 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
       clearWorktreeDrag
     ]
   )
-  const handleScrollPointerDown = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      const scrollbarWidth = event.currentTarget.offsetWidth - event.currentTarget.clientWidth
-      if (scrollbarWidth <= 0) {
-        return
-      }
-      const rect = event.currentTarget.getBoundingClientRect()
-      if (event.clientX >= rect.right - scrollbarWidth) {
-        markDirectScrollInput()
-      }
-    },
-    [markDirectScrollInput]
-  )
-
   const draggingIdentity = runtime.worktreeDragState.draggingWorktreeId
   const hiddenDragRanges = useDraggedSubtreeRanges(projection, draggingIdentity)
   const rowContext = buildWorktreeVirtualRowContext({
     dragUnitsByRow: rowGeometry.ranges.byRow,
     hiddenDragRanges,
     props: rowProps,
+    marksActiveCard,
     projection,
     activeFamilyRoots,
     renderRows,
@@ -364,11 +352,14 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
     onRowPointerDown: handleWorktreeRowPointerDown
   })
 
+  const scrollMargin = getScrollSectionMargin(virtualization.scrollSectionInsets)
+
   return (
     <div
       data-worktree-sidebar-container
       data-contextual-tour-target="workspace-list"
-      className="relative min-h-0 flex-1"
+      // Why isolate: pinned headers stack inside the list, never over overlays covering the sidebar.
+      className="relative isolate mt-2 min-h-0 flex-1"
     >
       <div
         ref={setScrollRootRef}
@@ -391,31 +382,44 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
         onKeyDown={handleContainerKeyDown}
         onKeyUp={handleContainerKeyUp}
         onBlur={handleContainerBlur}
-        onPointerDown={handleScrollPointerDown}
-        onTouchMove={markDirectScrollInput}
-        onWheel={markDirectScrollInput}
         onDragOver={nativeDrag.handleWorktreeDragOver}
         onDrop={nativeDrag.handleWorktreeDrop}
         className="worktree-sidebar-scrollbar h-full overflow-y-auto overflow-x-hidden pl-1 scrollbar-sleek outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset pt-px"
-        style={WORKTREE_SIDEBAR_SCROLL_STYLE}
+        {...virtualization.scrollContainerProps}
       >
+        <SidebarScrollSectionSlots />
         <div
           role="presentation"
           data-worktree-sidebar-content
+          {...SIDEBAR_KEYBOARD_SECTION_PROPS}
           className="relative w-full"
           style={{ height: `${virtualization.virtualizer.getTotalSize()}px` }}
         >
           {renderWorktreeSidebarDropIndicators({
             headerDrag,
-            worktreeDragState: runtime.worktreeDragState
+            worktreeDragState: runtime.worktreeDragState,
+            scrollMargin
           })}
           {virtualItems.map((vItem) => {
             const row = renderRows[vItem.index]
-            return row ? renderWorktreeVirtualRow(rowContext, row, vItem, t) : null
+            return row
+              ? renderWorktreeVirtualRow(
+                  rowContext,
+                  row,
+                  toRowBoxVirtualItem(vItem, scrollMargin),
+                  t
+                )
+              : null
           })}
         </div>
+        {props.footer}
       </div>
-      {showScrollToTop ? <WorktreeListScrollToTopButton onClick={scrollToTop} /> : null}
+      {showScrollToTop ? (
+        <WorktreeListScrollToTopButton
+          onClick={scrollToTop}
+          className={cn(virtualization.scrollSectionInsets.pinned > 0 && 'top-10')}
+        />
+      ) : null}
     </div>
   )
 })

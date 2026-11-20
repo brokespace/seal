@@ -1,0 +1,48 @@
+{
+  "id": "session-ends-right-after-its-turn",
+  "title": "The agent finishes and its process exits at once",
+  "categories": ["session-end"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The finished session has a recap that says the sitemap was generated.",
+  "steps": [
+    {
+      "user": "Generate the sitemap and exit."
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm sitemap"
+        },
+        "output": "public/sitemap.xml: 1204 urls"
+      }
+    },
+    {
+      "agent": "sitemap.xml is generated in public/ with 1,204 URLs."
+    },
+    {
+      "status": "done"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "five minutes after the session ended",
+      "check": [
+        {
+          "view": "exists",
+          "is": true,
+          "why": "a session that ended still gets a recap"
+        },
+        {
+          "in": "did",
+          "has": "sitemap",
+          "why": "the sitemap is recorded as done"
+        }
+      ]
+    }
+  ]
+}

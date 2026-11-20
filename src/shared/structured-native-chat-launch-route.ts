@@ -8,6 +8,7 @@ import {
   STRUCTURED_AGENT_SESSION_RUNTIME_CAPABILITY
 } from './agent-session/agent-session-runtime-capabilities'
 import { STRUCTURED_AGENT_SESSION_REGISTERED_AGENTS_RUNTIME_CAPABILITY } from './agent-session/structured-agent-session-surface-capabilities'
+import { AGENT_SESSION_CREATE_LAUNCH_DIRECTORY_RUNTIME_CAPABILITY } from './agent-session/agent-session-create-capabilities'
 import type { AgentDefaultSurface } from './native-chat/native-chat-appearance-settings'
 import type { TuiAgent } from './agent-launch/catalog/tui-agent'
 import type { WorkspaceLaunchKind } from './agent-launch/contracts/workspace-launch-kind'
@@ -22,7 +23,7 @@ export type NativeChatDefaultSettings = {
 export type StructuredNativeChatBlocker =
   | 'reused-terminal'
   | 'agent-without-structured-session'
-  /** Only PTYs apply a start directory outside the workspace; configured command/arguments do not choose the surface. */
+  /** Only PTYs apply a start directory outside the workspace, or a workspace subfolder on a host that cannot start there; configured command/arguments do not choose the surface. */
   | 'custom-start-directory'
   | 'remote-execution-host'
   | 'project-runtime'
@@ -48,6 +49,8 @@ export type StructuredNativeChatSupportInput = {
   projectExecutionKind?: 'host' | 'ssh'
   projectRuntime?: ProjectExecutionRuntimeResolution | null
   startsOutsideWorkspaceRoot?: boolean
+  /** A folder below the workspace root: only a host advertising the launch-directory capability starts there. */
+  startsInWorkspaceSubfolder?: boolean
   /** An existing PTY agent keeps its execution transport. */
   reusesTerminal?: boolean
   /** Without host inventory, offer only Claude/Codex, which every structured host supports. */
@@ -117,6 +120,12 @@ export function resolveStructuredNativeChatSupport(
     if (!clientChoosesStructuredLaunches(input.clientCapabilities)) {
       return { supported: false, blocker: 'client-capability' }
     }
+  }
+  if (
+    input.startsInWorkspaceSubfolder === true &&
+    !input.hostCapabilities.includes(AGENT_SESSION_CREATE_LAUNCH_DIRECTORY_RUNTIME_CAPABILITY)
+  ) {
+    return { supported: false, blocker: 'custom-start-directory' }
   }
   return { supported: true }
 }

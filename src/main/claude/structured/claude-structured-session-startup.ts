@@ -9,6 +9,7 @@ import {
 import type { AgentSessionAccountKind } from '../../../shared/agent-session/agent-session-availability'
 import type { StructuredAgentSessionProviderOpenResult } from '../../native-chat/agent-session-wire/startup/structured-agent-session-provider-open-contract'
 import type { ClaudeStreamJsonConnection } from '../claude-stream-json-connection'
+import { claudeStartupDeadlines } from './claude-structured-startup-deadlines'
 import { ClaudeSlashCommandCatalog } from '../command-catalog/claude-slash-command-catalog'
 import {
   claudeAuthDiagnostic,
@@ -70,6 +71,7 @@ export async function readClaudeStartupFacts(input: {
   requestTimeoutMs: number | undefined
   emit: (event: ClaudeStructuredSessionEvent) => void
 }): Promise<ClaudeInitializeFacts> {
+  const deadlines = claudeStartupDeadlines(input)
   const control = input.connection.initializationResult().then((result) => {
     const authError = claudeInitializationAuthError(result, input.account)
     if (authError) {
@@ -105,8 +107,9 @@ export async function readClaudeStartupFacts(input: {
         throw error
       }
       throw await claudeStartupAnswerAfterExit(input.connection, control, error)
-    })
-  ])
+    }),
+    deadlines.expired
+  ]).finally(deadlines.clear)
   if (input.connection.closed) {
     throw (
       input.connection.startupFailure?.() ??

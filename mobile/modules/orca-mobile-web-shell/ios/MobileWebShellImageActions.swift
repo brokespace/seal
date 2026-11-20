@@ -18,7 +18,7 @@ func presentImageShareSheet(url: URL, from presenter: UIViewController) {
 func saveImageToPhotoLibrary(url: URL, promise: Promise) {
   PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
     guard status == .authorized || status == .limited else {
-      promise.reject("native_image_permission_denied", "Orca is not allowed to add to Photos")
+      promise.reject("native_image_permission_denied", "Seal is not allowed to add to Photos")
       return
     }
     PHPhotoLibrary.shared().performChanges({

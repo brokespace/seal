@@ -1,0 +1,46 @@
+{
+  "id": "partly-done-and-the-agent-says-which-part",
+  "title": "Three of the same thing are asked for; two get done and the agent names the third",
+  "categories": ["partly-addressed"],
+  "surfaces": ["claude-cli", "chat-journal"],
+  "expected": "Tests exist for the csv and json parsers. The yaml parser has none yet, and that is what is left open.",
+  "steps": [
+    {
+      "user": "Add unit tests for the three parsers: csv, json and yaml."
+    },
+    {
+      "edit": "/srv/shop/test/parsers/csv.test.ts"
+    },
+    {
+      "edit": "/srv/shop/test/parsers/json.test.ts"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm test test/parsers"
+        },
+        "output": "14 passed"
+      }
+    },
+    {
+      "agent": "The csv and json parsers have tests now, 14 passing. I have not written the yaml ones: the yaml parser reads from disk and needs a fixture loader first."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "yaml",
+          "why": "the yaml parser still has no tests"
+        }
+      ]
+    }
+  ]
+}

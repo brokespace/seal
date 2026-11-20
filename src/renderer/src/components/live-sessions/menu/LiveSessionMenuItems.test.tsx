@@ -1,0 +1,277 @@
+// @vitest-environment happy-dom
+import { cleanup, fireEvent, render } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../../../../shared/live-sessions/live-session-surface.test-fixture'
+import {
+  chatTabsClosedBy,
+  LIVE_SESSION_MENU_ITEM_IDS,
+  liveSessionMenuItems,
+  removeRequestFor,
+  type LiveSessionMenuContext,
+  type LiveSessionMenuEffects,
+  type LiveSessionMenuItemId
+} from './live-session-menu'
+import { DROPDOWN_MENU_KIT, LiveSessionMenuItemsView } from './LiveSessionMenuItems'
+
+afterEach(cleanup)
+
+const SESSION_ID = 'local:claude:04186322-14da-4a67-890c-c5f4a754e99f'
+
+const session: LiveSession = {
+  id: SESSION_ID,
+  provider: 'claude',
+  providerSessionId: '04186322-14da-4a67-890c-c5f4a754e99f',
+  machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
+  origin: 'seal',
+  ...sampleSessionSurface('seal'),
+  cwd: '/srv/shop',
+  project: 'shop',
+  title: 'Fix the coupon bug',
+  status: 'needs-permission',
+  statusSource: 'screen',
+  statusDetail: 'Allow Bash?',
+  lastActivityAt: 1,
+  startedAt: 0,
+  alive: true,
+  pid: 4100,
+  transcriptPath: '/home/dev/.claude/projects/-srv-shop/04186322-14da-4a67-890c-c5f4a754e99f.jsonl',
+  inputRoutes: [{ kind: 'seal-pane', paneKey: 'tab-1:0' }],
+  permission: { promptId: 'p1', question: 'Allow Bash?', options: [{ id: 'yes', label: 'Yes' }] },
+  activity: {
+    subagents: [
+      {
+        id: 'a1',
+        title: 'Audit payments',
+        agentType: 'general-purpose',
+        model: null,
+        status: 'running',
+        background: true,
+        activity: null,
+        startedAt: 0,
+        lastActivityAt: 0,
+        transcriptPath: null
+      }
+    ],
+    tasks: [],
+    todos: [{ content: 'Write the fix', status: 'in_progress' }]
+  }
+}
+
+const context: LiveSessionMenuContext = {
+  worktreeId: 'repo-1::/srv/shop',
+  swapAccounts: [
+    { key: 'claude:personal', label: 'personal', current: true },
+    { key: 'claude:work', label: 'work', current: false }
+  ],
+  projects: {
+    choices: [
+      { key: 'folder:billing', name: 'billing', current: false },
+      { key: 'folder:shop', name: 'shop', current: true }
+    ],
+    moved: false
+  },
+  canTakeOver: true
+}
+
+/** What selecting each item must do, and nothing else. */
+const EXPECTED: Record<LiveSessionMenuItemId, [keyof LiveSessionMenuEffects, ...unknown[]]> = {
+  open: ['open', session, 'preview'],
+  'open-new-tab': ['open', session, 'tab'],
+  'open-split': ['open', session, 'split'],
+  'send-message': ['askMessage', session],
+  'answer-permission': ['focus', SESSION_ID, 'permission'],
+  'view-subagents': ['focus', SESSION_ID, 'subagents'],
+  'view-tasks': ['focus', SESSION_ID, 'tasks'],
+  rename: ['askRename', session],
+  pin: ['setPinned', session, true],
+  'move-to-project': ['moveToProject', session, { key: 'folder:billing', name: 'billing' }],
+  'copy-session-id': ['copy', '04186322-14da-4a67-890c-c5f4a754e99f', 'session-id'],
+  'copy-resume-command': [
+    'copy',
+    "cd '/srv/shop' && claude --resume '04186322-14da-4a67-890c-c5f4a754e99f'",
+    'resume-command'
+  ],
+  'swap-account': ['swapAccount', session, 'claude:work'],
+  'take-over': ['takeOver', session],
+  'open-worktree': ['openWorktree', 'repo-1::/srv/shop', session],
+  'open-machine': ['openMachine', session],
+  'reveal-transcript': ['revealTranscript', session],
+  stop: ['confirm', 'stop', [session]],
+  'stop-and-remove': ['confirm', 'stop-and-remove', [session]],
+  remove: ['confirm', 'remove', [session]],
+  'delete-with-transcripts': ['confirm', 'delete-with-transcripts', [session]]
+}
+
+/** Effects that only note what was asked of them. */
+function recordingEffects(calls: unknown[][] = []): LiveSessionMenuEffects {
+  const record =
+    (name: keyof LiveSessionMenuEffects) =>
+    (...args: unknown[]) => {
+      calls.push([name, ...args])
+    }
+  return {
+    open: record('open'),
+    focus: record('focus'),
+    askRename: record('askRename'),
+    askMessage: record('askMessage'),
+    setPinned: record('setPinned'),
+    moveToProject: record('moveToProject'),
+    askNewProject: record('askNewProject'),
+    copy: record('copy'),
+    swapAccount: record('swapAccount'),
+    takeOver: record('takeOver'),
+    openWorktree: record('openWorktree'),
+    openMachine: record('openMachine'),
+    revealTranscript: record('revealTranscript'),
+    confirm: record('confirm')
+  }
+}
+
+function openMenu() {
+  const calls: unknown[][] = []
+  const effects = recordingEffects(calls)
+  render(
+    <DropdownMenu open modal={false}>
+      <DropdownMenuTrigger>Session</DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <LiveSessionMenuItemsView
+          session={session}
+          context={context}
+          kit={DROPDOWN_MENU_KIT}
+          effects={effects}
+        />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+  const item = (id: string) =>
+    document.querySelector<HTMLElement>(`[data-live-session-menu-item="${id}"]`)
+  return { calls, item }
+}
+
+describe('session menu', () => {
+  it.each(LIVE_SESSION_MENU_ITEM_IDS)('%s runs its one handler', (id) => {
+    vi.stubGlobal('navigator', { userAgent: 'X11; Linux x86_64' })
+    const { calls, item } = openMenu()
+    const element = item(id)
+    expect(element?.getAttribute('aria-disabled')).not.toBe('true')
+    if (id === 'swap-account') {
+      // The accounts sit in a submenu, opened here the way the keyboard opens it.
+      fireEvent.keyDown(element!, { key: 'ArrowRight' })
+      fireEvent.click(document.querySelector('[data-live-session-account="claude:work"]')!)
+    } else if (id === 'move-to-project') {
+      fireEvent.keyDown(element!, { key: 'ArrowRight' })
+      fireEvent.click(document.querySelector('[data-live-session-project="folder:billing"]')!)
+    } else {
+      fireEvent.click(element!)
+    }
+    expect(calls).toEqual([EXPECTED[id]])
+  })
+
+  it('offers nothing a session cannot do', () => {
+    const quiet: LiveSession = {
+      ...session,
+      alive: false,
+      permission: null,
+      activity: { subagents: [], tasks: [], todos: [] },
+      inputRoutes: [],
+      transcriptPath: null,
+      providerSessionId: 'pid-4100'
+    }
+    const { rerender } = render(<div />)
+    rerender(
+      <DropdownMenu open modal={false}>
+        <DropdownMenuTrigger>Session</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <LiveSessionMenuItemsView
+            session={quiet}
+            context={{
+              worktreeId: null,
+              swapAccounts: [],
+              projects: { choices: [], moved: false },
+              canTakeOver: false
+            }}
+            kit={DROPDOWN_MENU_KIT}
+            effects={recordingEffects()}
+          />
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+    const disabled = [...document.querySelectorAll('[data-live-session-menu-item]')]
+      .filter((element) => element.getAttribute('aria-disabled') === 'true')
+      .map((element) => element.getAttribute('data-live-session-menu-item'))
+    expect(disabled).toEqual([
+      'send-message',
+      'answer-permission',
+      'view-subagents',
+      'view-tasks',
+      'copy-resume-command',
+      'swap-account',
+      'take-over',
+      'open-worktree',
+      'reveal-transcript',
+      'stop',
+      'stop-and-remove',
+      'delete-with-transcripts'
+    ])
+  })
+})
+
+describe('what a confirmed action asks for', () => {
+  const running = { id: 'a', alive: true }
+  const ended = { id: 'b', alive: false }
+
+  it('stops without hiding, hides without stopping, and stops before deleting files', () => {
+    expect(removeRequestFor('stop', [running])).toEqual({
+      sessionIds: ['a'],
+      stop: true,
+      deleteTranscripts: false,
+      keep: true
+    })
+    expect(removeRequestFor('stop-and-remove', [running])).toEqual({
+      sessionIds: ['a'],
+      stop: true,
+      deleteTranscripts: false
+    })
+    expect(removeRequestFor('remove', [running, ended])).toEqual({
+      sessionIds: ['a', 'b'],
+      stop: false,
+      deleteTranscripts: false
+    })
+    expect(removeRequestFor('delete-with-transcripts', [running, ended])).toEqual({
+      sessionIds: ['a', 'b'],
+      stop: true,
+      deleteTranscripts: true
+    })
+    expect(removeRequestFor('delete-with-transcripts', [ended])).toEqual({
+      sessionIds: ['b'],
+      stop: false,
+      deleteTranscripts: true
+    })
+  })
+
+  it('takes a removed chat out with its tab, and offers Delete on a row with no record', () => {
+    const chat: LiveSession = {
+      ...session,
+      transcriptPath: null,
+      surface: { kind: 'chat', sessionId: 'chat-1', tabId: 'agent-session:chat-1' }
+    }
+    expect(
+      chatTabsClosedBy('remove', [chat], {
+        'repo-1::/srv/shop': [
+          { id: 'tab-term', contentType: 'terminal', entityId: 'term-1' },
+          { id: 'tab-chat', contentType: 'agent-session', entityId: 'chat-1' }
+        ]
+      })
+    ).toEqual(['tab-chat'])
+    expect(
+      liveSessionMenuItems(chat, context).find(({ id }) => id === 'delete-with-transcripts')
+        ?.disabled
+    ).toBe(false)
+  })
+})

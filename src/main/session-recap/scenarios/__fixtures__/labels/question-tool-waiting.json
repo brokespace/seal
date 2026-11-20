@@ -1,0 +1,17 @@
+{
+  "id": "question-tool-waiting",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Set up the staging deploy"],
+      "at": {
+        "while the agent waits": {
+          "is": "open",
+          "why": "step 4: the agent asked which region to deploy to and is waiting for the answer, nothing written yet"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

@@ -129,7 +129,7 @@ function createLocalRepoFixture() {
   mkdirSync(repoPath, { recursive: true })
   git(repoPath, 'init', '--initial-branch=main')
   git(repoPath, 'config', 'user.email', 'bench@orca.local')
-  git(repoPath, 'config', 'user.name', 'Orca Bench')
+  git(repoPath, 'config', 'user.name', 'Seal Bench')
   writeFileSync(path.join(repoPath, 'README.md'), '# terminal perf fixture\n')
   git(repoPath, 'add', '.')
   git(repoPath, 'commit', '-m', 'init', '--no-gpg-sign')
@@ -144,7 +144,7 @@ function createLocalRepoFixture() {
 
 async function setupWorkspaces(page, fixture) {
   return await runWithTimeout(
-    'fixture registration in Orca',
+    'fixture registration in Seal',
     () =>
       page.evaluate(
         async ({ repoPath, importedWorktreePaths }) => {

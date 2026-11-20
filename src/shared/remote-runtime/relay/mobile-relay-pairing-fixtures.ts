@@ -1,6 +1,11 @@
 import type { PairingOffer } from '../pairing/mobile-relay-pairing-offer'
+import { PAIRING_URL_PREFIX } from '../pairing/pairing-url-scheme'
 
-const PUBLIC_KEY_B64 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+const PUBLIC_KEY_B64 = 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA='
+// SHA-256 of the 32 bytes 1..32, base64url, first 16 characters.
+const RELAY_HOST_ID = 'riFsLvUkejeCwTXv'
+const LOW_ORDER_PUBLIC_KEY_B64 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+const LOW_ORDER_RELAY_HOST_ID = 'Zmh6rfhivXdsj8GL'
 const INVITE_TOKEN = 'abcdefghijklmnopqrstuvwxyzABCDEFGH012345678'
 
 export type PairingFixture = {
@@ -21,7 +26,7 @@ export function createMobileRelayPairingFixtures(now: number): PairingFixture[] 
     directorUrl: 'https://relay.onorca.dev',
     cellUrl: 'https://relay-c1.onorca.dev',
     assignmentEpoch: 7,
-    relayHostId: 'AbCdEf0123_-xyZ9',
+    relayHostId: RELAY_HOST_ID,
     inviteToken: INVITE_TOKEN,
     inviteExpiresAt: now + 5 * 60 * 1000,
     e2eeFraming: 2 as const
@@ -97,6 +102,20 @@ export function createMobileRelayPairingFixtures(now: number): PairingFixture[] 
       expected: null
     },
     {
+      name: 'relay host id not derived from the offered public key is invalid',
+      payload: { ...directOffer, relay: { ...relay, relayHostId: 'AbCdEf0123_-xyZ9' } },
+      expected: null
+    },
+    {
+      name: 'low-order public key is invalid for a relay offer',
+      payload: {
+        ...directOffer,
+        publicKeyB64: LOW_ORDER_PUBLIC_KEY_B64,
+        relay: { ...relay, relayHostId: LOW_ORDER_RELAY_HOST_ID }
+      },
+      expected: null
+    },
+    {
       name: 'invite token length is invalid',
       payload: { ...directOffer, relay: { ...relay, inviteToken: 'short' } },
       expected: null
@@ -136,5 +155,5 @@ export function createMobileRelayPairingFixtures(now: number): PairingFixture[] 
 export function encodePairingFixturePayload(payload: unknown): string {
   const json = JSON.stringify(payload)
   const code = Buffer.from(json, 'utf8').toString('base64url')
-  return `orca://pair?code=${code}`
+  return `${PAIRING_URL_PREFIX}?code=${code}`
 }

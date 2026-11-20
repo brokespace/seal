@@ -1,0 +1,46 @@
+{
+  "id": "subagent-result-is-the-answer",
+  "title": "The answer is in the subagent's result and the agent only points at it",
+  "categories": ["subagent"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The recap says what was found: the export job's S3 credentials expired.",
+  "steps": [
+    {
+      "user": "Find out why the nightly export job fails."
+    },
+    {
+      "subagent": {
+        "prompt": "Read the last five runs of the nightly export job and find the root cause of the failures.",
+        "says": [
+          "Reading the job logs.",
+          "Every failing run stops at PutObject with AccessDenied."
+        ],
+        "result": "Root cause: the export job's S3 credentials expired on 1 November; every run since gets AccessDenied on PutObject."
+      }
+    },
+    {
+      "agent": "See the finding above."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "credential|S3|expired|AccessDenied",
+          "why": "the finding is recorded as what the agent did"
+        }
+      ]
+    }
+  ]
+}

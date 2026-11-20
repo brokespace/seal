@@ -63,7 +63,7 @@ describe('AppImage generation namespace', () => {
     const installedLauncher = await writePayload(installed!)
     await Promise.all([writePayload(keep.rootPath), writePayload(idle!), writePayload(resident!)])
     publishAppImageLauncherEndpoint(options.cacheRootPath, 'installed', installedLauncher)
-    residentExecutables.paths = [join(resident!, 'orca-ide')]
+    residentExecutables.paths = [join(resident!, 'seal')]
 
     await pruneAppImageExtractedRoots(keep.rootPath, legacyNamespace)
 
@@ -80,7 +80,7 @@ describe('AppImage generation namespace', () => {
       const older = join(dirname(keep.rootPath), 'c'.repeat(24))
       await Promise.all([writePayload(keep.rootPath), writePayload(older)])
       const leasePath = await leaseAppImageGenerationForCurrentProcess({
-        execPath: join(older, 'orca-ide')
+        execPath: join(older, 'seal')
       })
       expect(leasePath).not.toBeNull()
 

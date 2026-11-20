@@ -26,6 +26,11 @@ import type { OrcadPeerDesktopsResult } from '../../../shared/orcad-peer-desktop
 import type { RpcBinarySender } from './transports/rpc-binary-sender'
 import type { RpcMethodPermission } from './callers/rpc-method-permission'
 import type { OrcadFeatureRequirement } from './startup/orcad-readiness'
+import type {
+  PairedDevicesListResult,
+  PairedDevicesRevokeParams,
+  PairedDevicesRevokeResult
+} from '../../../shared/paired-device-admin-contract'
 import {
   runsOrchestrationAccessCheck,
   type OrchestrationMethodAccessDeclaration
@@ -57,6 +62,12 @@ export type PairingRpcContext = {
 // Mints new pairing credentials, so only the host owner's local transport provides it.
 export type PairingOffersRpcContext = {
   create(params: PairingCreateOfferParams): Promise<PairingCreateOfferResult>
+}
+
+// Lists and revokes every paired device, so only the host owner's local transport provides it.
+export type PairedDevicesRpcContext = {
+  list(): PairedDevicesListResult
+  revoke(params: PairedDevicesRevokeParams): PairedDevicesRevokeResult
 }
 
 export type RpcEnvelopeMeta = {
@@ -166,6 +177,7 @@ export type RpcContext = {
   authenticatedCallerFingerprint?: string
   pairing?: PairingRpcContext
   pairingOffers?: PairingOffersRpcContext
+  pairedDevices?: PairedDevicesRpcContext
   deviceSelf?: DeviceSelfRpcContext
   // Available only on a desktop relay for its configured servers.
   mobileRelayHosts?: {

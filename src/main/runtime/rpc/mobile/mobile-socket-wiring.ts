@@ -4,19 +4,24 @@ import type { WebSocket } from 'ws'
 import type { DeviceEntry } from '../server/pairing/device-entry'
 import type { DeviceRegistry } from '../server/pairing/device-registry'
 import { EPHEMERAL_DEVICE_SWEEP_INTERVAL_MS } from '../server/pairing/ephemeral-device-rows'
-import { devicePrincipalOf } from '../server/pairing/device-principal'
 import type { E2EEKeypair } from '../server/pairing/e2ee-keypair'
 import { E2EEChannel } from './e2ee/e2ee-channel'
-import type { E2EEAuthenticatedDevice } from '../server/mobile-e2ee-authenticated-device'
+import {
+  authenticatedDeviceOf,
+  type E2EEAuthenticatedDevice
+} from '../server/mobile-e2ee-authenticated-device'
 import { createMobileE2EEOutboundMemoryBudget } from './e2ee/mobile-e2ee-outbound-memory-budget'
 import type { RuntimeCapability } from '../../../../shared/protocol-version'
 import type { RpcBinarySender } from '../transports/rpc-binary-sender'
 import type { NetworkSourceClass } from '../transports/websocket/source-admission/network-source-class'
+import { authLockoutSource, FailedAuthLockout } from './failed-auth-lockout'
+import { RevocationSweep } from './revocation-sweep'
 
 type MobileSocketPayload = string | Uint8Array<ArrayBufferLike>
 
 export type MobileSocketTransportMetadata =
-  | { transport: 'direct'; sourceClass?: NetworkSourceClass }
+  // sourceKey: one IPv4 host or IPv6 /64; failed sign-ins are counted against it.
+  | { transport: 'direct'; sourceClass?: NetworkSourceClass; sourceKey?: string }
   | {
       transport: 'relay'
       relayHostId: string
@@ -65,13 +70,8 @@ type MobileSocketWiringOptions = {
   onReady?: (socket: AuthenticatedMobileSocket) => void
   // Why: stale keys and missing registry entries both fail before RPC can explain the re-pair action.
   onUnpairedDeviceAuthFailure?: (metadata: MobileSocketTransportMetadata) => void
-}
-
-function toAuthenticatedDevice(device: DeviceEntry): E2EEAuthenticatedDevice {
-  return {
-    ...devicePrincipalOf(device),
-    ...(device.token !== undefined ? { deviceToken: device.token } : {})
-  }
+  // Rows removed from the registry file by another writer, or expired: the owner finishes the revoke.
+  onDevicesRevoked?: (devices: DeviceEntry[]) => void
 }
 
 export class MobileSocketWiring {
@@ -83,6 +83,8 @@ export class MobileSocketWiring {
   private readonly onReady: MobileSocketWiringOptions['onReady']
   private readonly onUnpairedDeviceAuthFailure: MobileSocketWiringOptions['onUnpairedDeviceAuthFailure']
   private readonly ephemeralSweep: ReturnType<typeof setInterval>
+  private readonly revocationSweep: RevocationSweep
+  private readonly authLockout = new FailedAuthLockout()
   private readonly channels = new Map<WebSocket, E2EEChannel>()
   private readonly connectionIds = new Map<WebSocket, string>()
   private readonly authenticatedSockets = new Map<WebSocket, AuthenticatedMobileSocket>()
@@ -103,10 +105,27 @@ export class MobileSocketWiring {
     )
     // Why: bookkeeping must never hold the process open.
     this.ephemeralSweep.unref?.()
+    this.revocationSweep = new RevocationSweep({
+      deviceRegistry: options.deviceRegistry,
+      authenticatedSockets: () => Array.from(this.authenticatedSockets),
+      closeUnauthorized: (ws) => this.closeUnauthorized(ws),
+      onDevicesRevoked: options.onDevicesRevoked
+    })
   }
 
   dispose(): void {
     clearInterval(this.ephemeralSweep)
+    this.revocationSweep.stop()
+  }
+
+  /** What the once-a-second timer runs. */
+  sweepRevokedDevices(now: number): void {
+    this.revocationSweep.run(now)
+  }
+
+  private closeUnauthorized(ws: WebSocket): void {
+    ws.close(4001, 'Unauthorized')
+    this.handleClose(ws)
   }
 
   /** Removes idle session-only browser rows and cuts any socket still bound to them. */
@@ -180,12 +199,17 @@ export class MobileSocketWiring {
   ): void {
     const socket = this.authenticatedSockets.get(ws)
     if (socket && !this.deviceRegistry.resolveAuthenticatedPrincipal(socket.device)) {
-      ws.close(4001, 'Unauthorized')
-      this.handleClose(ws)
+      this.closeUnauthorized(ws)
       return
     }
     let channel = this.channels.get(ws)
     if (!channel) {
+      const lockoutSource = authLockoutSource(metadata)
+      // Refused before any credential is looked up; clients treat 1013 as "retry later", not "re-pair".
+      if (this.authLockout.isLockedOut(lockoutSource)) {
+        ws.close(1013, 'Too many failed sign-ins')
+        return
+      }
       const connectionId = randomBytes(8).toString('hex')
       this.connectionIds.set(ws, connectionId)
       channel = new E2EEChannel(ws, {
@@ -194,7 +218,6 @@ export class MobileSocketWiring {
           metadata.transport === 'relay'
             ? { transport: 'relay', relayHostId: metadata.relayHostId }
             : { transport: 'direct' },
-        requireV2: metadata.transport === 'relay',
         outboundMemoryBudget: this.outboundMemoryBudget,
         resolveAuthenticatedDevice: (token) => {
           const device = this.deviceRegistry.validateToken(token)
@@ -205,7 +228,7 @@ export class MobileSocketWiring {
           if (metadata.transport === 'relay' && metadata.relayDeviceId !== device.deviceId) {
             return null
           }
-          return toAuthenticatedDevice(device)
+          return authenticatedDeviceOf(device, token)
         },
         resolveAuthenticatedDeviceKey: (deviceId) => {
           const lookup = this.deviceRegistry.lookupDeviceKey(deviceId)
@@ -222,7 +245,7 @@ export class MobileSocketWiring {
           }
           return {
             kind: 'found',
-            device: toAuthenticatedDevice(lookup.device),
+            device: authenticatedDeviceOf(lookup.device),
             devicePublicKeyB64: lookup.device.devicePublicKeyB64
           }
         },
@@ -243,6 +266,7 @@ export class MobileSocketWiring {
             transport: metadata
           }
           this.authenticatedSockets.set(ws, socket)
+          this.authLockout.noteSuccess(lockoutSource)
           transport.setClientId(ws, device.deviceId)
           // Do not delay e2ee_authenticated for the secure-file rewrite.
           this.deviceRegistry.updateLastSeenDeferred(
@@ -260,6 +284,7 @@ export class MobileSocketWiring {
           this.channels.get(ws)?.destroy()
           this.channels.delete(ws)
           ws.close(code, reason)
+          this.authLockout.noteSignInClosed(lockoutSource, code, reason)
           if (reportUnpairedDevice) {
             try {
               this.onUnpairedDeviceAuthFailure?.(metadata)

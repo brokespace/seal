@@ -13,7 +13,7 @@ import { getRepoExecutionHostId } from '../../../../shared/execution-host'
 import {
   normalizeCustomWorktreeVisibilitySources,
   normalizeWorktreeVisibilitySourcePreferences
-} from '../../../../shared/worktree/visibility-sources'
+} from '../../../../shared/worktree/visibility/visibility-sources'
 import type { RepoSlice, RepoUpdate } from './repo-state'
 import { adoptFromEndpoint } from '../host-catalog/endpoint-catalog-adoption'
 import { getProjectSetupRuntimeTarget } from '../projects/project-host-routing'
@@ -197,9 +197,11 @@ export function createRepoUpdateActions(
                 sourceControlAi,
                 externalWorktreeDiscoverySuppressedAt,
                 hiddenAt,
+                autoCreated,
                 ghAccount,
                 externalWorktreeVisibility,
                 agentWorktreeVisibility,
+                workspaceCleanupPolicy,
                 ...updatesWithoutClearSentinels
               } = sanitizedUpdates
               mergedRepo = { ...mergedRepo, ...updatesWithoutClearSentinels }
@@ -239,11 +241,23 @@ export function createRepoUpdateActions(
               } else if (hiddenAt !== undefined) {
                 mergedRepo = { ...mergedRepo, hiddenAt }
               }
+              if (autoCreated === null) {
+                const { autoCreated: _autoCreated, ...repoWithoutAutoCreated } = mergedRepo
+                mergedRepo = repoWithoutAutoCreated
+              } else if (autoCreated !== undefined) {
+                mergedRepo = { ...mergedRepo, autoCreated }
+              }
               if (ghAccount === null) {
                 const { ghAccount: _ghAccount, ...repoWithoutGhAccount } = mergedRepo
                 mergedRepo = repoWithoutGhAccount
               } else if (ghAccount !== undefined) {
                 mergedRepo = { ...mergedRepo, ghAccount }
+              }
+              if (workspaceCleanupPolicy === null) {
+                const { workspaceCleanupPolicy: _policy, ...repoWithoutCleanupPolicy } = mergedRepo
+                mergedRepo = repoWithoutCleanupPolicy
+              } else if (workspaceCleanupPolicy !== undefined) {
+                mergedRepo = { ...mergedRepo, workspaceCleanupPolicy }
               }
               return s.githubSourceCollections?.adopt(mergedRepo) ?? mergedRepo
             })

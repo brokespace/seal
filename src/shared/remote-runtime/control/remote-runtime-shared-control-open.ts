@@ -6,7 +6,6 @@ import {
   openRemoteRuntimeWebSocket,
   type RemoteRuntimeWebSocket
 } from '../requests/remote-runtime-request-websocket'
-import { formatSharedControlCloseMessage } from './remote-runtime-shared-control-protocol'
 import {
   startRemoteRuntimeSocketLiveness,
   type RemoteRuntimeSocketLivenessOptions
@@ -48,13 +47,12 @@ export function openSharedControlSocket(
         callbacks.onOpened()
       }
     },
-    onClose: (ws, code, reason) => {
+    onClose: (ws, code, reason, message) => {
       if (callbacks.getCurrentSocket() === ws) {
-        callbacks.onSocketClosed(
-          remoteRuntimeUnavailableError(formatSharedControlCloseMessage(code, reason)),
-          'socket_close',
-          { code, reason: reason.toString() }
-        )
+        callbacks.onSocketClosed(remoteRuntimeUnavailableError(message), 'socket_close', {
+          code,
+          reason: reason.toString()
+        })
       }
     },
     onError: (ws, error) => {

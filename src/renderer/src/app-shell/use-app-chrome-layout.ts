@@ -6,6 +6,7 @@ import { resolveLeftSidebarStyleVariables } from '@/app-shell/appearance/left-si
 import { resolveLeftTitlebarChromeLayout } from '@/app-shell/chrome/titlebar-left-chrome'
 import { selectWorktreeCreationSurfaceShown } from '@/lib/workspace/creation/worktree-creation-surface'
 import { useAppStore } from '../store/index'
+import { useSplitViewShowing } from '../components/split-view/split-view-showing'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
 import { selectActiveTerminalChromeState } from './active-terminal-chrome-selector'
 import {
@@ -61,8 +62,12 @@ export function useAppChromeLayout() {
   const shouldMountTerminalWorkbench = canMountTerminalWorkbenchNow || hasMountedTerminalWorkbench
   // Creation owns faux chrome throughout; retain the previous workspace without its real chrome.
   const creationLayoutActive = useAppStore(selectWorktreeCreationSurfaceShown)
-  const workspaceChromeActive =
+  const splitViewShowing = useSplitViewShowing()
+  // Commands follow the active workspace; chrome follows what the main area draws.
+  const workspaceCommandsActive =
     activeView === 'terminal' && hasActiveWorktree && !creationLayoutActive
+  // Split view keeps the standard titlebar row whichever pane kind has focus.
+  const workspaceChromeActive = workspaceCommandsActive && !splitViewShowing
   // Activity/Space own full pages and hide the workspace sidebar.
   const showSidebar =
     activeView !== 'settings' && activeView !== 'activity' && activeView !== 'space'
@@ -125,13 +130,15 @@ export function useAppChromeLayout() {
     showSidebar,
     // Keep the pending composer in the same viewport as the workspace it hands off to.
     showRightSidebarControls: canShowRightSidebarForView(activeView),
+    splitViewShowing,
     showTitlebarAppName: settings?.showTitlebarAppName !== false,
     showTitlebarExpandButton: workspaceChromeActive && !hasTabBar && effectiveActiveTabExpanded,
     sidebarOpen,
     stackedSidebarOpen,
     // Retained workbench panes need a separate visibility condition.
-    terminalWorkbenchVisible: workspaceChromeActive,
+    terminalWorkbenchVisible: workspaceCommandsActive || splitViewShowing,
     titlebarLeftControlsRef,
-    workspaceChromeActive
+    workspaceChromeActive,
+    workspaceCommandsActive
   }
 }

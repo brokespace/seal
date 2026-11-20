@@ -1,6 +1,4 @@
-import type { PairedE2EEFraming } from '../../../../src/shared/remote-runtime/e2ee/paired-e2ee-client-handshake'
 import { PAIRED_E2EE_HANDSHAKE_DEADLINE_MS } from '../../../../src/shared/remote-runtime/e2ee/paired-e2ee-handshake-deadline'
-import type { PairedE2EEFramingPolicy } from '../../../../src/shared/remote-runtime/e2ee/paired-e2ee-framing-policy'
 import { createDirectSocketFraming, type DirectSocketFraming } from './direct-socket-framing'
 import { isRpcResponse } from './rpc-response-shape'
 import { AUTH_REJECTED } from './rpc-client-authentication-retry'
@@ -27,7 +25,6 @@ type SocketSessionOptions = {
   endpoint: string
   deviceToken: string
   serverPublicKeyB64: string
-  framingPolicy: PairedE2EEFramingPolicy
   getCurrentSocket: () => WebSocket | null
   getState: () => ConnectionState
   getReconnectAttempt: () => number
@@ -48,8 +45,6 @@ export class RpcClientSocketSession {
   readonly socket: WebSocket
   readonly constructedAt = Date.now()
   private framing: DirectSocketFraming | null = null
-  // Why: chosen when the socket opens, so a latch recorded while it was dialing applies.
-  private framingKind: PairedE2EEFraming | null = null
   private readyAccepted = false
   private authenticated = false
   private lastInboundAt: number | null = null
@@ -145,7 +140,10 @@ export class RpcClientSocketSession {
         authenticated: this.authenticated,
         lastInboundAt: this.lastInboundAt
       })
-      this.options.onClosed(this, this.classifyClose(closeCode))
+      if (closeCode === UNAUTHORIZED_CLOSE_CODE) {
+        this.logRefusedHandshake()
+      }
+      this.options.onClosed(this, closeCode)
     }
     this.socket.onerror = (event) => {
       if (this.isStale('error')) {
@@ -163,24 +161,21 @@ export class RpcClientSocketSession {
     }
   }
 
-  // Before v2 ready, old hosts answer 4001 to an unsupported hello; treat it as auth failure only after prior v2 proof.
-  private classifyClose(closeCode: number | undefined): number | undefined {
-    if (this.framingKind !== 'v2' || this.readyAccepted || closeCode !== UNAUTHORIZED_CLOSE_CODE) {
-      return closeCode
+  // No ready was accepted: the host cannot speak this app's framing, or it is not the paired host.
+  private logRefusedHandshake(): void {
+    if (this.framing && !this.readyAccepted) {
+      this.options.emitLog(
+        'error',
+        'Host refused the encrypted handshake',
+        'Update Orca on the host. If it is up to date, its identity changed: pair again.',
+        { code: 'authentication-rejected' }
+      )
     }
-    const policy = this.options.framingPolicy
-    const countsAsAuthFailure = policy.helloRefusalIsAuthFailure()
-    policy.noteV2HelloRefused()
-    return countsAsAuthFailure ? closeCode : undefined
   }
 
   private startHandshake(): void {
     const isCurrent = () => this.options.getCurrentSocket() === this.socket
-    const policy = this.options.framingPolicy
-    this.framingKind = policy.framingForNextDial()
     this.framing = createDirectSocketFraming({
-      framing: this.framingKind,
-      mayUseLegacy: policy.mayUseLegacy,
       socket: this.socket,
       serverPublicKeyB64: this.options.serverPublicKeyB64,
       deviceToken: this.options.deviceToken,
@@ -192,10 +187,6 @@ export class RpcClientSocketSession {
         onAuthenticated: () => {
           this.clearHandshakeTimer()
           this.authenticated = true
-          // Why: latch only once the host proved its key; an unauthenticated ready is forgeable.
-          if (this.framingKind === 'v2') {
-            policy.noteV2Authenticated()
-          }
           this.options.onAuthenticated(this)
         },
         onText: (plaintext) => {
@@ -213,6 +204,7 @@ export class RpcClientSocketSession {
         onAuthRejected: () => {
           if (isCurrent()) {
             this.clearHandshakeTimer()
+            this.logRefusedHandshake()
             this.options.onAuthRejected(AUTH_REJECTED)
           }
         },

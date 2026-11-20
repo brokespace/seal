@@ -536,7 +536,7 @@ async function findReachableMetroUrl(initialUrl) {
 }
 
 async function main() {
-  log(colors.bright + 'Starting Orca Mobile in Emulator\n' + colors.reset)
+  log(colors.bright + 'Starting Seal Mobile in Emulator\n' + colors.reset)
   let pairingRuntime = null
 
   try {

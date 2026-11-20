@@ -1,0 +1,14 @@
+[
+  {
+    "key": "ee0b05d9e568ed948af37be85d570dfe",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Set up the staging deploy.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Set up the staging deploy.\n\n[m2] AGENT: I need one choice from you before I can write the workflow.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [\n      {\"text\": \"Which repo holds the staging environment repo?\", \"ref\": \"m2\"}\n    ]\n  },\n  \"add\": {\n    \"did\": [\n      {\"text\": \"Proposed setting up staging deploy workflow\", \"state\": \"blocked\", \"ref\": \"m1\"}\n    ]\n  }\n}",
+    "neurons": 6.309699999999999
+  }
+]

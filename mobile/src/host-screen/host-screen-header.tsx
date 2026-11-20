@@ -3,6 +3,7 @@ import { Pressable, Text, type HostInstance } from 'react-native'
 import {
   CalendarClock,
   ChevronLeft,
+  LayoutDashboard,
   List,
   MoreHorizontal,
   PanelLeftClose,
@@ -102,6 +103,13 @@ export function HostScreenHeader({
   const hostPath = `/h/${encodeURIComponent(hostId)}`
 
   const navigationGroup: ActionSheetAction[] = [
+    {
+      id: 'seal',
+      label: t('hostScreen.hostScreenHeader.seal', 'Seal'),
+      icon: LayoutDashboard,
+      closeBeforePress: true,
+      onPress: () => actions.navigateFromHostList(`${hostPath}/seal`)
+    },
     {
       id: 'tasks',
       label: t('hostScreen.hostScreenHeader.tasks', 'Tasks'),

@@ -1,7 +1,3 @@
-import {
-  requestVirtualizedScrollAnchorRecord,
-  supersedeVirtualizedScrollAnchorRestore
-} from '@/hooks/requestVirtualizedScrollAnchorRecord'
 import { measureRootProjectHeaderDragRects } from './root-project-header-drop'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
@@ -19,9 +15,20 @@ import {
   type UseRepoHeaderDragArgs
 } from './project-header-drag-contract'
 import { createProjectHeaderDragSession } from './project-header-drag-start'
+import { beginProjectHeaderPaneDrop } from './project-header-pane-drop'
 import { getWorktreeSidebarDragAutoscroll } from './worktree-sidebar-drag-autoscroll'
+import {
+  haveWorktreeRowsMoved,
+  measureWorktreeRowsAutoscrollView,
+  scrollWorktreeRowsForDrag,
+  measureWorktreeRowsViewTop
+} from './worktree-rows-drag-view'
 import { hasPointerBeenReleased } from './header-drag-pointer-release'
-import { swallowNextClickOnDragHandle } from './header-drag-click-swallow'
+import {
+  swallowClickAfterNextRelease,
+  swallowNextClickOnDragHandle
+} from './header-drag-click-swallow'
+import { useHeaderDragGrabbingCursor } from './use-header-drag-grabbing-cursor'
 import type { Repo } from '../../../../../../shared/repo-types'
 
 // Virtualized rows can unmount during drag; pointer events and cached header geometry avoid stale drop targets.
@@ -66,8 +73,8 @@ export function useRepoHeaderDrag({
   const autoscrollFrameIdRef = useRef<number | null>(null)
 
   const dragSessionRef = useRef<ProjectHeaderDragSession | null>(null)
-  const clickSwallowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const rowsGeometryKeyRef = useRef<string | null>(null)
   const refreshHeaderRects = useCallback(() => {
     const container = getContainerRef.current()
     const session = dragSessionRef.current
@@ -98,7 +105,8 @@ export function useRepoHeaderDrag({
         scrollTop: container.scrollTop,
         rects: session.headerRects,
         sidebarRepoHeaderIds: session.sidebarRepoHeaderIds,
-        contentBottom: container.scrollHeight
+        contentBottom: container.scrollHeight,
+        viewTop: measureWorktreeRowsViewTop(container)
       })
     },
     []
@@ -130,7 +138,7 @@ export function useRepoHeaderDrag({
   }, [])
 
   const endDrag = useCallback(
-    (commit: boolean) => {
+    (commit: boolean, release?: { clientX: number; clientY: number }) => {
       cancelAutoscroll()
       const session = dragSessionRef.current
       if (!session) {
@@ -144,10 +152,15 @@ export function useRepoHeaderDrag({
         // Pointer cancellation or unmount may already have released capture.
       }
       if (session.promoted) {
-        clickSwallowTimeoutRef.current = swallowNextClickOnDragHandle(session.handleEl)
+        // Ended by a key, the release is still to come.
+        const swallow = release ? swallowNextClickOnDragHandle : swallowClickAfterNextRelease
+        swallow(session.handleEl)
       }
+      const paneTookDrop =
+        commit && release && session.paneDrop?.commit(release.clientX, release.clientY)
+      session.paneDrop?.end()
       const sidebarDropIndex =
-        commit && session.promoted && latestDropIndexRef.current !== null
+        commit && session.promoted && !paneTookDrop && latestDropIndexRef.current !== null
           ? latestDropIndexRef.current
           : null
       dragSessionRef.current = null
@@ -186,16 +199,13 @@ export function useRepoHeaderDrag({
       autoscrollLastFrameTimeRef.current = frameTime
       const autoscroll = getWorktreeSidebarDragAutoscroll({
         point: { clientX: 0, clientY: session.latestPointerY },
-        containerRect: container.getBoundingClientRect(),
-        scrollTop: container.scrollTop,
-        scrollHeight: container.scrollHeight,
-        clientHeight: container.clientHeight,
+        ...measureWorktreeRowsAutoscrollView(container),
         elapsedMs: frameTime - previousFrameTime
       })
       if (autoscroll) {
-        supersedeVirtualizedScrollAnchorRestore(container, autoscroll.scrollTop)
-        container.scrollTop = autoscroll.scrollTop
-        requestVirtualizedScrollAnchorRecord(container)
+        scrollWorktreeRowsForDrag(container, autoscroll.scrollTop)
+      }
+      if (haveWorktreeRowsMoved(container, rowsGeometryKeyRef)) {
         refreshHeaderRects()
       }
 
@@ -238,6 +248,7 @@ export function useRepoHeaderDrag({
           return
         }
         session.promoted = true
+        session.paneDrop = beginProjectHeaderPaneDrop(session.repo, session.handleEl)
         // Virtualization may detach headers; global listeners keep dragging alive without capture.
         if (session.handleEl.isConnected) {
           try {
@@ -247,6 +258,11 @@ export function useRepoHeaderDrag({
         refreshHeaderRects()
         setState({ draggingRepoId: session.repo.id, dropIndex: null, dropIndicatorY: null })
       }
+      if (session.paneDrop?.track(e.clientX, e.clientY)) {
+        cancelAutoscroll()
+        applyDrop(session.repo.id, null)
+        return
+      }
       refreshHeaderRects()
       applyDrop(session.repo.id, computeDrop(e.clientY))
       ensureAutoscroll()
@@ -254,7 +270,7 @@ export function useRepoHeaderDrag({
     const onPointerEnd = (e: PointerEvent): void => {
       const session = dragSessionRef.current
       if (session && e.pointerId === session.pointerId) {
-        endDrag(e.type === 'pointerup')
+        endDrag(e.type === 'pointerup', e)
       }
     }
     const onKeyDown = (e: KeyboardEvent): void => {
@@ -276,10 +292,6 @@ export function useRepoHeaderDrag({
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('blur', onBlur)
       cancelAutoscroll()
-      if (clickSwallowTimeoutRef.current !== null) {
-        clearTimeout(clickSwallowTimeoutRef.current)
-        clickSwallowTimeoutRef.current = null
-      }
     }
   }, [
     applyDrop,
@@ -291,19 +303,10 @@ export function useRepoHeaderDrag({
     sessionArmed
   ])
 
-  useEffect(() => {
-    if (state.draggingRepoId === null) {
-      return
-    }
-    const body = document.body
-    const { cursor: prevCursor, userSelect: prevUserSelect } = body.style
-    body.style.cursor = 'grabbing'
-    body.style.userSelect = 'none'
-    return () => {
-      body.style.cursor = prevCursor
-      body.style.userSelect = prevUserSelect
-    }
-  }, [state.draggingRepoId])
+  // An unmount in the middle of a drag skips endDrag; the main area must not stay in its drag state.
+  useEffect(() => () => dragSessionRef.current?.paneDrop?.end(), [])
+
+  useHeaderDragGrabbingCursor(state.draggingRepoId !== null)
 
   const onHandlePointerDown = useCallback((event: React.PointerEvent<HTMLElement>, repo: Repo) => {
     const session = createProjectHeaderDragSession({

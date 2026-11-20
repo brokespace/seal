@@ -16,6 +16,18 @@ import { resolveHostCodexSessionSourceHome } from '../../codex/history/rollouts/
 import { browserManager } from '../../browser/guest-lifecycle/manager/browser-manager'
 import { prewarmStructuredAgentModelCatalogs } from '../../runtime/agent-session/model-catalog/structured-agent-model-catalog-wiring'
 import { mainProcessState as state } from '../main-process-state'
+import { setSealFleetTransport } from '../../seal-accounts/seal-fleet-sync'
+import {
+  sealDesktopFleetTransport,
+  sealDesktopReplicaTargets
+} from '../../seal-accounts/seal-desktop-fleet-transport'
+import { startSealConfigReplication } from '../../seal-accounts/seal-config-replication'
+import { onRuntimeEnvironmentStatusPublished } from '../../ipc/runtime-environments/status/runtime-environment-status-owner'
+import { trackRuntimeEnvironmentVerifiedTransitions } from '../../ipc/runtime-environments/status/runtime-environment-verified-transitions'
+import { getSealAccountManager } from '../../seal-accounts/seal-account-manager'
+import { installSealConnectorsFleet } from '../../seal-connectors/seal-connectors-fleet'
+import { getSealConnectorsService } from '../../seal-connectors/seal-connectors-install'
+import { getMachineRegistry } from '../../machines/registry/machine-registry-service'
 
 // Settings that change which account or binary a new chat's agent runs under.
 const MODEL_CATALOG_ACCOUNT_SETTINGS = [
@@ -50,6 +62,32 @@ export function initializeMainProcessAccountServices(): void {
     codexAccountLifecycle: { onHostSystemDefaultSelected: state.codexSessionMigration.requestRun },
     setClaudeStatusLineListener: (listener) => agentHookServer.setClaudeStatusLineListener(listener)
   })
+  setSealFleetTransport(sealDesktopFleetTransport)
+  const sealAccounts = getSealAccountManager()
+  if (sealAccounts) {
+    startSealConfigReplication(sealAccounts, {
+      targets: sealDesktopReplicaTargets,
+      call: sealDesktopFleetTransport,
+      onHostOnline: (listener) =>
+        onRuntimeEnvironmentStatusPublished(trackRuntimeEnvironmentVerifiedTransitions(listener))
+    })
+  }
+  const sealConnectors = getSealConnectorsService()
+  if (sealConnectors) {
+    installSealConnectorsFleet({
+      service: sealConnectors,
+      targets: sealDesktopReplicaTargets,
+      call: sealDesktopFleetTransport,
+      onHostOnline: (listener) =>
+        onRuntimeEnvironmentStatusPublished(trackRuntimeEnvironmentVerifiedTransitions(listener)),
+      label: (target) =>
+        target === 'local'
+          ? 'This computer'
+          : (getMachineRegistry()
+              .records()
+              .find((record) => record.environmentId === target)?.name ?? target)
+    })
+  }
   state.rateLimits = services.rateLimits
   state.codexRuntimeHome = services.codexRuntimeHome
   state.codexAccounts = services.codexAccounts

@@ -13,6 +13,7 @@ import {
 } from '../metadata/worktree-card-meta-items'
 import { WorktreeCardStatusLane } from '../surface/worktree-card-status-lane'
 import { WorktreeLineageToggle } from '../identity/WorktreeLineageToggle'
+import { WorkspaceCardSessions } from '@/components/live-sessions/workspace-rows/WorkspaceCardSessions'
 import { cardElement } from './card-template-compiler'
 
 type Card = WorktreeCardController
@@ -47,15 +48,34 @@ function detailsHover(
 }
 
 export const CARD_ACTIVITY_PARTS = {
-  StatusLane: part(['unreadAction'], (props, _children, card) => (
-    <WorktreeCardStatusLane card={card} showUnreadAction={props.unreadAction === true} />
-  )),
-  Agents: part(['tight'], (props, _children, card) => (
-    <WorktreeCardAgents
+  StatusLane: part(['unreadAction', 'titleLine'], (props, _children, card) => {
+    const lane = (
+      <WorktreeCardStatusLane card={card} showUnreadAction={props.unreadAction === true} />
+    )
+    // Seal: a one-line card centres the lane on its title, so session rows under the title cannot pull it down.
+    return props.titleLine === true ? (
+      <div className="flex h-5 shrink-0 items-center">{lane}</div>
+    ) : (
+      lane
+    )
+  }),
+  // Seal: one row per agent session on every card style; upstream's agent list is only what a note picks its recipient from.
+  SessionRows: part([], (_props, _children, card) => (
+    <WorkspaceCardSessions
       worktreeId={card.worktree.id}
-      agents={card.agentActivityDisplayMode === 'compact' ? card.compactInlineAgentRows : undefined}
-      // Why: counterbalance the card stack gap so agents right after the title read as one group.
-      className={props.tight === true ? '-mt-1' : 'mt-0'}
+      hostId={card.worktree.hostId}
+      // Why -mt-1: the rows carry their own padding, so they sit close to the title.
+      className="-mt-1"
+      sendTargets={
+        card.showInlineAgentList ? (
+          <WorktreeCardAgents
+            worktreeId={card.worktree.id}
+            executionHostId={card.worktree.hostId}
+            agents={card.inlineAgentRows}
+            className="-mt-1"
+          />
+        ) : null
+      }
     />
   )),
   RemoteBranchConflict: part([], (_props, _children, { remoteBranchConflict }) =>
@@ -66,8 +86,8 @@ export const CARD_ACTIVITY_PARTS = {
       />
     ) : null
   ),
-  DeleteFailed: part([], (_props, _children, { worktree }) =>
-    worktree.removalError ? <WorktreeCardDeleteFailed error={worktree.removalError} /> : null
+  DeleteFailed: part([], (_props, _children, { deleteFailure }) =>
+    deleteFailure ? <WorktreeCardDeleteFailed error={deleteFailure} /> : null
   ),
   LinearSetupPrompt: part([], (_props, _children, { repo, settings }) => (
     <LinearAgentSkillSetupPrompt

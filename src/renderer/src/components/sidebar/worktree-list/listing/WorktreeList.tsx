@@ -12,22 +12,20 @@ import { useRepoMap } from '@/store/repos/use-repository-catalog'
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { Repo } from '../../../../../../shared/repo-types'
 import { openHeaderCreateComposer } from '../rows/header-create-workspace-target'
+import { openProjectSettings } from '@/components/project-overview/project-overview-actions'
 import {
   getRepoExecutionHostId,
   getSettingsFocusedExecutionHostId
 } from '../../../../../../shared/execution-host'
 import { getActiveSidebarWorkspaceId } from '../../../../../../shared/workspace-scope'
 import { getPinnedWorktreeDisplayPolicy } from '../../../../../../shared/sidebar-list/row-types'
-import {
-  getProjectGroupHeaderKey,
-  isProjectSectionGroupKey
-} from '../../../../../../shared/sidebar-list/group-keys'
 import { selectWorktreeListReviewCacheInputs } from './review-cache-inputs'
 import type { VirtualizedScrollAnchor } from '@/hooks/useVirtualizedScrollAnchor'
 import { SidebarWorktreeListDialogs } from '../rows/ProjectGroupDialogs'
-import { SidebarWorktreeListEmptyState } from './EmptyState'
+import { SidebarWorkspacesEmptyNotice, SidebarWorktreeListEmptyState } from './EmptyState'
 import { VirtualizedWorktreeViewport } from '../viewport/VirtualizedWorktreeViewport'
 import { markSidebarWorktreeActiveImmediately } from '../rows/option-dom'
+import { isSessionOnViewIn } from '@/components/live-sessions/open/use-agent-session-showing'
 import { EMPTY_PROJECT_GROUPS } from '../viewport/viewport-props'
 import { NOOP_WORKSPACE_BOARD_DRAG_PREVIEW_CALLBACK } from '../drag/drop-commit-context'
 import { useAgentSendTargetWorktreeId } from './use-agent-send-target'
@@ -48,6 +46,7 @@ import { useProjectsCollapseShortcut } from '../controls/use-projects-collapse-s
 import { useProjectsCollapseAllAnnouncement } from '../controls/use-projects-collapse-all-announcement'
 import {
   areAllProjectsCollapsed,
+  countProjectSections,
   getRenderedProjectCollapseKeys,
   setAllProjectsCollapsed
 } from './project-collapse-all'
@@ -55,6 +54,7 @@ import {
   selectDetectedWorktreesByRepo,
   selectFolderWorkspaces
 } from '@/store/workspaces/catalog/workspace-record-fields'
+import { useProjectSessionRows } from './use-project-session-rows'
 
 type WorktreeListProps = {
   scrollOffsetRef: React.MutableRefObject<number>
@@ -103,8 +103,6 @@ const WorktreeList = React.memo(function WorktreeList({
   const sortBy = useAppStore((s) => s.sortBy)
   const projectOrderBy = useAppStore((s) => s.projectOrderBy)
   const openModal = useAppStore((s) => s.openModal)
-  const openSettingsPage = useAppStore((s) => s.openSettingsPage)
-  const openSettingsTarget = useAppStore((s) => s.openSettingsTarget)
   const activeView = useAppStore((s) => s.activeView)
   const activeModal = useAppStore((s) => s.activeModal)
   const pendingRevealWorktree = useAppStore((s) => s.pendingRevealWorktree)
@@ -171,11 +169,7 @@ const WorktreeList = React.memo(function WorktreeList({
     [groupBy, rowModel.sectionRows]
   )
   const projectSectionCount = useMemo(
-    () =>
-      new Set([
-        ...rowModel.occurrencePlan.sections.map(({ key }) => key).filter(isProjectSectionGroupKey),
-        ...visibleScope.visibleProjectGroupsForRows.map(({ id }) => getProjectGroupHeaderKey(id))
-      ]).size,
+    () => countProjectSections(rowModel.occurrencePlan, visibleScope.visibleProjectGroupsForRows),
     [rowModel.occurrencePlan, visibleScope.visibleProjectGroupsForRows]
   )
   const allProjectsCollapsed = areAllProjectsCollapsed(
@@ -206,16 +200,9 @@ const WorktreeList = React.memo(function WorktreeList({
 
   const handleImmediateWorktreeActivate = useCallback((worktreeId: string, rowKey?: string) => {
     // Update the active row directly on pointer input to avoid virtualized rerender latency; store state reconciles afterward.
-    markSidebarWorktreeActiveImmediately(worktreeId, rowKey)
+    markSidebarWorktreeActiveImmediately(worktreeId, rowKey, !isSessionOnViewIn(worktreeId))
   }, [])
 
-  const handleOpenRepoSettings = useCallback(
-    (projectId: string, sectionId?: string) => {
-      openSettingsTarget({ pane: 'repo', repoId: projectId, ...(sectionId ? { sectionId } : {}) })
-      openSettingsPage()
-    },
-    [openSettingsPage, openSettingsTarget]
-  )
   const handleOpenWorktreeVisibility = useCallback(
     (repo: Repo) => {
       openModal('worktree-visibility', { repoId: repo.id, hostId: getRepoExecutionHostId(repo) })
@@ -284,7 +271,9 @@ const WorktreeList = React.memo(function WorktreeList({
     [announceProjectCollapse, toggleGroup]
   )
   // Clear Filters must outrank empty project headers when filtering hides every workspace.
-  if (rowModel.rows.length === 0 || filtersHideAllRows) {
+  const noWorkspaces = rowModel.rows.length === 0 || filtersHideAllRows
+  const viewportRows = useProjectSessionRows(rowModel, visibleScope, noWorkspaces ? null : groupBy)
+  if (viewportRows.length === 0) {
     return <SidebarWorktreeListEmptyState hasFilters={hasFilters} onClearFilters={clearFilters} />
   }
 
@@ -320,7 +309,13 @@ const WorktreeList = React.memo(function WorktreeList({
       <VirtualizedWorktreeViewport
         // Wake moves status headers; preserve viewport identity across those changes.
         key={`group:${groupBy}:host:${filterState.visibleWorkspaceHostIds?.join(',') ?? 'all'}:lineage`}
-        rows={rowModel.sectionRows}
+        rows={viewportRows}
+        // Sessions that need no workspace are still listed; the notice follows them.
+        footer={
+          noWorkspaces ? (
+            <SidebarWorkspacesEmptyNotice hasFilters={hasFilters} onClearFilters={clearFilters} />
+          ) : null
+        }
         hostOptions={rowModel.hostOptions}
         occurrencePlan={rowModel.occurrencePlan}
         visibleProjectRepoIdsBySection={visibleProjectRepoIdsBySection}
@@ -337,7 +332,7 @@ const WorktreeList = React.memo(function WorktreeList({
         onToggleAllProjects={projectCollapseKeys.length > 0 ? handleToggleAllProjects : undefined}
         collapsedGroups={effectiveCollapsedGroups}
         handleCreateForRepo={openHeaderCreateComposer}
-        handleOpenRepoSettings={handleOpenRepoSettings}
+        handleOpenRepoSettings={openProjectSettings}
         handleOpenWorktreeVisibility={handleOpenWorktreeVisibility}
         handleShowImportedWorktrees={externalWorktreeCards.handleShowImportedWorktrees}
         handleKeepImportedWorktreesHidden={externalWorktreeCards.handleKeepImportedWorktreesHidden}

@@ -13,9 +13,13 @@ import { agentSessionInstallCommand } from '../../agent-session/lifecycle/agent-
 export type HostChatAnswer =
   | 'yes'
   | 'not-yet-known'
-  | 'ssh'
+  /** An SSH machine without the Seal server; chats there run through the server. */
+  | 'needs-server'
+  /** No structured chat on this host, but the agent's CLI opens in chat view. */
+  | 'via-cli'
   | 'wsl'
-  | 'subfolder'
+  /** The launch asks for a folder outside its workspace. */
+  | 'outside-workspace'
   | 'not-on-host'
   /** The host is Windows, where this agent has no chat. */
   | 'windows'
@@ -39,18 +43,29 @@ export function orderAgentLaunchPickerAgents(
 export type ChatUnavailableReason =
   | 'check-failed'
   | 'not-installed'
-  | 'ssh'
+  /** Not a refusal: the row leads to the machine, where the Seal server is installed. */
+  | 'needs-server'
   | 'wsl'
-  | 'subfolder'
+  | 'outside-workspace'
   | 'not-on-host'
   | 'windows'
 
-export type NewTabAgentMenuRow = (
-  | { kind: 'chat'; agent: TuiAgent }
-  | { kind: 'chat-unavailable'; agent: TuiAgent; reason: ChatUnavailableReason }
-  | { kind: 'cli'; agent: TuiAgent; chat?: true }
-  | { kind: 'terminal'; agent: TuiAgent }
-) & { executionHostId?: ExecutionHostId }
+export type NewTabAgentMenuRow =
+  /** `viaCli`: the chat is the agent's CLI opened in chat view. */
+  (
+    | { kind: 'chat'; agent: TuiAgent; viaCli?: true }
+    | { kind: 'chat-unavailable'; agent: TuiAgent; reason: ChatUnavailableReason }
+    /** `chat`: the agent also has a chat here. `needsServer`: its chat needs the Seal server first. `noChat`: why it has none. */
+    | {
+        kind: 'cli'
+        agent: TuiAgent
+        chat?: true
+        viaCli?: true
+        needsServer?: true
+        noChat?: 'windows'
+      }
+    | { kind: 'terminal'; agent: TuiAgent }
+  ) & { executionHostId?: ExecutionHostId }
 
 export type NewTabAgentMenuSettings = NativeChatDefaultSettings &
   Partial<Pick<GlobalSettings, 'defaultTuiAgent' | 'disabledTuiAgents'>>
@@ -89,15 +104,43 @@ export function buildNewTabAgentMenuRows(args: {
     !installed.includes(agent) &&
     ['missing', 'installable'].includes(args.chatProgram(agent))
   const chatToo = new Set<TuiAgent>()
+  const viaCli = new Set<TuiAgent>()
+  const needsServer = new Set<TuiAgent>()
+  const noChatOnWindows = new Set<TuiAgent>()
   for (const agent of chatAgents) {
     const displayed = nativeChatPreferenceFor(settings, agent)
+    const answer = args.hostChatAnswer(agent)
+    if (answer === 'via-cli') {
+      // The chat is the CLI itself, so it needs the CLI and no chat program.
+      if (installed.includes(agent)) {
+        viaCli.add(agent)
+        if (displayed) {
+          runnable.push(agent)
+        } else {
+          chatToo.add(agent)
+        }
+      } else if (displayed) {
+        unavailable.set(agent, 'not-installed')
+      }
+      continue
+    }
+    if (answer === 'needs-server') {
+      // Without its server the machine's agents cannot be listed, so the install is all a row can offer.
+      if (displayed || args.detectedOnHost === null) {
+        unavailable.set(agent, 'needs-server')
+      } else if (installed.includes(agent)) {
+        needsServer.add(agent)
+      }
+      continue
+    }
     if (!displayed && (!installed.includes(agent) || !canOpen(agent))) {
       continue
     }
-    const answer = args.hostChatAnswer(agent)
     if (!displayed) {
       if (answer === 'yes') {
         chatToo.add(agent)
+      } else if (answer === 'windows') {
+        noChatOnWindows.add(agent)
       }
       continue
     }
@@ -127,23 +170,25 @@ export function buildNewTabAgentMenuRows(args: {
       ...chatAgents.filter((agent) => needsSetup(agent) && args.hostChatAnswer(agent) === 'yes')
     )
   }
+  // Every installed agent keeps its CLI row, so the terminal is offered beside a runnable chat too.
   return [
     ...orderAgentLaunchPickerAgents(defaultAgent, runnable).map((agent) => ({
       kind: 'chat' as const,
-      agent
+      agent,
+      ...(viaCli.has(agent) ? { viaCli: true as const } : {})
     })),
     ...orderAgentLaunchPickerAgents(defaultAgent, [...unavailable.keys()]).map((agent) => ({
       kind: 'chat-unavailable' as const,
       agent,
       reason: unavailable.get(agent) ?? 'not-on-host'
     })),
-    ...orderAgentLaunchPickerAgents(
-      defaultAgent,
-      installed.filter((agent) => !runnable.includes(agent))
-    ).map((agent) => ({
+    ...orderAgentLaunchPickerAgents(defaultAgent, installed).map((agent) => ({
       kind: 'cli' as const,
       agent,
-      ...(chatToo.has(agent) ? { chat: true as const } : {})
+      ...(chatToo.has(agent) ? { chat: true as const } : {}),
+      ...(chatToo.has(agent) && viaCli.has(agent) ? { viaCli: true as const } : {}),
+      ...(needsServer.has(agent) ? { needsServer: true as const } : {}),
+      ...(noChatOnWindows.has(agent) ? { noChat: 'windows' as const } : {})
     }))
   ]
 }

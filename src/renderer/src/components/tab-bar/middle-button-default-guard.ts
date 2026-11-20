@@ -6,3 +6,12 @@ export function preventMiddleButtonDefault(event: ReactMouseEvent): void {
     event.preventDefault()
   }
 }
+
+/** A middle click closes a tab on auxclick; `close` is null for a tab that stays (pinned). */
+export function closeTabOnMiddleClick(event: ReactMouseEvent, close: (() => void) | null): void {
+  if (event.button === 1) {
+    event.preventDefault()
+    event.stopPropagation()
+    close?.()
+  }
+}

@@ -182,14 +182,14 @@ describe(ORCAD_PEER_DESKTOPS_METHOD, () => {
     await (await socket(stable)).request(ORCAD_DECLARE_CLIENT_METHOD, { clientInstanceId: STABLE })
     const dev = pair(server, 'Orca‮\nDev​', 'runtime')
     await (await socket(dev)).request(ORCAD_DECLARE_CLIENT_METHOD, { clientInstanceId: DEV })
-    expect(await peerNames(stable, STABLE)).toEqual(['OrcaDev'])
+    expect(await peerNames(stable, STABLE)).toEqual(['SealDev'])
 
     const phone = await socket(pair(server, 'Phone', 'mobile'))
     const refused = await phone.request(ORCAD_DECLARE_CLIENT_METHOD, {
       clientInstanceId: 'phone-installation'
     })
     expect(refused.ok).not.toBe(true)
-    expect(await peerNames(stable, STABLE)).toEqual(['OrcaDev'])
+    expect(await peerNames(stable, STABLE)).toEqual(['SealDev'])
   })
 
   // R39 follow-up: Stable removed the host while Dev used it, so the server was kept. Once Stable

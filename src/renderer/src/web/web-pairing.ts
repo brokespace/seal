@@ -4,6 +4,10 @@ import {
 } from '../../../shared/remote-runtime/host-status/runtime-host-descriptor'
 import { normalizePairingBase64 } from '../../../shared/remote-runtime/pairing/mobile-pairing-base64'
 import { PAIRING_INPUT_MAX_CHARACTERS } from '../../../shared/remote-runtime/pairing/mobile-pairing-protocol-limits'
+import {
+  acceptedPairingSchemePrefixLength,
+  isAcceptedPairingProtocol
+} from '../../../shared/remote-runtime/pairing/pairing-url-scheme'
 import type { DeviceScope } from '../../../shared/runtime-types'
 import { classifyRuntimeHostRePair } from '../../../shared/remote-runtime/host-status/runtime-host-pairing-identity'
 import type { StoredWebRuntimeEnvironment } from './web-runtime-environment'
@@ -43,7 +47,7 @@ export function parseWebPairingInput(input: string): WebPairingOffer | null {
   }
 
   try {
-    if (trimmed.toLowerCase().startsWith('orca://')) {
+    if (acceptedPairingSchemePrefixLength(trimmed) !== null) {
       const code = extractPairingCodeFromUrl(trimmed)
       return code ? decodePairingPayload(code) : null
     }
@@ -71,7 +75,8 @@ export function readPairingInputFromLocation(
   if (!hash) {
     return null
   }
-  if (hash.startsWith('orca://pair')) {
+  const hashSchemeLength = acceptedPairingSchemePrefixLength(hash)
+  if (hashSchemeLength !== null && hash.slice(hashSchemeLength).startsWith('pair')) {
     return hash
   }
   const hashParams = new URLSearchParams(hash)
@@ -179,9 +184,9 @@ function extractPairingCodeFromUrl(url: string): string | null {
   } catch {
     return null
   }
-  // Why: prefix checks accepted routes like `orca://pairing?...`; only the
+  // Why: prefix checks accepted routes like `seal://pairing?...`; only the
   // pairing deep-link host may carry runtime auth material.
-  if (parsed.protocol !== 'orca:' || parsed.hostname !== 'pair') {
+  if (!isAcceptedPairingProtocol(parsed.protocol) || parsed.hostname !== 'pair') {
     return null
   }
   if (parsed.pathname !== '' && parsed.pathname !== '/') {

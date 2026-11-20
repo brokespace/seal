@@ -36,6 +36,7 @@ type NewWorkspaceComposerProjectSectionProps = Pick<
   | 'onEphemeralVmRecipeChange'
   | 'selectedEphemeralVmRecipeId'
   | 'ephemeralVmRecipeError'
+  | 'agentSession'
 > & {
   disabled?: boolean
   projectDescriptionId: string
@@ -90,7 +91,8 @@ export function NewWorkspaceComposerProjectSection({
   onConnectSelectedRepo,
   sshStatusLabel,
   connectButtonLabel,
-  selectedProjectName
+  selectedProjectName,
+  agentSession
 }: NewWorkspaceComposerProjectSectionProps): React.JSX.Element {
   const t = useTranslate()
   const addProjectLabel = t('auto.components.NewWorkspaceComposerCard.d6b0a96f32', 'Add project')
@@ -211,7 +213,9 @@ export function NewWorkspaceComposerProjectSection({
         {shouldShowRunTargetPicker ? (
           <div className="min-w-0 space-y-1">
             <label className="flex h-5 min-w-0 items-center truncate text-xs font-medium text-muted-foreground">
-              {t('auto.components.NewWorkspaceComposerCard.runOn', 'Run on')}
+              {agentSession
+                ? t('components.newAgentSession.machine', 'Machine')
+                : t('auto.components.NewWorkspaceComposerCard.runOn', 'Run on')}
             </label>
             <RunTargetCombobox
               hostOptions={projectHostSetupOptions ?? []}

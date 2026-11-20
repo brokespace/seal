@@ -15,6 +15,11 @@ const {
   verifyPackagedMacTerminalHostBoots
 } = require('./scripts/desktop-distribution/runtime-verification/verify-packaged-daemon-entry.cjs')
 const {
+  assertPackagedDiskIndexProgramExists,
+  packagedAppAsNode,
+  verifyPackagedDiskIndexProgramRuns
+} = require('./scripts/desktop-distribution/runtime-verification/verify-packaged-disk-index-program.cjs')
+const {
   buildMacTerminalHost,
   macTerminalHostSignIgnore,
   verifyMacTerminalHost
@@ -219,40 +224,40 @@ const windowsRuntimeResources = existsSync(
 // Shared with the terminal host helper so its purpose strings cannot drift from the app's.
 const macUsageDescriptions = {
   NSAppleEventsUsageDescription:
-    'Orca allows terminal-launched developer tools to automate local apps when you request it.',
+    'Seal allows terminal-launched developer tools to automate local apps when you request it.',
   NSBluetoothAlwaysUsageDescription:
-    'Orca allows terminal-launched developer tools to access Bluetooth devices when you request it.',
+    'Seal allows terminal-launched developer tools to access Bluetooth devices when you request it.',
   NSBluetoothPeripheralUsageDescription:
-    'Orca allows terminal-launched developer tools to access Bluetooth devices when you request it.',
+    'Seal allows terminal-launched developer tools to access Bluetooth devices when you request it.',
   NSCalendarsUsageDescription:
-    'Orca allows terminal-launched developer tools to access your calendars when you request it.',
+    'Seal allows terminal-launched developer tools to access your calendars when you request it.',
   NSCalendarsFullAccessUsageDescription:
-    'Orca allows terminal-launched developer tools to access your calendars when you request it.',
+    'Seal allows terminal-launched developer tools to access your calendars when you request it.',
   NSCameraUsageDescription: "Application requests access to the device's camera.",
   NSContactsUsageDescription:
-    'Orca allows terminal-launched developer tools to access your contacts when you request it.',
+    'Seal allows terminal-launched developer tools to access your contacts when you request it.',
   NSLocationUsageDescription:
-    'Orca allows terminal-launched developer tools to access location when you request it.',
+    'Seal allows terminal-launched developer tools to access location when you request it.',
   NSLocalNetworkUsageDescription:
-    'Orca allows terminal-launched developer tools to discover and connect to local development servers when you request it.',
+    'Seal allows terminal-launched developer tools to discover and connect to local development servers when you request it.',
   NSMicrophoneUsageDescription: "Application requests access to the device's microphone.",
   NSRemindersUsageDescription:
-    'Orca allows terminal-launched developer tools to access your reminders when you request it.',
+    'Seal allows terminal-launched developer tools to access your reminders when you request it.',
   NSRemindersFullAccessUsageDescription:
-    'Orca allows terminal-launched developer tools to access your reminders when you request it.',
+    'Seal allows terminal-launched developer tools to access your reminders when you request it.',
   NSAudioCaptureUsageDescription:
-    'Orca allows terminal-launched developer tools to capture desktop audio when you request it.',
+    'Seal allows terminal-launched developer tools to capture desktop audio when you request it.',
   NSBonjourServices: ['_http._tcp', '_https._tcp'],
   ...MACOS_FOLDER_USAGE_DESCRIPTIONS
 }
 // Developer ID team that signs every release-channel mac build.
-const ORCA_MAC_TEAM_ID = '6CX3WHS9HZ'
+const ORCA_MAC_TEAM_ID = require('./seal/seal-branding.cjs').signing.macTeamId
 
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
   appId,
-  productName: 'Orca',
-  protocols: [{ name: 'Orca', schemes: ['orca'] }],
+  productName: 'Seal',
+  protocols: [{ name: 'Seal', schemes: ['orca'] }],
   toolsets: { appimage: '1.0.3' },
   ...(devChannelBuildVersion
     ? { extraMetadata: { version: devChannelBuildVersion } }
@@ -363,6 +368,7 @@ module.exports = {
     'out/main/startup/network-compatibility/http1-compatibility-marker.js',
     'out/main/daemon-entry.js',
     'out/main/session-scanner-service-entry.js',
+    'out/main/disk-usage-index-entry.js',
     'out/main/wsl-transcript-fs-process-entry.js',
     'out/main/foreign-sqlite-reader-entry.js',
     'out/main/agent-identity-worker-entry.js',
@@ -374,11 +380,13 @@ module.exports = {
     'out/main/orcad/orcad-local-serve-selection-entry.js',
     'out/main/orcad/instance-lock/orcad-stale-lock-reclaim.js',
     'out/main/orcad/profile-state/orcad-host-identity-reset.js',
+    'out/main/orcad/profile-state/paired-devices-under-lock.js',
     'out/main/chunks/**',
     'out/renderer/**',
     'out/mobile-web/**',
     'resources/**',
     'node_modules/ws/**',
+    'node_modules/@noble/hashes/**',
     'node_modules/tweetnacl/**',
     'node_modules/zod/**',
     'node_modules/yaml/**'
@@ -496,12 +504,20 @@ module.exports = {
     }
     if (canExecuteTargetArch) {
       verifyPackagedDaemonEntryBoots(resourcesDir)
+      verifyPackagedDiskIndexProgramRuns(resourcesDir, [
+        { program: process.execPath, env: {} },
+        // The unsigned macOS app is not run before signing, and Windows runs the index only on other machines.
+        ...(context.electronPlatformName === 'linux'
+          ? [packagedAppAsNode(join(context.appOutDir, context.packager.executableName))]
+          : [])
+      ])
       if (appImageNodeRuntime) {
         await verifyAppImageNodeRuntimeServesPty(resourcesDir, appImageNodeRuntime)
       }
     } else {
       // Cross-arch smoke cannot run, but missing unpacked entry is always a packaging error.
       assertPackagedDaemonEntryExists(resourcesDir)
+      assertPackagedDiskIndexProgramExists(resourcesDir)
       console.log(
         `[verify-packaged-daemon-entry] skipped boot on cross-arch slice (target ${context.arch}, host ${process.arch})`
       )
@@ -535,7 +551,7 @@ module.exports = {
     })
     chmodUnixCliLaunchers(resourcesDir, context.electronPlatformName)
     if (context.electronPlatformName === 'darwin') {
-      await signMacComputerUseHelper(join(resourcesDir, 'Orca Computer Use.app'), context.packager)
+      await signMacComputerUseHelper(join(resourcesDir, 'Seal Computer Use.app'), context.packager)
       await signMacStandaloneHelper(
         join(resourcesDir, '..', 'MacOS', 'orca-notification-status'),
         'orca-notification-status',
@@ -555,7 +571,7 @@ module.exports = {
     }
   },
   win: {
-    executableName: 'Orca',
+    executableName: 'Seal',
     // SignPath signs Windows installers after packaging, so set release publisherName explicitly.
     // Unsigned dev channels omit it or updater signature checks reject dev updates and return to stable.
     // Sign hook signs nothing: it relays transient NSIS uninstaller files to CI SignPath; unset relay env leaves local/dev builds inert.
@@ -657,7 +673,7 @@ module.exports = {
       },
       {
         from: 'native/computer-use-macos/.build/release/Orca Computer Use.app',
-        to: 'Orca Computer Use.app'
+        to: 'Seal Computer Use.app'
       },
       featureWallResources
     ],
@@ -816,7 +832,7 @@ function chmodUnixCliLaunchers(resourcesDir, electronPlatformName) {
 async function signMacComputerUseHelper(helperAppPath, packager) {
   if (!existsSync(helperAppPath)) {
     if (isMacRelease) {
-      throw new Error(`Missing Orca Computer Use helper app at ${helperAppPath}`)
+      throw new Error(`Missing Seal Computer Use helper app at ${helperAppPath}`)
     }
     return
   }
@@ -830,7 +846,7 @@ async function signMacComputerUseHelper(helperAppPath, packager) {
     findInstalledMacSigningIdentity(codeSigningInfo?.keychainFile) ??
     (isMacRelease ? null : '-')
   if (!identity) {
-    throw new Error('Missing signing identity for Orca Computer Use helper app')
+    throw new Error('Missing signing identity for Seal Computer Use helper app')
   }
   // Why: TCC grants attach to this nested app's code identity. Sign it before
   // the outer Orca.app is sealed so production builds preserve that identity.
@@ -941,3 +957,5 @@ function findInstalledMacSigningIdentity(keychainFile) {
   } catch {}
   return null
 }
+
+module.exports = require('./seal/seal-electron-builder.cjs').applySealBranding(module.exports)

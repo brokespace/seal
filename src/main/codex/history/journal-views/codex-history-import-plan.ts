@@ -84,7 +84,8 @@ export function createCodexHistoryImportPlan(input: {
       identity: AgentJournalItemIdentity,
       body: AgentJournalItemBody,
       scope: AgentJournalTurnScope,
-      saved: AgentJournalRenderItem | null
+      saved: AgentJournalRenderItem | null,
+      observedAt?: number
     ): boolean => {
       const key = agentJournalItemKey(identity)
       if (
@@ -108,7 +109,10 @@ export function createCodexHistoryImportPlan(input: {
       }
       input.check()
       const mutation = journalLifecycleItemMutation(
-        { turnScope: saved?.turnScope ?? scope },
+        {
+          turnScope: saved?.turnScope ?? scope,
+          ...(observedAt === undefined ? {} : { observedAt })
+        },
         identity,
         body
       )
@@ -196,11 +200,14 @@ export function createCodexHistoryImportPlan(input: {
       let translated: AgentJournalItemBody | null
       let chosenIdentity = observation.identity,
         saved = observation.saved
+      let observedAt: number | undefined
       if (item.type === 'contextCompaction') {
         if (compacted) {
           continue
         }
         compacted = true
+        // The context ring reads this row's time as when the agent compacted, not when it was imported.
+        observedAt = lifecycle.completedAt ?? lifecycle.startedAt
         chosenIdentity = {
           provider: 'orca',
           clientMessageId: `codex-compaction:${codexCompactionKey(input.threadId, turn.id)}`
@@ -225,7 +232,8 @@ export function createCodexHistoryImportPlan(input: {
           chosenIdentity,
           withJournalReasoningLifecycle(translated, endedJournalReasoning()),
           scope,
-          saved
+          saved,
+          observedAt
         )
       ) {
         if (turn.saved) {

@@ -155,6 +155,9 @@ export type ClaudeInitProof = {
   seen: () => ClaudeInitObservation | null
   /** Refusals after startup must end the published session. */
   onRefusal: ((error: Error) => void) | null
+  /** Counts SessionStart hooks Claude reported starting and not yet answering. */
+  observeStartupHook: (init: ClaudeInitObservation) => void
+  runningStartupHooks: () => number
 }
 
 export function createClaudeInitProof(): ClaudeInitProof {
@@ -166,6 +169,7 @@ export function createClaudeInitProof(): ClaudeInitProof {
   })
   void promise.catch(() => {})
   let outcome: { init: ClaudeInitObservation } | { error: Error } | null = null
+  const runningHooks = new Set<string>()
   const reject = (error: Error): void => {
     outcome ??= { error }
     rejectPromise(error)
@@ -191,7 +195,16 @@ export function createClaudeInitProof(): ClaudeInitProof {
       }
       return outcome?.init ?? null
     },
-    onRefusal: null
+    onRefusal: null,
+    observeStartupHook: ({ message }) => {
+      const hookId = readClaudeFrameString(message, 'hook_id')
+      if (hookId && message.subtype === 'hook_started') {
+        runningHooks.add(hookId)
+      } else if (hookId && message.subtype === 'hook_response') {
+        runningHooks.delete(hookId)
+      }
+    },
+    runningStartupHooks: () => runningHooks.size
   }
   return proof
 }

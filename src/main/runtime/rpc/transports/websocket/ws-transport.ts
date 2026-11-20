@@ -4,6 +4,7 @@ import type { Socket } from 'node:net'
 import { WebSocketServer, type WebSocket } from 'ws'
 import type { RpcTransport } from '../../transport'
 import { answerWithoutWebClient, createStaticWebClientHandler } from './static-web-client-handler'
+import { withSealMcpRoute } from '../../../../seal-mcp/http/seal-mcp-http-route'
 import {
   attachNodeWebSocketLifecycle,
   clearNodeWebSocketPreAuthTimer,
@@ -17,6 +18,7 @@ import { assertPortNotShadowingListener } from './shadowed-port-probe'
 import { REMOTE_RUNTIME_MAX_INBOUND_FRAME_BYTES } from '../../../../../shared/remote-runtime/remote-runtime-memory-limits'
 import {
   classifyNetworkSource,
+  networkSourceKey,
   type NetworkSourceClass
 } from './source-admission/network-source-class'
 import { UnauthenticatedSourceCap } from './source-admission/ws-unauthenticated-source-cap'
@@ -82,7 +84,7 @@ export class WebSocketTransport implements RpcTransport {
   // Captured at upgrade: a closed socket no longer reports its peer.
   private readonly peers = new WeakMap<
     WebSocket,
-    { socket: Socket; sourceClass: NetworkSourceClass | null }
+    { socket: Socket; sourceClass: NetworkSourceClass | null; sourceKey: string | null }
   >()
 
   constructor({
@@ -137,8 +139,18 @@ export class WebSocketTransport implements RpcTransport {
     }
   }
 
-  sourceClassOf(ws: WebSocket): NetworkSourceClass | null {
-    return this.peers.get(ws)?.sourceClass ?? null
+  /** A direct peer as the socket wiring records it; `sourceKey` is its IPv4 address or IPv6 /64. */
+  directSourceOf(ws: WebSocket): {
+    transport: 'direct'
+    sourceClass?: NetworkSourceClass
+    sourceKey?: string
+  } {
+    const peer = this.peers.get(ws)
+    return {
+      transport: 'direct',
+      ...(peer?.sourceClass ? { sourceClass: peer.sourceClass } : {}),
+      ...(peer?.sourceKey ? { sourceKey: peer.sourceKey } : {})
+    }
   }
 
   terminateClientConnections(clientId: string): number {
@@ -223,7 +235,9 @@ export class WebSocketTransport implements RpcTransport {
     await assertPortNotShadowingListener(this.host, port)
     // Without an HTTP request listener, plain HTTP hangs instead of receiving 404 (#30100).
     const httpServer = createHttpServer(
-      this.staticRoot ? createStaticWebClientHandler(this.staticRoot) : answerWithoutWebClient
+      withSealMcpRoute(
+        this.staticRoot ? createStaticWebClientHandler(this.staticRoot) : answerWithoutWebClient
+      )
     )
 
     await new Promise<void>((resolve, reject) => {
@@ -253,7 +267,8 @@ export class WebSocketTransport implements RpcTransport {
     wss.on('connection', (ws, request) => {
       this.peers.set(ws, {
         socket: request.socket,
-        sourceClass: classifyNetworkSource(request.socket.remoteAddress)
+        sourceClass: classifyNetworkSource(request.socket.remoteAddress),
+        sourceKey: networkSourceKey(request.socket.remoteAddress)
       })
       if (wss.clients.size > WEBSOCKET_TRANSPORT_MAX_CONNECTIONS) {
         rejectNodeWebSocketOverCapacity(ws)

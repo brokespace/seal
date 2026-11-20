@@ -4,9 +4,12 @@ import {
   RelayDialAbortedError,
   toError
 } from './mobile-relay-director-fallback'
+import { RelayHostOfflineStreak } from './relay-host-offline-streak'
+import { RelayResolveTimeoutBudget } from './mobile-relay-resume-director'
 import { encodeBase64Url } from '../encryption/mobile-session-id-encoding'
 import { persistResumeConfirmation } from './mobile-relay-credential-rotation'
-import { relayFailureAllowsGraceRetry } from './relay-credential-eligibility'
+import { isExplicitCredentialRejection } from './relay-credential-eligibility'
+import { isPinnedMobileRelayCell, RelayCellOutsidePinError } from './mobile-relay-cell-pin'
 import type { MobileRelayCredentialBundle } from '../../host-credentials/mobile-relay-credential-bundle'
 import type { RelayReconnectController } from './mobile-relay-reconnect-controller'
 import type { StableLogicalRpcClient } from '../connection/stable-logical-rpc-client'
@@ -22,6 +25,8 @@ function directWon(logical: StableLogicalRpcClient): boolean {
 // Own candidate relays through cell resolution, logical migration and best-effort resume bookkeeping.
 export class MobileRelaySessionEstablisher {
   private relay: MobileRelayEndpoint
+  private readonly hostOfflineStreak: RelayHostOfflineStreak
+  private readonly resolveTimeout = new RelayResolveTimeoutBudget()
 
   constructor(
     private readonly args: {
@@ -48,6 +53,7 @@ export class MobileRelaySessionEstablisher {
     }
   ) {
     this.relay = args.relay
+    this.hostOfflineStreak = new RelayHostOfflineStreak(() => args.logical.getLastConnectedAt())
   }
 
   async adoptRelay(relay: MobileRelayEndpoint): Promise<void> {
@@ -59,7 +65,7 @@ export class MobileRelaySessionEstablisher {
     this.relay = relay
   }
 
-  // Try only grace-repairable BAD_OUTER_CREDENTIAL failures with another eligible credential.
+  // Only a credential the relay explicitly refused is retried with another eligible credential.
   async dialEligible(
     credentials: { token: string; version: number }[]
   ): Promise<
@@ -76,7 +82,8 @@ export class MobileRelaySessionEstablisher {
       }
       lastError = result.error
       this.args.onDialFailure(result.error)
-      if (!relayFailureAllowsGraceRetry(result.error)) {
+      // A bare 4401 also covers a first-frame timeout: it must not retire a working credential.
+      if (!isExplicitCredentialRejection(result.error)) {
         break
       }
       // Why: a rejected version stays invalid; retry only the grace credential.
@@ -88,11 +95,29 @@ export class MobileRelaySessionEstablisher {
   dial(credential: { token: string; version: number }): Promise<EstablishResult> {
     return dialRelayThroughDirectorFallback({
       resumeToken: credential.token,
+      hostOfflineStreak: this.hostOfflineStreak,
       relay: () => this.relay,
       dial: () => this.establish(credential),
-      resolveRelay: this.args.resolveRelay,
+      resolveRelay: (input) => this.resolveRelay(input),
       persistResolvedRelay: (resolved) => this.adoptRelay(resolved)
     })
+  }
+
+  private async resolveRelay(input: {
+    relay: MobileRelayEndpoint
+    resumeToken: string
+  }): Promise<MobileRelayEndpoint> {
+    try {
+      const resolved = await this.args.resolveRelay({
+        ...input,
+        timeoutMs: this.resolveTimeout.timeoutMs
+      })
+      this.resolveTimeout.succeeded()
+      return resolved
+    } catch (error) {
+      this.resolveTimeout.failed(error)
+      throw error
+    }
   }
 
   private async establish(credential: {
@@ -104,6 +129,10 @@ export class MobileRelaySessionEstablisher {
     // Why: director resolution and grace fallback can finish after background/stop.
     if (!args.isActive() || !bundle) {
       return { ok: false, error: new RelayDialAbortedError() }
+    }
+    // Not a relay close: the director fallback re-resolves, so a stale stored cell heals without the token leaving.
+    if (!isPinnedMobileRelayCell(this.relay)) {
+      return { ok: false, error: new RelayCellOutsidePinError() }
     }
     const session = args.openRelay(
       this.relay,

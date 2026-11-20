@@ -1,6 +1,7 @@
 import { consumeCodexRateLimitResetCredit } from '../providers/codex/codex-fetcher'
-import { RateLimitServiceInactiveAccounts } from './service-inactive-accounts'
+import { RateLimitServiceAccountReads } from './service-account-reads'
 import { hasUsageWindows } from './service-result-policy'
+import { ACCOUNT_READ_FLOOR_MS } from './service-types'
 import {
   normalizeCodexAccountSelectionTarget,
   type CodexAccountSelectionTarget
@@ -16,7 +17,7 @@ import type {
   CodexRateLimitResetResult
 } from '../../../shared/rate-limit-types'
 
-export abstract class RateLimitServiceAccountRefresh extends RateLimitServiceInactiveAccounts {
+export abstract class RateLimitServiceAccountRefresh extends RateLimitServiceAccountReads {
   async refresh(): Promise<RateLimitState> {
     // User refresh must bypass recent poll/focus throttles.
     await this.fetchAll({ force: true })
@@ -55,7 +56,7 @@ export abstract class RateLimitServiceAccountRefresh extends RateLimitServiceIna
    *  Returns whether it started a read. */
   requestUsageReading(
     provider: 'claude' | 'codex',
-    options: { notWithinMs?: number } = {}
+    options: { notWithinMs?: number; preferBackend?: boolean } = {}
   ): boolean {
     if (provider === 'claude' && !this.isClaudeOAuthUsageEnabled()) {
       return false
@@ -84,8 +85,50 @@ export abstract class RateLimitServiceAccountRefresh extends RateLimitServiceIna
     this.automaticReadingAt[provider] = { at: now, source: this.usageReadingAccounts[provider] }
     // Starts the failure clock as the poller's own retries do.
     this.lastActiveFailureRetryAtByProvider[provider] = now
-    void (provider === 'claude' ? this.fetchClaudeOnly() : this.fetchCodexOnly()).catch(() => {})
+    void (
+      provider === 'claude'
+        ? this.fetchClaudeOnly()
+        : this.fetchCodexOnly({ preferBackend: options.preferBackend })
+    ).catch(() => {})
     return true
+  }
+
+  /**
+   * One account's usage for a caller that keeps its own cadence (Seal's swap poller), read into
+   * this service's state so every surface shows the one reading. `accountId` null is the host's
+   * selected account. An automatic read, as `requestUsageReading` is, on the budget every caller
+   * shares. `preferBackend` reads Codex over HTTP before spawning its app-server. Null when no
+   * slot here holds the account.
+   */
+  async readAccountUsage(
+    provider: 'claude' | 'codex',
+    accountId: string | null,
+    options: { preferBackend?: boolean } = {}
+  ): Promise<ProviderRateLimits | null> {
+    if (accountId !== null) {
+      return provider === 'claude'
+        ? this.readInactiveClaudeAccount(accountId)
+        : this.readInactiveCodexAccount(accountId, options)
+    }
+    const target = provider === 'claude' ? this.claudeFetchTarget : this.codexFetchTarget
+    if (target.runtime !== 'host') {
+      return null
+    }
+    this.requestUsageReading(provider, { ...options, notWithinMs: ACCOUNT_READ_FLOOR_MS })
+    await this.waitForFetchIdle()
+    return this.state[provider]
+  }
+
+  /**
+   * A new login: the account's next reading must not wait out the old login's failures.
+   * `accountId` null is the host's selection or the machine's own login.
+   */
+  forgetAccountReadAttempts(provider: 'claude' | 'codex', accountId: string | null): void {
+    this.accountReads.forget(`${provider}:${accountId ?? 'system'}`)
+    if (accountId === null) {
+      this.activeFailureStreakByProvider[provider] = 0
+      this.lastActiveFailureRetryAtByProvider[provider] = 0
+    }
   }
 
   async refreshGrok(): Promise<RateLimitState> {
@@ -137,10 +180,11 @@ export abstract class RateLimitServiceAccountRefresh extends RateLimitServiceIna
     target?: CodexAccountSelectionTarget
   ): Promise<RateLimitState> {
     const nextTarget = normalizeCodexAccountSelectionTarget(target)
-    // Weekly-only plans still need outgoing switcher snapshots.
+    // Weekly-only and monthly-only plans still need outgoing switcher snapshots.
     if (
       outgoingAccountId &&
-      (this.state.codex?.session || this.state.codex?.weekly) &&
+      this.state.codex &&
+      hasUsageWindows(this.state.codex) &&
       this.isSameCodexTarget(this.codexFetchTarget, nextTarget)
     ) {
       this.inactiveCodexCache.set(outgoingAccountId, this.state.codex)

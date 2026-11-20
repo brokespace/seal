@@ -1,3 +1,4 @@
+import { isAgentSessionSurfaceTab } from '../../../../shared/tab-types'
 import { useMemo } from 'react'
 import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-tab-types'
 import { useShallow } from 'zustand/react/shallow'
@@ -34,7 +35,7 @@ export function useFloatingWorkspaceChromeModel() {
     activeTab.contentType !== 'terminal' &&
     activeTab.contentType !== 'browser' &&
     activeTab.contentType !== 'simulator' &&
-    activeTab.contentType !== 'agent-session'
+    !isAgentSessionSurfaceTab(activeTab.contentType)
       ? activeTab.id
       : null
   const activeBrowserTab = activeBrowserId
@@ -48,7 +49,7 @@ export function useFloatingWorkspaceChromeModel() {
       ? 'browser'
       : activeTab?.contentType === 'terminal'
         ? 'terminal'
-        : activeTab?.contentType === 'agent-session'
+        : isAgentSessionSurfaceTab(activeTab?.contentType)
           ? 'agent-session'
           : activeTab?.contentType === 'simulator'
             ? 'simulator'
@@ -70,7 +71,7 @@ export function useFloatingWorkspaceChromeModel() {
         if (tab.contentType === 'browser') {
           return model.browserItems.some((item) => item.tabId === tab.id)
         }
-        if (tab.contentType === 'simulator' || tab.contentType === 'agent-session') {
+        if (tab.contentType === 'simulator' || isAgentSessionSurfaceTab(tab.contentType)) {
           return true
         }
         return model.editorItems.some((item) => item.tabId === tab.id)

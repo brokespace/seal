@@ -164,10 +164,11 @@ async function runPairing(
   onJournalSaved: (journalId: string) => void
 ): Promise<{ hostId: string }> {
   const now = dependencies.now()
-  // Use the preserved host id for every artifact so re-pairing updates one card (STA-1840).
+  const provisionalHostId = `host-${now}`
+  // Use the preserved host id for every saved artifact so re-pairing updates one card (STA-1840).
   const { id: hostId, name: hostName } = await dependencies.resolveHostIdentity(
     offer.publicKeyB64,
-    `host-${now}`
+    provisionalHostId
   )
   assertActive(isDisposed)
   let journal: MobileRelayPairingJournal | null = null
@@ -175,9 +176,10 @@ async function runPairing(
     // Give committed recovery a bounded publication chance before the new scan supersedes its journal.
     await dependencies.recoverPendingJournal()
     assertActive(isDisposed)
+    // A public key is not proof: the journal takes a known host's id only once a path authenticated to that key.
     journal = createMobileRelayPairingJournal({
       offer: { ...offer, relay: offer.relay },
-      hostId,
+      hostId: provisionalHostId,
       hostName,
       now
     })
@@ -256,6 +258,7 @@ async function runPairing(
     ...journal,
     metadata: {
       ...journal.metadata,
+      host: { ...journal.metadata.host, id: hostId },
       winner: winner.path,
       authorizationMode: winner.path === 'direct' ? 'authenticated-direct' : 'relay-basis'
     }

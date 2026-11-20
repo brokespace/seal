@@ -1,0 +1,24 @@
+[
+  {
+    "key": "474a0de751fa5f6b165bb4cd9b9a776a",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"The login page takes four seconds to load, make it faster. And add a test for th\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: The login page takes four seconds to load, make it faster. And add a test for the password reset email.\n\n[m2] AGENT: Added a test for the password reset email; it covers the link and the expiry. I have not looked at the login page yet.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"goal\": \"Speed up slow login page and add password reset email test.\",\n  \"standing\": \"Agent added password reset email test but has not examined login page yet.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\"text\": \"Added password reset email test\", \"state\": \"done\", \"ref\": \"m1\"}\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": []\n}"
+  },
+  {
+    "key": "d74b96557de1d7d209430940f7d5c15b",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":\"Speed up slow login page and add password reset email test.\",\"standing\":\"Agent added password reset email test but has not examined login page yet.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Added password reset email test\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: ok go on\n\n[m2] AGENT: Done.\n</new_messages>"
+      }
+    ],
+    "reply": "{\"update\":[{\"id\":\"w1\",\"state\":\"done\"}],\"resolve\":[\"w1\"]}"
+  }
+]

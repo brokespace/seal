@@ -1,0 +1,36 @@
+{
+  "auto": {
+    "web": {
+      "WebConnect": {
+        "27393856e4": "seal://pair?code=…"
+      },
+      "runtimeAuth": {
+        "hostOutdated": "Этот сервер Seal не поддерживает шифрование, необходимое этому веб-клиенту. Обновите Seal на сервере и перезагрузите эту страницу. Если сервер уже обновлён, его ключ идентификации изменился: заново подключите этот браузер."
+      }
+    },
+    "components": {
+      "sidebar": {
+        "AddRemoteHostDialog": {
+          "pairingCodePlaceholder": "seal://pair?code=…"
+        }
+      },
+      "settings": {
+        "RuntimeHostAccessForm": {
+          "accessLinkPlaceholder": "seal://pair?code=…"
+        }
+      },
+      "mobile": {
+        "MobileHero": {
+          "installHeading": "Установите Seal Mobile.",
+          "installLead": "Seal Mobile нет в App Store и Google Play. Соберите и установите его из репозитория Seal, затем перейдите к шагу 2, чтобы получить QR-код для сопряжения.",
+          "installGuide": "Открыть руководство по установке"
+        }
+      }
+    }
+  },
+  "runtime": {
+    "remoteServerPairingErrors": {
+      "invalidPairingCode": "Неверный код сопряжения. Ожидается URL вида seal://pair?... или данные сопряжения без ссылки."
+    }
+  }
+}

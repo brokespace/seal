@@ -14,7 +14,7 @@ import { quotePosixShell } from '../../src/shared/shell/launch/shell-argument-qu
 test.skip(process.platform === 'win32', 'The recipe scripts are POSIX shell')
 test.use({ seedTestRepo: false })
 
-test('saves an edited file in a recipe-created Orca server workspace', async ({ orcaPage }) => {
+test('saves an edited file in a recipe-created Seal server workspace', async ({ orcaPage }) => {
   // Boots a second Orca as the environment's server, then restarts it mid-test.
   test.setTimeout(300_000)
   const host = await launchHeadlessPairedRuntimeHost({ pinnedServePort: true })
@@ -42,7 +42,7 @@ test('saves an edited file in a recipe-created Orca server workspace', async ({ 
     await orcaPage.getByRole('option', { name: /Per-Workspace Environment/ }).click()
     await orcaPage
       .getByRole('listbox', { name: 'Per-Workspace Environment' })
-      .getByText('Local Orca server', { exact: true })
+      .getByText('Local Seal server', { exact: true })
       .click()
     const workspaceName = `recipe-save-${Date.now()}`
     await dialog.getByPlaceholder(/Type a name/i).fill(workspaceName)
@@ -141,7 +141,7 @@ function seedGitRepo(repoPath: string, files: Record<string, string>): void {
   }
   execFileSync('git', ['init', '-b', 'main'], { cwd: repoPath })
   execFileSync('git', ['config', 'user.email', 'e2e@test.local'], { cwd: repoPath })
-  execFileSync('git', ['config', 'user.name', 'Orca E2E'], { cwd: repoPath })
+  execFileSync('git', ['config', 'user.name', 'Seal E2E'], { cwd: repoPath })
   execFileSync('git', ['add', '.'], { cwd: repoPath })
   execFileSync('git', ['commit', '-m', 'seed'], { cwd: repoPath })
 }
@@ -163,7 +163,7 @@ node -e 'console.log(JSON.stringify({schemaVersion:1,connection:{type:"orca-serv
     path.join(repoPath, 'orca.yaml'),
     `environmentRecipes:
   - id: local-orca-server
-    name: Local Orca server
+    name: Local Seal server
     create: ./create.sh
     destroy: ./destroy.sh
 `

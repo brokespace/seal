@@ -30,8 +30,6 @@ function pairDeviceHeading(t: Translate = translate): string {
 function emptyPairingQrMessage(
   args: {
     relayMintFailure: MobileRelayMintFailure | null
-    canGeneratePairing: boolean
-    connectionMode: MobilePairingConnectionMode
     pairingQrError: boolean
     pairingUrl: string | null
   },
@@ -40,20 +38,11 @@ function emptyPairingQrMessage(
   if (args.relayMintFailure != null) {
     return t('auto.components.mobile.MobileHero.noRelayCode', 'No pairing code available')
   }
-  if (!args.canGeneratePairing && args.connectionMode === 'automatic') {
-    return t(
-      'auto.components.mobile.MobileHero.qrSignInRequired',
-      'Sign in to create a Relay pairing code'
-    )
-  }
   if (args.pairingQrError && args.pairingUrl != null) {
     return t(
       'auto.components.mobile.MobileHero.qrRenderFailed',
       'QR couldn’t be rendered — copy the code below'
     )
-  }
-  if (!args.canGeneratePairing) {
-    return t('auto.components.mobile.MobileHero.noPairingCode', 'No pairing code available')
   }
   return t(
     'auto.components.mobile.MobileHero.qrGeneratePrompt',
@@ -74,7 +63,6 @@ export function MobileHeroPairingStep({
   connectionMode,
   onConnectionModeChange,
   onRegeneratePairing,
-  canGeneratePairing,
   onCopyPairingCode,
   networkInterfaces,
   customAddresses,
@@ -99,7 +87,6 @@ export function MobileHeroPairingStep({
   connectionMode: MobilePairingConnectionMode
   onConnectionModeChange: (mode: MobilePairingConnectionMode) => void
   onRegeneratePairing: () => void
-  canGeneratePairing: boolean
   onCopyPairingCode: () => void
   networkInterfaces: readonly PairingNetworkInterface[]
   customAddresses: readonly string[]
@@ -128,16 +115,7 @@ export function MobileHeroPairingStep({
   const networkDisclosurePinned = selectedAddressIsCustom
   const emptyQrMessage =
     !pairLoading && pairQrDataUrl == null
-      ? emptyPairingQrMessage(
-          {
-            relayMintFailure,
-            canGeneratePairing,
-            connectionMode,
-            pairingQrError,
-            pairingUrl
-          },
-          t
-        )
+      ? emptyPairingQrMessage({ relayMintFailure, pairingQrError, pairingUrl }, t)
       : null
 
   useEffect(() => {
@@ -255,7 +233,7 @@ export function MobileHeroPairingStep({
             type="button"
             className="mp-link-under"
             onClick={onRegeneratePairing}
-            disabled={pairLoading || !canGeneratePairing}
+            disabled={pairLoading}
           >
             {pairLoading
               ? t('auto.components.mobile.MobileHero.65b3f2e8bc', 'Generating…')

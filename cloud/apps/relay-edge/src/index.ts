@@ -4,9 +4,9 @@ import { HostRelay } from './host-relay'
 import { SpliceRelay } from './splice-relay'
 import { edgeConfig, type Env } from './env'
 import { HOST_ID, readBearer, verifyRelayJwt } from './jwt'
-import { SPLICE_SLOTS, makeConnId, parseConnId } from './splice-slot'
+import { parseConnId } from './splice-slot'
 import { metric, requestPlace } from './metrics'
-import { admitPreAuth, notOnEdge } from './preauth'
+import { admitPreAuth, decodePathSegment, notOnEdge } from './preauth'
 import { objectHealth } from './health'
 import { AssignBodySchema, DrainBodySchema, EraseBodySchema, ExportBodySchema, verifyAdminRequest, type AdminOp } from './admin'
 
@@ -107,9 +107,9 @@ export default {
     }
     const abortSplice = url.pathname.match(/^\/__spike\/abort-splice\/([^/]+)$/)
     if (abortSplice && env.SPIKE_ADMIN === '1') {
-      const connId = decodeURIComponent(abortSplice[1])
-      const parsed = parseConnId(connId)
-      if (!parsed) { return reject(429) }
+      const connId = decodePathSegment(abortSplice[1])
+      const parsed = connId === null ? null : parseConnId(connId)
+      if (connId === null || !parsed) { return reject(429) }
       // Resets the whole slot object: every splice currently in that slot.
       return forward(env, request, '', { 'x-edge-kind': 'abort', 'x-edge-conn-id': connId }, 'splice', parsed.object)
     }
@@ -174,9 +174,13 @@ export default {
       // The host object picks the least-busy slot of its splice pool, so concurrent phones land in
       // different objects (isolation) and reuse existing ones (no object creation per connect).
       const host = env.HOST_RELAY.get(env.HOST_RELAY.idFromName(phone[1]))
-      const connId = await host
-        .allocateConnId(phone[1])
-        .catch(() => makeConnId(phone[1], Math.floor(Math.random() * SPLICE_SLOTS)))
+      let connId: string | null
+      try {
+        connId = await host.allocateConnId(phone[1])
+      } catch {
+        // The host object could not answer: a guessed slot would only move the failure into a splice object.
+        return reject(503, 5)
+      }
       if (connId === null) {
         metric(env, 'not_on_edge', 1, '', [], '', requestPlace(request))
         return notOnEdge()
@@ -189,7 +193,8 @@ export default {
     if (data) {
       if (!(await admitPreAuth(env, request, 'data'))) { return reject(429) }
       if (!isUpgrade) { return reject(426) }
-      const connId = decodeURIComponent(data[1])
+      const connId = decodePathSegment(data[1])
+      if (connId === null) { return reject(400) }
       const parsed = parseConnId(connId)
       if (!parsed) { return reject(429) }
       return forward(env, request, parsed.relayHostId, { 'x-edge-kind': 'data', 'x-edge-conn-id': connId }, 'splice', parsed.object)

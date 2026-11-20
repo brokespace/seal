@@ -54,10 +54,6 @@ export function openSealedFrame(
   if (!bytes) {
     return failed('undecryptable')
   }
-  // Why v2 only: hosts compress v2 frames alone, so legacy binary keeps whatever leading byte it has.
-  if (handshake.framing !== 'v2') {
-    return { kind: 'binary', bytes }
-  }
   try {
     return inflateCompressedFrame(bytes, NODE_COMPRESSED_FRAME_CODEC) ?? { kind: 'binary', bytes }
   } catch {

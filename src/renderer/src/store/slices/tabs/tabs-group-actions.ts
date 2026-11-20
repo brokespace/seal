@@ -1,6 +1,8 @@
 import { createNonSecureContextUuid as createBrowserUuid } from '../../../../../shared/non-secure-context-uuid'
 import type { TabSplitTarget, TabsSlice, TabsSliceGet, TabsSliceSet } from './tabs-slice-contract'
 import { activeSurfacePatchMatchesState, buildActiveSurfacePatch } from './tabs-surface'
+import { selectActiveTabForWorktree } from './active-tab-selection'
+import { getActiveWorkspaceCopyHostOfTab } from '@/lib/workspace/ownership/unified-tab-host-ownership'
 import type { TabGroup, TabGroupLayoutNode } from '../../../../../shared/tab-types'
 import {
   buildSplitNode,
@@ -156,23 +158,21 @@ export function createTabsGroupActions(
             activeGroupIdByWorktree: nextActiveGroupIdByWorktree
           }
         }
-        const activeSurfacePatch = buildActiveSurfacePatch(
-          {
-            ...state,
-            activeGroupIdByWorktree: nextActiveGroupIdByWorktree
-          },
-          worktreeId,
-          groupId
-        )
+        const focusedState = { ...state, activeGroupIdByWorktree: nextActiveGroupIdByWorktree }
+        const activeSurfacePatch = buildActiveSurfacePatch(focusedState, worktreeId, groupId)
+        const focusedTab = selectActiveTabForWorktree(focusedState, worktreeId)
+        const copyHostId = focusedTab ? getActiveWorkspaceCopyHostOfTab(state, focusedTab) : null
         if (
           groupAlreadyFocused &&
+          !copyHostId &&
           activeSurfacePatchMatchesState(state, worktreeId, activeSurfacePatch)
         ) {
           return state
         }
         return {
           ...(groupAlreadyFocused ? {} : { activeGroupIdByWorktree: nextActiveGroupIdByWorktree }),
-          ...activeSurfacePatch
+          ...activeSurfacePatch,
+          ...(copyHostId ? { activeWorkspaceExecutionHostId: copyHostId } : {})
         }
       }),
 

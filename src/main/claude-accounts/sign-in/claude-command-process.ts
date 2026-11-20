@@ -18,6 +18,7 @@ import {
 import { resolveWslExecutablePath } from '../../wsl/execution/wsl-executable-path'
 import { buildWindowsCommandInvocation } from './windows-command-invocation'
 import { terminateClaudeProcess } from './claude-login-process-termination'
+import { trackAccountCliProcess } from '../../provider-process/account-cli-process-reaper'
 import { stripInheritedAgentSessionEnv } from '../../../shared/agent-launch/startup/parent-agent-session-env'
 
 const MAX_COMMAND_OUTPUT_CHARS = 4_000
@@ -38,6 +39,8 @@ export type ClaudeCommandOptions = {
   onStdout?: (text: string) => void
   /** Requires `keepStdinOpen`. */
   onStdin?: (send: (text: string) => void) => void
+  /** Run against the machine's own Claude login: the user's CLAUDE_CONFIG_DIR, or none. */
+  systemLogin?: { userConfigDir: string | undefined }
 }
 
 export function runClaudeCommandProcess(
@@ -75,7 +78,8 @@ export function runClaudeCommandProcess(
       configDir,
       interactiveLogin,
       hostClaudeCommand,
-      options?.browser
+      options?.browser,
+      options?.systemLogin
     )
     const child = spawnProcess({
       program: spawnConfig.command,
@@ -88,6 +92,7 @@ export function runClaudeCommandProcess(
       detached: process.platform !== 'win32',
       windowsVerbatimArguments: spawnConfig.windowsVerbatimArguments
     })
+    trackAccountCliProcess(child, { group: process.platform !== 'win32' })
     const stdout = child.stdout
     const stderr = child.stderr
     if (!interactiveLogin && (!stdout || !stderr)) {
@@ -228,7 +233,10 @@ type ClaudeSpawnConfig = {
 }
 
 // Match account terminals by using CLAUDE_CONFIG_DIR for login identity.
-function claudeConfigDirEnv(configDir: string, browser: string | undefined): NodeJS.ProcessEnv {
+function claudeConfigDirEnv(
+  configDir: string | undefined,
+  browser: string | undefined
+): NodeJS.ProcessEnv {
   return browser
     ? { CLAUDE_CONFIG_DIR: configDir, BROWSER: browser }
     : { CLAUDE_CONFIG_DIR: configDir }
@@ -250,17 +258,20 @@ function resolveClaudeInvocation(
   configDir: ClaudeCommandConfig,
   interactiveLogin: WindowsHostInteractiveLoginSpawn | null,
   hostClaudeCommand: () => string,
-  browser: string | undefined
+  browser: string | undefined,
+  systemLogin?: { userConfigDir: string | undefined }
 ): ClaudeSpawnConfig {
   const inheritedEnv = { ...process.env }
   stripInheritedAgentSessionEnv(inheritedEnv)
+  // An undefined value removes the variable, so Claude falls back to its default folder.
+  const hostConfigDir = systemLogin ? systemLogin.userConfigDir : configDir.windowsPath
   const spawnConfig = interactiveLogin
     ? {
         command: interactiveLogin.command,
         args: interactiveLogin.args,
         env: withCliRuntimeOnPath(hostClaudeCommand(), {
           ...inheritedEnv,
-          ...claudeConfigDirEnv(configDir.windowsPath, browser)
+          ...claudeConfigDirEnv(hostConfigDir, browser)
         }),
         windowsVerbatimArguments: false
       }
@@ -281,7 +292,7 @@ function resolveClaudeInvocation(
             ...buildWindowsCommandInvocation(hostClaudeCommand(), args),
             env: withCliRuntimeOnPath(hostClaudeCommand(), {
               ...inheritedEnv,
-              ...claudeConfigDirEnv(configDir.windowsPath, browser)
+              ...claudeConfigDirEnv(hostConfigDir, browser)
             })
           }
         : {
@@ -289,7 +300,7 @@ function resolveClaudeInvocation(
             args,
             env: withCliRuntimeOnPath(hostClaudeCommand(), {
               ...inheritedEnv,
-              ...claudeConfigDirEnv(configDir.windowsPath, browser)
+              ...claudeConfigDirEnv(hostConfigDir, browser)
             }),
             windowsVerbatimArguments: false
           }

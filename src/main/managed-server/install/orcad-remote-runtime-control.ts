@@ -38,6 +38,7 @@ import {
   isWindowsRemoteHost,
   type RemoteHostPlatform
 } from '../../ssh/remote-host/ssh-remote-platform'
+import { resolveSealServiceLaunch } from '../service/seal-service-launch-resolution'
 
 // Pause even after early host answers to avoid a tight retry loop.
 const READINESS_RETRY_PAUSE_MS = 1_000
@@ -130,7 +131,9 @@ export async function launchOrcadAndAwaitReadiness(
       orcadLaunchCommand(
         target.host,
         spec,
-        target.conn.orcadLaunchDetach ?? 'nohup',
+        (await resolveSealServiceLaunch(target, spec, (line) => execOrcadRemote(target, line))) ??
+          target.conn.orcadLaunchDetach ??
+          'nohup',
         (await target.conn.orcadLaunchEnv?.({ fullVersion: spec.fullVersion })) ?? []
       )
     )

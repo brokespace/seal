@@ -35,17 +35,11 @@ export type WebRuntimeCredentialSource = {
   migrationUnavailable(): void
   /** A sealed device_revoked naming `deviceId`: delete the key only if it is ours. */
   deviceRevoked(deviceId: string): Promise<boolean>
-  /** Send the token over v2 to hosts that take it (falling back for older hosts); keyed pages use keys instead. */
-  tryV2Token?: boolean
 }
 
-/** A bearer token; legacy framing unless `tryV2Token` (pages that can never hold a device key). */
-export function tokenOnlyCredentialSource(
-  deviceToken: string,
-  options: { tryV2Token?: boolean } = {}
-): WebRuntimeCredentialSource {
+/** A bearer token, for pages that can never hold a device key. */
+export function tokenOnlyCredentialSource(deviceToken: string): WebRuntimeCredentialSource {
   return {
-    tryV2Token: options.tryV2Token === true,
     nextPlan: () => ({ kind: 'legacy-token', deviceToken }),
     migrated: async () => {},
     migrationUnavailable: () => {},

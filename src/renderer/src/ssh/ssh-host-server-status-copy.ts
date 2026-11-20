@@ -297,8 +297,10 @@ function unservedLine(
           'Orca couldn’t confirm that terminals started by an older version of Orca have exited. Reconnect to try again.'
         )
       }
-    case 'orcad_unavailable':
-      return unavailableLine(status.detail, t)
+    case 'orcad_unavailable': {
+      const line = unavailableLine(status.detail, t)
+      return line.detail ? line : { ...line, ...withDetail(status.cause) }
+    }
     case 'source_changed':
       return sourceChangedLine(t)
     case 'refused':

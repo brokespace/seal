@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 // Standalone E2EE WebSocket mock exposes desktop RPCs with fake data for mobile development without Orca.
 import { WebSocketServer, type WebSocket } from 'ws'
-import { deriveSharedKey, e2eeDecrypt, e2eeEncrypt, type E2EEState } from './mock-server-encryption'
+import { DesktopMobileE2EEV2Session } from '../../src/main/runtime/rpc/mobile/e2ee/mobile-e2ee-v2-desktop-session'
 import { loadOrCreateMockServerKeyPair } from './mock-server-key-pair'
 import {
   error,
@@ -19,48 +19,46 @@ const serverPublicKeyB64 = Buffer.from(serverKeyPair.publicKey).toString('base64
 
 const wss = new WebSocketServer({ port: PORT })
 
-// First frame is plaintext e2ee_hello; encrypt subsequent RPCs with derived shared key.
-const connectionState = new Map<WebSocket, E2EEState>()
+// First frame is the plaintext v2 hello; every later frame is sealed under that socket's session keys.
+type MockSocketState = { session: DesktopMobileE2EEV2Session; authenticated: boolean }
+const connectionState = new Map<WebSocket, MockSocketState>()
 
 wss.on('connection', (ws) => {
   console.log('[mock] Client connected — waiting for e2ee_hello')
 
-  ws.on('message', (data) => {
-    const msg = typeof data === 'string' ? data : data.toString('utf-8')
-    const e2ee = connectionState.get(ws)
+  ws.on('message', (data, isBinary) => {
+    if (isBinary) {
+      return
+    }
+    const msg = data.toString('utf-8')
+    const state = connectionState.get(ws)
 
-    if (!e2ee) {
-      let hello: { type?: string; publicKeyB64?: string }
+    if (!state) {
+      let hello: unknown
       try {
         hello = JSON.parse(msg)
       } catch {
-        ws.send(JSON.stringify({ type: 'e2ee_error', message: 'Invalid JSON' }))
-        ws.close()
+        ws.close(4001, 'Invalid handshake message')
         return
       }
-
-      if (hello.type !== 'e2ee_hello' || !hello.publicKeyB64) {
-        ws.send(JSON.stringify({ type: 'e2ee_error', message: 'Expected e2ee_hello' }))
-        ws.close()
+      const session = DesktopMobileE2EEV2Session.create({
+        hello,
+        serverSecretKey: serverKeyPair.secretKey,
+        expectedContext: { transport: 'direct' }
+      })
+      if (!session) {
+        // Same refusal as a real desktop: nothing older than forward-secret v2 is answered.
+        ws.close(4001, 'Invalid e2ee_hello v2')
         return
       }
-
-      const clientPublicKey = Uint8Array.from(Buffer.from(hello.publicKeyB64, 'base64'))
-      if (clientPublicKey.length !== 32) {
-        ws.send(JSON.stringify({ type: 'e2ee_error', message: 'Invalid public key' }))
-        ws.close()
-        return
-      }
-
-      const sharedKey = deriveSharedKey(serverKeyPair.secretKey, clientPublicKey)
-      connectionState.set(ws, { sharedKey, deviceToken: null, authenticated: false })
-
-      ws.send(JSON.stringify({ type: 'e2ee_ready' }))
+      connectionState.set(ws, { session, authenticated: false })
+      ws.send(JSON.stringify(session.ready))
       console.log('[mock] E2EE key exchange complete — waiting for encrypted auth')
       return
     }
 
-    const plaintext = e2eeDecrypt(msg, e2ee.sharedKey)
+    const { session } = state
+    const plaintext = session.openText(msg)
     if (plaintext === null) {
       console.log('[mock] Decryption failed — dropping message')
       return
@@ -70,29 +68,33 @@ wss.on('connection', (ws) => {
     try {
       request = JSON.parse(plaintext) as RpcRequest
     } catch {
-      const encrypted = e2eeEncrypt(
-        JSON.stringify(error('unknown', 'bad_request', 'Invalid JSON')),
-        e2ee.sharedKey
-      )
-      ws.send(encrypted)
+      ws.send(session.sealText(JSON.stringify(error('unknown', 'bad_request', 'Invalid JSON'))))
       return
     }
 
-    if (!e2ee.authenticated) {
-      const auth = request as unknown as { type?: string; deviceToken?: string }
-      if (auth.type !== 'e2ee_auth' || auth.deviceToken !== AUTH_TOKEN) {
+    if (!state.authenticated) {
+      const auth: Record<string, unknown> = { ...request }
+      if (
+        auth.type !== 'e2ee_auth' ||
+        auth.deviceToken !== AUTH_TOKEN ||
+        auth.transcriptHashB64 !== session.transcriptHashB64
+      ) {
         ws.send(
-          e2eeEncrypt(
-            JSON.stringify({ type: 'e2ee_error', error: { code: 'unauthorized' } }),
-            e2ee.sharedKey
-          )
+          session.sealText(JSON.stringify({ type: 'e2ee_error', error: { code: 'unauthorized' } }))
         )
         ws.close()
         return
       }
-      e2ee.deviceToken = auth.deviceToken
-      e2ee.authenticated = true
-      ws.send(e2eeEncrypt(JSON.stringify({ type: 'e2ee_authenticated' }), e2ee.sharedKey))
+      state.authenticated = true
+      ws.send(
+        session.sealText(
+          JSON.stringify({
+            type: 'e2ee_authenticated',
+            v: 2,
+            transcriptHashB64: session.transcriptHashB64
+          })
+        )
+      )
       console.log('[mock] E2EE authentication complete')
       return
     }
@@ -102,7 +104,7 @@ wss.on('connection', (ws) => {
       request,
       (response) => {
         if (ws.readyState === ws.OPEN) {
-          ws.send(e2eeEncrypt(JSON.stringify(response), e2ee.sharedKey))
+          ws.send(session.sealText(JSON.stringify(response)))
         }
       },
       ws
@@ -120,7 +122,7 @@ wss.on('connection', (ws) => {
   })
 })
 
-console.log(`[mock] Orca mock server listening on ws://localhost:${PORT}`)
+console.log(`[mock] Seal mock server listening on ws://localhost:${PORT}`)
 console.log(`[mock] Auth token: ${AUTH_TOKEN}`)
 console.log(`[mock] Server public key (base64): ${serverPublicKeyB64}`)
 console.log(

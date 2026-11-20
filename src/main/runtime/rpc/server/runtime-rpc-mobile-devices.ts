@@ -7,6 +7,9 @@ import type {
   DelegatedMobileDeviceSyncResult
 } from '../../../../shared/delegated-mobile-device-contract'
 import type { DeviceEntry } from './pairing/device-entry'
+import { revokeDevices } from './pairing/device-revocation'
+import { revokeNamedPairedDevices, summarizePairedDevice } from './pairing/paired-device-summary'
+import type { PairedDevicesRpcContext } from '../core'
 import { RuntimeRpcRequestAdmission } from './runtime-rpc-request-admission'
 
 // Why: below dispatch so a caller-bound RPC context can revoke and mint mobile devices.
@@ -15,57 +18,59 @@ export class RuntimeRpcMobileDevices extends RuntimeRpcRequestAdmission {
 
   async revokeMobileDevice(deviceId: string): Promise<boolean> {
     const device = this.deviceRegistry?.getDevice(deviceId)
-    const revoked = device?.scope === 'mobile' && this.revokeDevicesNow([device])
-    if (revoked) {
-      this.mobileDesktopRelay?.phonesChanged()
-    }
-    return revoked
+    return device?.scope === 'mobile' && this.revokeDevicesNow([device]) !== null
   }
 
   revokeRuntimeAccess(deviceId: string): boolean {
     const device = this.deviceRegistry?.getDevice(deviceId)
-    return device?.scope === 'runtime' && this.revokeDevicesNow([device])
+    return device?.scope === 'runtime' && this.revokeDevicesNow([device]) !== null
   }
 
-  private revokeDevicesNow(roots: readonly DeviceEntry[]): boolean {
+  /** Rows another writer removed from the registry file, or that expired: finish them as revokes. */
+  protected revokeRemovedOrExpiredDevices(devices: readonly DeviceEntry[]): void {
+    this.revokeDevicesNow(devices)
+  }
+
+  // The desktop's Settings and the owner's CLI revoke through the same path.
+  protected override ownerPairedDevices(): PairedDevicesRpcContext {
+    return {
+      list: () => ({
+        devices: (this.deviceRegistry?.listDevices() ?? []).map(summarizePairedDevice)
+      }),
+      revoke: (params) => {
+        const registry = this.deviceRegistry
+        if (!registry) {
+          throw new Error('device_registry_unavailable')
+        }
+        return revokeNamedPairedDevices(registry.listDevices(), params, (roots) =>
+          this.revokeDevicesNow(roots)
+        )
+      }
+    }
+  }
+
+  private revokeDevicesNow(roots: readonly DeviceEntry[]): DeviceEntry[] | null {
     const registry = this.deviceRegistry
     if (!registry) {
-      return false
+      return null
     }
-    // Saves adopt disk deletions, so capture every descendant's cleanup facts before the first write.
-    const paired = registry.listDevices()
-    const plan: DeviceEntry[] = []
-    const visited = new Set<string>()
-    const visit = (device: DeviceEntry): void => {
-      if (visited.has(device.deviceId)) {
-        return
-      }
-      visited.add(device.deviceId)
-      for (const child of paired) {
-        if (child.parentDeviceId === device.deviceId || child.forkedFrom === device.deviceId) {
-          visit(child)
+    const revoked = revokeDevices(roots, {
+      registry,
+      queueRelayDeviceRevoke: (binding) => this.queueRelayDeviceRevoke(binding),
+      queuePushUnregister: (deviceId, registrationId) =>
+        this.queuePushUnregister(deviceId, registrationId),
+      onRevoked: (device) => {
+        if (device.scope === 'mobile') {
+          this.mobileRelayPairingProvider?.onDemandStateChanged?.()
         }
+        this.runtime.forgetClientNavigationState(device.deviceId)
+        this.mobileSocketWiring?.terminateDeviceConnections(device.deviceId)
       }
-      plan.push(device)
+    })
+    if (revoked?.some((device) => device.scope === 'mobile' && !device.parentDeviceId)) {
+      this.mobileDesktopRelay?.phonesChanged()
     }
-    roots.forEach(visit)
-    for (const device of plan) {
-      const { deviceId } = device
-      // Keep ancestors until child cleanup is durable so retry can rediscover them.
-      if (device.scope === 'mobile') {
-        if (device.relayBinding && !this.queueRelayDeviceRevoke(device.relayBinding)) {
-          return false
-        }
-        this.queuePushUnregister(deviceId, device.pushRegistration?.registrationId)
-      }
-      registry.removeDevice(deviceId)
-      if (device.scope === 'mobile') {
-        this.mobileRelayPairingProvider?.onDemandStateChanged?.()
-      }
-      this.runtime.forgetClientNavigationState(deviceId)
-      this.mobileSocketWiring?.terminateDeviceConnections(deviceId)
-    }
-    return true
+    return revoked
   }
 
   /** Make the runtime device `parentDeviceId`'s phones exactly `phones`; dropped ones are fully revoked. */
@@ -96,11 +101,7 @@ export class RuntimeRpcMobileDevices extends RuntimeRpcRequestAdmission {
       devices = registry.upsertDelegatedMobileDevices(current, phones)
     }
     return {
-      devices: devices.map((device) => ({
-        phoneKey: device.phoneKey,
-        deviceId: device.deviceId,
-        token: device.token
-      }))
+      devices: devices.map(({ phoneKey, deviceId, token }) => ({ phoneKey, deviceId, token }))
     }
   }
 

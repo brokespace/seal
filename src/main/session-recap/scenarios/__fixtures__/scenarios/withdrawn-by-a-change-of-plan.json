@@ -1,0 +1,62 @@
+{
+  "id": "withdrawn-by-a-change-of-plan",
+  "title": "The user scraps an ask the agent had a question about and asks for something else",
+  "categories": ["withdrawn-or-changed", "question-open"],
+  "surfaces": ["claude-cli", "codex-cli"],
+  "expected": "After turn 1 the rate limiter is open, waiting on the agent's question. After turn 2 it is withdrawn and not listed as not addressed; the CAPTCHA is done.",
+  "steps": [
+    {
+      "user": "Add a Redis-backed rate limiter to the login route."
+    },
+    {
+      "agent": "Before I add it: staging has no Redis. Should I add Redis to the compose file as well, or is there an instance I should point at?"
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "questions",
+          "has": "redis",
+          "why": "the agent's question is open"
+        }
+      ]
+    },
+    {
+      "user": "actually scrap the rate limiter, we're putting Cloudflare in front instead. just add a CAPTCHA to the login form"
+    },
+    {
+      "edit": "/srv/shop/src/pages/login.tsx"
+    },
+    {
+      "agent": "The login form has a CAPTCHA now, checked on the server before the password is."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "rate|limiter|redis",
+          "why": "the user scrapped the rate limiter"
+        },
+        {
+          "in": "did",
+          "has": "captcha",
+          "state": "done",
+          "why": "the CAPTCHA is recorded as done"
+        }
+      ]
+    }
+  ]
+}

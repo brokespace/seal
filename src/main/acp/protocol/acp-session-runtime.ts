@@ -24,6 +24,7 @@ import {
   SessionIdSchema,
   type InitializeRequest,
   type InitializeResponse,
+  type McpServer,
   type AuthenticateResponse,
   type CancelNotification,
   type PromptRequest,
@@ -137,8 +138,8 @@ export class AcpSessionRuntime {
   }
 
   /** Fork without starting a session here; requires advertised fork support. */
-  async forkSession(sessionId: string, cwd: string): Promise<string> {
-    const params = { sessionId, cwd, mcpServers: [] }
+  async forkSession(sessionId: string, cwd: string, mcpServers: McpServer[] = []) {
+    const params = { sessionId, cwd, mcpServers }
     return (await this.call('session/fork', params, ForkSessionResponseSchema)).sessionId
   }
 

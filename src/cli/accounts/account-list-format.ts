@@ -11,7 +11,7 @@ type AccountsBlock = {
 }
 
 export function formatDataAccounts(label: string, state: ManagedDataAccountsState): string {
-  const system = `  system  System default${state.activeAccountId === null ? ' (active)' : ''}`
+  const system = `  system  System login${state.activeAccountId === null ? ' (active)' : ''}`
   if (state.accounts.length === 0) {
     return `No managed ${label} accounts.\n${system}`
   }
@@ -25,7 +25,7 @@ export function formatDataAccounts(label: string, state: ManagedDataAccountsStat
 
 export function formatAccountsBlock(label: string, block: AccountsBlock): string {
   const hostAccountId = block.activeAccountIdsByRuntime?.host ?? block.activeAccountId
-  const system = `  system  System default${hostAccountId === null ? ' (active)' : ''}`
+  const system = `  system  System login${hostAccountId === null ? ' (active)' : ''}`
   if (block.accounts.length === 0) {
     return `No managed ${label} accounts.\n${system}`
   }
@@ -38,7 +38,7 @@ export function formatAccountsBlock(label: string, block: AccountsBlock): string
   const lines = block.accounts.map(
     (account) =>
       `  ${account.id}  ${account.email}${activeAccountIds.has(account.id) ? ' (active)' : ''}${
-        account.needsSignIn ? ' (sign in again in Orca Settings > AI Provider Accounts)' : ''
+        account.needsSignIn ? ' (sign in again in Seal Settings > Accounts)' : ''
       }`
   )
   return `Managed ${label} accounts (${block.accounts.length}):\n${system}\n${lines.join('\n')}`

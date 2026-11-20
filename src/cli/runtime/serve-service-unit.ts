@@ -4,6 +4,23 @@ import { SERVE_LAUNCHD_LABEL_PREFIX } from '../../shared/serve-bundle-coordinati
 
 export type ServeServiceManager = 'launchd' | 'systemd'
 
+/** Hex digits of the profile path's hash that name a non-default profile's service. */
+export const SERVE_PROFILE_SUFFIX_HEX_DIGITS = 8
+
+const SERVE_SYSTEMD_UNIT_PREFIX = 'seal-serve'
+
+/** The launchd label, or the systemd unit name with `.service`; an empty suffix names the default profile. */
+export function serveServiceName(manager: ServeServiceManager, profileSuffix: string): string {
+  if (manager === 'launchd') {
+    return profileSuffix
+      ? `${SERVE_LAUNCHD_LABEL_PREFIX}.${profileSuffix}`
+      : SERVE_LAUNCHD_LABEL_PREFIX
+  }
+  return profileSuffix
+    ? `${SERVE_SYSTEMD_UNIT_PREFIX}-${profileSuffix}.service`
+    : `${SERVE_SYSTEMD_UNIT_PREFIX}.service`
+}
+
 export type ServeServiceSpec = {
   manager: ServeServiceManager
   /** launchd label or systemd unit name (with `.service`). */
@@ -51,7 +68,10 @@ export function serveServiceArgs(
 function profileSuffix(input: ServeServiceInput): string {
   return input.userDataPath === input.defaultUserDataPath
     ? ''
-    : createHash('sha256').update(input.userDataPath).digest('hex').slice(0, 8)
+    : createHash('sha256')
+        .update(input.userDataPath)
+        .digest('hex')
+        .slice(0, SERVE_PROFILE_SUFFIX_HEX_DIGITS)
 }
 
 export function resolveServeServiceManager(platform: NodeJS.Platform): ServeServiceManager | null {
@@ -63,12 +83,11 @@ export function renderServeService(input: ServeServiceInput): ServeServiceSpec {
   if (!manager) {
     throw new Error(`No service manager support on ${input.platform}`)
   }
-  const suffix = profileSuffix(input)
+  const name = serveServiceName(manager, profileSuffix(input))
   // The manager’s environment may resolve a different default profile.
   const env: Record<string, string> = { PATH: input.path, ORCA_USER_DATA_PATH: input.userDataPath }
   const argv = [input.command, ...serveServiceArgs(input)]
   if (manager === 'launchd') {
-    const name = suffix ? `${SERVE_LAUNCHD_LABEL_PREFIX}.${suffix}` : SERVE_LAUNCHD_LABEL_PREFIX
     const logPath = join(input.homeDir, 'Library', 'Logs', 'Orca', `${name}.log`)
     return {
       manager,
@@ -78,7 +97,6 @@ export function renderServeService(input: ServeServiceInput): ServeServiceSpec {
       content: renderLaunchAgent(name, argv, env, logPath)
     }
   }
-  const name = suffix ? `orca-serve-${suffix}.service` : 'orca-serve.service'
   return {
     manager,
     name,
@@ -96,17 +114,25 @@ function xml(value: string): string {
     .replace(/"/g, '&quot;')
 }
 
-function renderLaunchAgent(
+export function renderLaunchAgent(
   label: string,
   argv: string[],
   env: Record<string, string>,
-  logPath: string
+  logPath: string,
+  options: {
+    abandonProcessGroup?: boolean
+    /** The only kind of login session launchd may load the agent into, e.g. `Aqua`. */
+    limitLoadToSessionType?: string
+  } = {}
 ): string {
   const strings = (values: string[]): string =>
     values.map((value) => `    <string>${xml(value)}</string>`).join('\n')
   const envEntries = Object.entries(env)
-    .map(([key, value]) => `    <key>${xml(key)}</key>\n    <string>${xml(value)}</string>`)
-    .join('\n')
+    .map(([key, value]) => `    <key>${xml(key)}</key>\n    <string>${xml(value)}</string>\n`)
+    .join('')
+  const sessionType = options.limitLoadToSessionType
+    ? `  <key>LimitLoadToSessionType</key>\n  <string>${xml(options.limitLoadToSessionType)}</string>\n`
+    : ''
   // launchd has no start limit; a clean crash-brake exit must stop restarts.
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -120,8 +146,7 @@ ${strings(argv)}
   </array>
   <key>EnvironmentVariables</key>
   <dict>
-${envEntries}
-  </dict>
+${envEntries}  </dict>
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>
@@ -137,7 +162,7 @@ ${envEntries}
   <string>${xml(logPath)}</string>
   <key>StandardErrorPath</key>
   <string>${xml(logPath)}</string>
-</dict>
+${options.abandonProcessGroup ? '  <key>AbandonProcessGroup</key>\n  <true/>\n' : ''}${sessionType}</dict>
 </plist>
 `
 }
@@ -150,21 +175,24 @@ export function systemdQuote(value: string): string {
     : escaped
 }
 
-function renderSystemdUnit(argv: string[], env: Record<string, string>): string {
+export function renderSystemdUnit(
+  argv: string[],
+  env: Record<string, string>,
+  description = 'Seal server (seal serve --supervise)'
+): string {
   const environment = Object.entries(env)
-    .map(([key, value]) => `Environment=${systemdQuote(`${key}=${value}`)}`)
-    .join('\n')
+    .map(([key, value]) => `Environment=${systemdQuote(`${key}=${value}`)}\n`)
+    .join('')
   // Kill only the supervisor: it stops its server while the terminal daemon survives.
   return `[Unit]
-Description=Orca server (orca serve --supervise)
+Description=${description}
 StartLimitIntervalSec=900
 StartLimitBurst=5
 
 [Service]
 Type=simple
 ExecStart=${argv.map(systemdQuote).join(' ')}
-${environment}
-Restart=on-failure
+${environment}Restart=on-failure
 RestartSec=10
 TimeoutStopSec=90
 KillMode=process

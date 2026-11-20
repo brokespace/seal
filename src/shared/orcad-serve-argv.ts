@@ -1,4 +1,6 @@
 /** Share the CLI’s exact Electron --serve-* and plain orcad argv with runtime tests; flags previously vanished at this boundary (#30120). */
+import { ORCAD_LOOPBACK_BIND_HOST } from './orcad-bind-address'
+
 export type ServeOrcaAppArgs = {
   json?: boolean
   port?: string | null
@@ -35,16 +37,12 @@ export function serveOptionArgs(args: ServeOrcaAppArgs, prefix: '--' | '--serve-
   ]
 }
 
-/** `bindHost` exists for tests, which must not listen on every interface. */
-export function orcadServeArgs(
-  args: ServeOrcaAppArgs,
-  webClientRoot?: string,
-  bindHost = '0.0.0.0'
-): string[] {
+/** Listens on loopback unless the operator names an address: reaching the network is never the default. */
+export function orcadServeArgs(args: ServeOrcaAppArgs, webClientRoot?: string): string[] {
   const { bind, ...options } = args
   return [
     '--bind',
-    bind ?? bindHost,
+    bind ?? ORCAD_LOOPBACK_BIND_HOST,
     ...serveOptionArgs(options, '--'),
     ...(webClientRoot ? ['--web-client-root', webClientRoot] : [])
   ]

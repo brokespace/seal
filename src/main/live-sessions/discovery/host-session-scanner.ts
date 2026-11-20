@@ -1,0 +1,297 @@
+import type {
+  LiveSession,
+  LiveSessionMachine
+} from '../../../shared/live-sessions/live-session-types'
+import type { LiveSessionHost } from '../hosts/live-session-hosts'
+import {
+  buildAgentProbeScript,
+  buildDiscoveryScript,
+  buildJobProbeScript
+} from './discovery-script'
+import { jobAnswers, jobLookups, settleJobLookups } from './detached-job-lookup'
+import { parseDiscoveryOutput, type DiscoveredFile, type DiscoveryOutput } from './discovery-output'
+import { assembleHostSessions, type SummarizedTranscript } from './session-assembly'
+import {
+  contextAfter,
+  summarizeClaudeTranscript,
+  summarizeCodexRollout
+} from './transcript-summary'
+import { foldClaudeActivity, newClaudeActivityState } from './claude-transcript-activity'
+import { summarizeSubagentFile, type SubagentFileSummary } from './claude-subagent-files'
+import { foldCodexTerminals, newCodexTerminalState } from './codex-background-terminals'
+import { codexPlan } from './codex-transcript-activity'
+import { recordsOf } from './transcript-records'
+import { discoveredAgentConfigsIn, HostAutoCompactConfig } from './host-auto-compact-config'
+
+export type HostScanLimits = {
+  maxAgeMinutes: number
+  maxFiles: number
+  maxReads: number
+  headBytes: number
+  tailBytes: number
+  /** Subagent transcripts listed per session, and how many are read per scan across the host. */
+  maxSubagents: number
+  maxSubagentReads: number
+  subagentTailBytes: number
+}
+
+export const LOCAL_SCAN_LIMITS: HostScanLimits = {
+  maxAgeMinutes: 12 * 60,
+  maxFiles: 60,
+  maxReads: 60,
+  headBytes: 16 * 1024,
+  tailBytes: 48 * 1024,
+  maxSubagents: 24,
+  maxSubagentReads: 48,
+  // A subagent's last calls and their results: the commands it left running are its session's.
+  subagentTailBytes: 24 * 1024
+}
+
+// SSH exec keeps only the last 1 MB of output; a handful of reads stays well under it.
+export const SSH_SCAN_LIMITS: HostScanLimits = {
+  ...LOCAL_SCAN_LIMITS,
+  maxFiles: 40,
+  maxReads: 6,
+  maxSubagents: 12,
+  maxSubagentReads: 10,
+  subagentTailBytes: 12 * 1024
+}
+
+// A runtime answers up to 4 MB of JSON; the server caps the script's output below that.
+export const RUNTIME_SCAN_LIMITS: HostScanLimits = { ...LOCAL_SCAN_LIMITS, maxReads: 16 }
+
+export function scanLimitsFor(machine: LiveSessionMachine): HostScanLimits {
+  if (machine.kind === 'local') {
+    return LOCAL_SCAN_LIMITS
+  }
+  return machine.connection === 'server' ? RUNTIME_SCAN_LIMITS : SSH_SCAN_LIMITS
+}
+
+type CachedTranscript = SummarizedTranscript & {
+  head: string | null
+  /** The last context reading that had a size; a compaction read on its own has none. */
+  sizedContext: SummarizedTranscript['summary']['context']
+  subagentFiles: Map<string, SubagentFileSummary>
+}
+
+export type HostScanResult = {
+  sessions: LiveSession[]
+  /** Cut short, it has not read what ties every agent to its transcript: its sessions are not the machine's. */
+  complete: boolean
+}
+
+const agentPidsOf = (output: DiscoveryOutput): string =>
+  output.processes
+    .map((process) => process.pid)
+    .sort((a, b) => a - b)
+    .join(' ')
+
+/** Scans one host, re-reading only transcripts that grew since the last scan. */
+export class HostSessionScanner {
+  private readonly cache = new Map<string, CachedTranscript>()
+  private readonly firstSeen = new Map<string, number>()
+  /** Transcripts a scan found several possible writers for; outlives the read cache. */
+  private readonly contested = new Set<string>()
+  /** The agent processes of the last whole scan. */
+  private agentPids: string | null = null
+  /** The agent process last known to write each transcript; outlives the read cache. */
+  private readonly writers = new Map<string, number>()
+  private readonly autoCompact = new HostAutoCompactConfig()
+
+  constructor(
+    private readonly host: LiveSessionHost,
+    private readonly limits: HostScanLimits
+  ) {}
+
+  /** Seal resumed the session of `transcriptPath` as `pid`: its writes from here on are that process's. */
+  noteResumed(transcriptPath: string, pid: number): void {
+    this.writers.set(transcriptPath, pid)
+  }
+
+  /** Whether an agent started or ended since the last scan: one `ps`, not a scan. */
+  async agentsChanged(): Promise<boolean> {
+    const output = parseDiscoveryOutput(await this.host.run(buildAgentProbeScript()))
+    return !output.complete || agentPidsOf(output) !== this.agentPids
+  }
+
+  async scan(nowMs: number): Promise<HostScanResult> {
+    const cached = [...this.cache.values()]
+    const known = cached.flatMap((t) => [
+      { path: t.path, size: t.size },
+      ...[...t.subagentFiles.values()].map((sub) => ({ path: sub.path, size: sub.size }))
+    ])
+    const headKnown = cached.filter((t) => t.head !== null).map((t) => t.path)
+    const findFiles = this.host.transcriptFiles
+    const asked = jobLookups(cached)
+    const script = buildDiscoveryScript({
+      ...this.limits,
+      transcripts: !findFiles,
+      known: findFiles ? [] : known,
+      headKnown: findFiles ? [] : headKnown,
+      jobs: asked,
+      configRoots: this.autoCompact.rootsOf(cached)
+    })
+    const stdout = await this.host.run(script)
+    const output = parseDiscoveryOutput(stdout)
+    this.autoCompact.absorb(discoveredAgentConfigsIn(stdout))
+    this.agentPids = output.complete ? agentPidsOf(output) : null
+    if (findFiles) {
+      // After the script: it names the transcripts running agents own, which are listed however old.
+      output.files = await findFiles({
+        ...this.limits,
+        nowMs,
+        known: new Map(known.map((k) => [k.path, k.size])),
+        headKnown: new Set(headKnown),
+        pinned: output.pins
+      })
+    }
+    const listed = new Set(output.files.map((f) => f.path))
+    for (const file of output.files) {
+      this.absorb(file)
+    }
+    if (output.complete) {
+      for (const path of this.cache.keys()) {
+        if (!listed.has(path)) {
+          this.cache.delete(path)
+        }
+      }
+    }
+    await this.settleDetachedJobs(asked, output)
+    // A scan cut short lists only some: the rest stand as earlier scans read them.
+    const transcripts = [...this.cache.values()].map((transcript) => ({
+      ...transcript,
+      summary: {
+        ...transcript.summary,
+        context: this.autoCompact.apply(transcript, transcript.summary.context)
+      },
+      agentPid: this.writers.get(transcript.path),
+      contested: this.contested.has(transcript.path)
+    }))
+    const sessions = assembleHostSessions({
+      machine: this.host.machine,
+      output,
+      transcripts,
+      unread: output.files.filter((file) => !this.cache.has(file.path)),
+      nowMs,
+      onContested: (transcript) => this.contested.add(transcript.path)
+    })
+    for (const session of sessions) {
+      if (session.transcriptPath && session.pid !== null) {
+        this.writers.set(session.transcriptPath, session.pid)
+      }
+    }
+    const ids = new Set(sessions.map((s) => s.id))
+    for (const id of this.firstSeen.keys()) {
+      if (!ids.has(id)) {
+        this.firstSeen.delete(id)
+      }
+    }
+    for (const session of sessions) {
+      const seen = this.firstSeen.get(session.id) ?? nowMs
+      this.firstSeen.set(session.id, seen)
+      session.lastActivityAt ||= seen
+    }
+    return { sessions, complete: output.complete }
+  }
+
+  /**
+   * Which jobs the sessions left running by themselves still run. What this scan read may have
+   * started one the script was not asked about: the host is asked again, for the jobs alone.
+   */
+  private async settleDetachedJobs(
+    asked: ReturnType<typeof jobLookups>,
+    output: DiscoveryOutput
+  ): Promise<void> {
+    const transcripts = [...this.cache.values()]
+    const wanted = jobLookups(transcripts)
+    const known = new Set(asked.map((lookup) => lookup.key))
+    if (wanted.every((lookup) => known.has(lookup.key))) {
+      settleJobLookups(transcripts, wanted, jobAnswers(asked, output.jobs))
+      return
+    }
+    const probe = await this.host
+      .run(buildJobProbeScript(wanted))
+      .then(parseDiscoveryOutput, () => null)
+    settleJobLookups(transcripts, wanted, jobAnswers(wanted, probe?.complete ? probe.jobs : null))
+  }
+
+  /** Subagent transcripts change while their session's own file stands still. */
+  private absorbSubagents(cached: CachedTranscript, file: DiscoveredFile): void {
+    const listed = new Map<string, SubagentFileSummary>()
+    for (const sub of file.subagents ?? []) {
+      const previous = cached.subagentFiles.get(sub.path)
+      const summary = summarizeSubagentFile(sub, this.limits.subagentTailBytes, previous)
+      if (summary) {
+        // Unread bytes (over the budget) keep the size they were last read at, so they are read later.
+        const unread = sub.tail === null && previous?.size !== sub.size
+        listed.set(sub.path, unread ? { ...summary, size: previous?.size ?? -1 } : summary)
+      }
+    }
+    cached.subagentFiles = listed
+    cached.subagents = [...listed.values()]
+  }
+
+  private absorb(file: DiscoveredFile): void {
+    const cached = this.cache.get(file.path)
+    if (cached) {
+      this.absorbSubagents(cached, file)
+    }
+    if (cached && cached.size === file.size) {
+      cached.mtimeMs = file.mtimeMs
+      return
+    }
+    const tailIsWholeFile = file.size <= this.limits.tailBytes
+    const records = recordsOf(file.tail, !tailIsWholeFile)
+    if (file.tail === null || (cached && !tailIsWholeFile && records.length === 0)) {
+      // Over this scan's read budget, or a tail cut inside one long line: the old summary stands until a scan reads a whole record.
+      if (cached) {
+        cached.mtimeMs = file.mtimeMs
+      }
+      return
+    }
+    const head = file.head ?? cached?.head ?? null
+    const summarize = file.provider === 'claude' ? summarizeClaudeTranscript : summarizeCodexRollout
+    const summary = summarize({ path: file.path, head, tail: file.tail, tailIsWholeFile })
+    // A file that shrank was rewritten: what the old bytes launched no longer holds.
+    const grew = cached !== undefined && file.size > cached.size
+    const claudeActivity = (grew ? cached.claudeActivity : undefined) ?? newClaudeActivityState()
+    const codexTerminals = (grew ? cached.codexTerminals : undefined) ?? newCodexTerminalState()
+    if (file.provider === 'claude') {
+      foldClaudeActivity(claudeActivity, records)
+    } else {
+      foldCodexTerminals(codexTerminals, records)
+    }
+    const sized = grew ? cached.sizedContext : null
+    const context = contextAfter(summary.context, grew ? cached.summary.context : null, sized)
+    const next: CachedTranscript = {
+      path: file.path,
+      size: file.size,
+      mtimeMs: file.mtimeMs,
+      head,
+      sizedContext: context && context.windowTokens > 0 ? context : sized,
+      summary: {
+        ...summary,
+        title: summary.title ?? cached?.summary.title ?? null,
+        cwd: summary.cwd ?? cached?.summary.cwd ?? null,
+        startCwd: summary.startCwd ?? cached?.summary.startCwd ?? null,
+        firstAt: summary.firstAt ?? cached?.summary.firstAt ?? null,
+        lastMessage: summary.lastMessage ?? cached?.summary.lastMessage ?? null,
+        context,
+        // A terminal's records can lie between the bytes a scan reads: once its, it stays its.
+        headless: summary.headless && !(grew && !cached.summary.headless)
+      },
+      ...(file.provider === 'claude'
+        ? { claudeActivity }
+        : {
+            codexPlan: codexPlan(records, (grew ? cached.codexPlan : null) ?? null),
+            codexTerminals
+          }),
+      subagentFiles: cached?.subagentFiles ?? new Map(),
+      subagents: cached?.subagents ?? []
+    }
+    this.cache.set(file.path, next)
+    if (!cached) {
+      this.absorbSubagents(next, file)
+    }
+  }
+}

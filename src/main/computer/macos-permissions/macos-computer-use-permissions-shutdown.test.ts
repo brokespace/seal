@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@orca/process-host', () => ({ runProcess: mocks.runProcess }))
 vi.mock('node:child_process', () => ({ spawn: mocks.spawn, spawnSync: mocks.spawnSync }))
 vi.mock('../macos-native/macos-native-provider-paths', () => ({
-  resolveMacOSComputerUseAppPath: () => '/Applications/Orca Computer Use.app'
+  resolveMacOSComputerUseAppPath: () => '/Applications/Seal Computer Use.app'
 }))
 vi.mock('./macos-computer-use-permission-status', () => ({
   getComputerUsePermissionStatus: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock('../../macos-permissions/macos-tcc-reset', () => ({
 
 const denied: ComputerUsePermissionStatusResult = {
   platform: 'darwin',
-  helperAppPath: '/Applications/Orca Computer Use.app',
+  helperAppPath: '/Applications/Seal Computer Use.app',
   helperUnavailableReason: null,
   permissions: [
     { id: 'accessibility', status: 'not-granted' },
@@ -250,5 +250,35 @@ describe('computer-use setup cancellation', () => {
       launchQueued: false
     })
     expect(setupLaunches()).toEqual([['--permission', 'accessibility']])
+  })
+
+  it('leaves System Settings closed when an agent asks for a granted permission', async () => {
+    mocks.peek.mockResolvedValue({
+      ...denied,
+      permissions: [
+        { id: 'accessibility', status: 'granted' },
+        { id: 'screenshots', status: 'not-granted' }
+      ]
+    })
+    const { permissions } = await loadModules()
+    await expect(
+      permissions.openComputerUsePermissions('accessibility', { skipGranted: true })
+    ).resolves.toMatchObject({ launchedHelper: false, openedSettings: false })
+    expect(setupLaunches()).toEqual([])
+    await permissions.openComputerUsePermissions('screenshots', { skipGranted: true })
+    expect(setupLaunches()).toEqual([['--permission', 'screenshots']])
+  })
+
+  it('refuses setup behind the lock screen without opening System Settings', async () => {
+    mocks.peek.mockResolvedValue({ ...denied, sessionLocked: true })
+    const { permissions } = await loadModules()
+    await expect(
+      permissions.openComputerUsePermissions('accessibility', { skipGranted: true })
+    ).rejects.toMatchObject({ code: 'screen_locked' })
+    await expect(permissions.openComputerUsePermissions()).rejects.toMatchObject({
+      code: 'screen_locked'
+    })
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(setupLaunches()).toEqual([])
   })
 })

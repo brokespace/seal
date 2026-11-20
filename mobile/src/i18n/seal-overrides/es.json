@@ -1,0 +1,18 @@
+{
+  "app": {
+    "pairScan": {
+      "pasteCodePlaceholder": "seal://pair?code=... o pega el código"
+    }
+  },
+  "seal": {
+    "pairConfirm": {
+      "computerLabel": "Ordenador",
+      "newComputer": "Aún no está emparejado con este teléfono",
+      "fingerprintLabel": "Huella de la clave",
+      "relayLabel": "Relay",
+      "directLabel": "Dirección directa",
+      "replaceNotice": "Esto sustituirá el emparejamiento actual con {{name}}.",
+      "otherRelayNotice": "Este código usa {{origin}} en lugar del relay integrado en esta app. Empareja solo si confías en quien lo gestiona."
+    }
+  }
+}

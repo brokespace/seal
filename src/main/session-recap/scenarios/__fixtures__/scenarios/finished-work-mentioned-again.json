@@ -1,0 +1,64 @@
+{
+  "id": "finished-work-mentioned-again",
+  "title": "The user mentions work that is already done while asking for the next thing",
+  "categories": ["duplicate-asks", "addressed-later-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "Two requests, both done. The retries, which the user only mentions in passing in turn 2, are not listed as a new or unaddressed request.",
+  "steps": [
+    {
+      "user": "Add retries to the webhook sender, three attempts with backoff."
+    },
+    {
+      "edit": "/srv/shop/src/webhooks/send.ts"
+    },
+    {
+      "agent": "The webhook sender now retries three times with exponential backoff."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "user": "Thanks. Now that the webhook sender retries, log each attempt with its status code."
+    },
+    {
+      "edit": "/srv/shop/src/webhooks/send.ts"
+    },
+    {
+      "agent": "Each attempt is logged with its status code and the attempt number."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "ignored",
+          "lacks": "retr",
+          "why": "the user mentioning the finished retries is not a new request for them"
+        },
+        {
+          "in": "asked",
+          "max": 2,
+          "why": "the user asked two things"
+        },
+        {
+          "in": "did",
+          "has": "log",
+          "why": "the logging is recorded as done"
+        }
+      ]
+    }
+  ]
+}

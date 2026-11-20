@@ -1,0 +1,26 @@
+{
+  "id": "finished-work-mentioned-again",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Add retries to the webhook sender, three attempts with backoff"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says the sender retries three times with exponential backoff"
+        }
+      }
+    },
+    {
+      "quotes": ["log each attempt with its status code"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 8: the agent says each attempt is logged with its status code"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

@@ -22,7 +22,8 @@ export function SshHostFields({
   configIdentityAlias = null,
   onFormChange,
   onSubmit,
-  offerProxyConnectionReuse = false
+  offerProxyConnectionReuse = false,
+  advancedOptions
 }: {
   form: EditingTarget
   disabled: boolean
@@ -33,6 +34,8 @@ export function SshHostFields({
   onFormChange: (updater: (prev: EditingTarget) => EditingTarget) => void
   onSubmit: () => void
   offerProxyConnectionReuse?: boolean
+  /** Shown at the end of Advanced. */
+  advancedOptions?: React.ReactNode
 }) {
   const t = useTranslate()
   const [advancedOpen, setAdvancedOpen] = useState(preferAdvancedOpen)
@@ -141,6 +144,7 @@ export function SshHostFields({
         disabled={disabled}
         onFormChange={onFormChange}
         offerProxyConnectionReuse={offerProxyConnectionReuse}
+        extra={advancedOptions}
       />
     </form>
   )
@@ -213,7 +217,7 @@ export function RemoteServerFields({
           onChange={(event) => onPairingCodeChange(event.target.value)}
           placeholder={t(
             'auto.components.sidebar.AddRemoteHostDialog.pairingCodePlaceholder',
-            'orca://pair?code=...'
+            'seal://pair?code=...'
           )}
           className="font-mono"
         />

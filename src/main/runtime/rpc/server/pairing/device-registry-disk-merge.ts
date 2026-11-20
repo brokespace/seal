@@ -3,7 +3,7 @@ import {
   writeDurableSecureJsonFile,
   writeSecureJsonFile
 } from '../../../../../shared/secure-storage/secure-file'
-import type { DeviceEntry } from './device-entry'
+import { withoutUsedPlaintextToken, type DeviceEntry } from './device-entry'
 import { isMissingFileError, quarantineCorruptRegistry } from './device-registry-corruption'
 import { readDeviceRegistryFile, type DeviceRegistryFileRead } from './device-registry-file-read'
 
@@ -44,7 +44,8 @@ export function mergeDeviceRegistrySave(
 
 function withLatestSighting(device: DeviceEntry, diskLastSeenAt: number | undefined): DeviceEntry {
   return diskLastSeenAt !== undefined && diskLastSeenAt > device.lastSeenAt
-    ? { ...device, lastSeenAt: diskLastSeenAt }
+    ? // Another writer saw the offer used, so its bearer is no longer kept in the clear.
+      withoutUsedPlaintextToken({ ...device, lastSeenAt: diskLastSeenAt })
     : device
 }
 

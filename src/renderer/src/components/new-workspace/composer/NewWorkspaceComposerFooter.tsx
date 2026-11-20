@@ -17,6 +17,7 @@ type NewWorkspaceComposerFooterProps = Pick<
   | 'createDisabled'
   | 'creating'
   | 'primaryActionLabel'
+  | 'primaryActionText'
 > & {
   submitShortcutModifierLabel: string
 }
@@ -30,6 +31,7 @@ export function NewWorkspaceComposerFooter({
   createDisabled,
   creating,
   primaryActionLabel,
+  primaryActionText,
   submitShortcutModifierLabel
 }: NewWorkspaceComposerFooterProps): React.JSX.Element {
   const t = useTranslate()
@@ -81,7 +83,7 @@ export function NewWorkspaceComposerFooter({
           aria-label={primaryActionLabel}
         >
           {creating ? <LoaderCircle className="size-4 animate-spin" /> : null}
-          {t('auto.components.NewWorkspaceComposerFooter.create', 'Create')}
+          {primaryActionText ?? t('auto.components.NewWorkspaceComposerFooter.create', 'Create')}
           <ButtonKeyHint modifierLabel={submitShortcutModifierLabel} />
         </Button>
       </div>

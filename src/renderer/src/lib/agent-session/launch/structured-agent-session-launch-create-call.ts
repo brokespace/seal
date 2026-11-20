@@ -33,6 +33,7 @@ import {
   inheritedForkCreateOptions,
   refuseUnsentInheritedFork
 } from './structured-agent-session-launch-fork-support'
+import { requireHostLaunchDirectorySupport } from './structured-agent-session-launch-directory-support'
 import {
   RuntimeConnectionChangedBeforeSendError,
   RuntimeRpcCallError
@@ -151,6 +152,7 @@ export async function launchStructuredAgentSession(
     }
   }
   await requireHostForkSupport(intent)
+  await requireHostLaunchDirectorySupport(intent)
   const hostSeed = await requireHostCreateSupport(intent)
   if (intent.target.kind !== 'local') {
     onHostSeed?.(hostSeed)

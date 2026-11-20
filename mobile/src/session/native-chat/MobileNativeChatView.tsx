@@ -116,6 +116,8 @@ type ChatViewProps = MobileNativeChatSendProps &
     onRemoveAttachment?: (id: string) => void
     isAttaching?: boolean
     inputLockReason?: MobileNativeChatInputLockReason | null
+    /** Seal: why a `waiting` lock holds, where the chat has no terminal to wait for. */
+    inputLockText?: string | null
     /** Why a `disconnected` lock holds: which host is out, and Reconnect when it can help. */
     hostOutage?: ComponentProps<typeof MobileNativeChatInputLockStatus>['hostOutage']
     // Report send failures here only while mounted; the route uses a toast otherwise.
@@ -183,6 +185,7 @@ export function MobileNativeChatView({
   onMicPressIn,
   onMicPressOut,
   inputLockReason,
+  inputLockText,
   hostOutage = null,
   sendErrorMessage,
   onClearSendError,
@@ -319,10 +322,9 @@ export function MobileNativeChatView({
   const footer = mobileNativeChatListFooter(liveStatus, turns.waitingRows, renderItem)
   const emptyState = mobileNativeChatEmptyState(status, agent, error, sessionLive, clearing)
 
-  const composerPlaceholder = mobileNativeChatComposerPlaceholder(
-    offlineQueue.lockReason,
-    turnIndicator?.afterStop
-  )
+  const composerPlaceholder =
+    (offlineQueue.lockReason === 'waiting' ? inputLockText : null) ??
+    mobileNativeChatComposerPlaceholder(offlineQueue.lockReason, turnIndicator?.afterStop)
   const promptOwnsInput = useMobileNativeChatPromptInputOwner(
     { promptShown, ask, askRequiresTerminal, permission, micActive, micProcessing },
     inputRef

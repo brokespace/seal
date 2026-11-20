@@ -1,0 +1,158 @@
+import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
+import {
+  AGENT_ONE_SHOT_FLAGS,
+  AGENT_ONE_SHOT_SUBCOMMANDS,
+  AGENT_TOOL_SUBCOMMANDS
+} from '../../../shared/live-sessions/agent-subcommands'
+import type { DiscoveredProcess } from './discovery-output'
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+const NOT_A_SESSION: Record<LiveSessionProvider, ReadonlySet<string>> = {
+  claude: new Set([...AGENT_TOOL_SUBCOMMANDS.claude, ...AGENT_ONE_SHOT_SUBCOMMANDS.claude]),
+  codex: new Set([...AGENT_TOOL_SUBCOMMANDS.codex, ...AGENT_ONE_SHOT_SUBCOMMANDS.codex])
+}
+
+// Another program drives these through pipes (Agent SDK hosts such as Seal's Home chat).
+const HEADLESS_FLAGS: Record<LiveSessionProvider, ReadonlySet<string>> = {
+  claude: new Set([
+    ...AGENT_ONE_SHOT_FLAGS.claude,
+    '--input-format',
+    '--output-format',
+    '--sdk-url'
+  ]),
+  codex: new Set(AGENT_ONE_SHOT_FLAGS.codex)
+}
+const TOOL = /^(claude|codex)(\.[cm]?js)?$/
+
+export function processProvider(args: string): LiveSessionProvider | null {
+  const [command = '', script = '', ...rest] = args.split(/\s+/)
+  const name = (value: string) => value.split('/').pop() ?? ''
+  // Claude's native installer names its binary for the version: `~/.local/share/claude/versions/2.1.3`.
+  const direct = /\/claude\/versions\/[\d.]+$/.test(command)
+    ? 'claude'
+    : TOOL.exec(name(command))?.[1]
+  let provider: LiveSessionProvider | null = null
+  let subcommand = ''
+  if (direct === 'claude' || direct === 'codex') {
+    provider = direct
+    subcommand = script
+  } else if (name(command) === 'node') {
+    const named = TOOL.exec(name(script))?.[1]
+    if (script.endsWith('claude-code/cli.js') || named === 'claude') {
+      provider = 'claude'
+    } else if (/@openai\/codex\/bin\//.test(script) || named === 'codex') {
+      provider = 'codex'
+    }
+    subcommand = rest[0] ?? ''
+  }
+  if (!provider || NOT_A_SESSION[provider].has(subcommand)) {
+    return null
+  }
+  return args.split(/\s+/).some((word) => HEADLESS_FLAGS[provider].has(word.split('=')[0]))
+    ? null
+    : provider
+}
+
+/** The binary a session runs, when its command line names it by absolute path. */
+export function processBinary(args: string, provider: LiveSessionProvider): string | null {
+  const command = args.split(/\s+/)[0] ?? ''
+  return command.startsWith('/') && command.split('/').pop() === provider ? command : null
+}
+
+/** `$CODEX_HOME`, from where a rollout lives: `<home>/sessions/YYYY/MM/DD/rollout-*.jsonl`. */
+export function codexHomeOf(transcriptPath: string | null): string | null {
+  const at = transcriptPath?.lastIndexOf('/sessions/') ?? -1
+  return at > 0 ? transcriptPath!.slice(0, at) : null
+}
+
+/** How the agent was told to ask before acting, when its command line says. */
+export function approvalModeFromArgs(args: string): string | null {
+  const words = args.split(/\s+/)
+  if (
+    words.includes('--dangerously-skip-permissions') ||
+    words.includes('--dangerously-bypass-approvals-and-sandbox') ||
+    words.includes('--yolo')
+  ) {
+    return words.some((word) => /(^|\/)codex/.test(word)) ? 'never' : 'bypassPermissions'
+  }
+  for (let i = 0; i < words.length; i++) {
+    const [flag, inline] = words[i].split('=')
+    if (flag === '--permission-mode' || flag === '--ask-for-approval' || flag === '-a') {
+      return inline ?? words[i + 1] ?? null
+    }
+  }
+  return null
+}
+
+/** The session a command line names: `--resume <id>`, `--session-id <id>`, `codex resume <id>`. */
+export function sessionIdFromArgs(args: string): string | null {
+  const words = args.split(/\s+/)
+  for (let i = 0; i < words.length - 1; i++) {
+    const flag = words[i]
+    if (
+      (flag === '--resume' || flag === '-r' || flag === '--session-id' || flag === 'resume') &&
+      UUID.test(words[i + 1])
+    ) {
+      return words[i + 1]
+    }
+  }
+  return null
+}
+
+export type AgentProcess = DiscoveredProcess & { provider: LiveSessionProvider }
+
+const MAX_WRAPPERS = 8
+
+/**
+ * Each agent process with the pid of its session's process: its own, or the outermost wrapper it
+ * runs under (npm's codex wrapper spawns the native binary, which is the one that holds the rollout).
+ */
+function agentSessionPids(processes: DiscoveredProcess[]): Map<AgentProcess, number> {
+  const agents = processes.flatMap((p): AgentProcess[] => {
+    const provider = processProvider(p.args)
+    return provider ? [{ ...p, provider }] : []
+  })
+  const byPid = new Map(agents.map((p) => [p.pid, p]))
+  return new Map(
+    agents.map((agent) => {
+      let outermost = agent
+      for (let hops = 0; hops < MAX_WRAPPERS; hops++) {
+        const parent = byPid.get(outermost.ppid)
+        if (!parent || parent.provider !== agent.provider) {
+          break
+        }
+        outermost = parent
+      }
+      return [agent, outermost.pid]
+    })
+  )
+}
+
+/**
+ * Whether the pane on a process's tty is the one it runs in: its first process is the agent or
+ * one the agent runs under. Taken as so when the host did not say what either runs under.
+ */
+export function runsInPane(process: DiscoveredProcess, panePid: number): boolean {
+  return (
+    process.ancestors === undefined ||
+    panePid === 0 ||
+    process.pid === panePid ||
+    process.ancestors.includes(panePid)
+  )
+}
+
+/** Only the outermost agent process per session. */
+export function agentProcesses(processes: DiscoveredProcess[]): AgentProcess[] {
+  return [...agentSessionPids(processes)].flatMap(([agent, pid]) =>
+    agent.pid === pid ? [agent] : []
+  )
+}
+
+/** The session's process for a pid: what an inner process holds open, its session owns. */
+export function agentSessionPidOf(processes: DiscoveredProcess[]): (pid: number) => number {
+  const sessionPids = new Map(
+    [...agentSessionPids(processes)].map(([agent, pid]) => [agent.pid, pid])
+  )
+  return (pid) => sessionPids.get(pid) ?? pid
+}

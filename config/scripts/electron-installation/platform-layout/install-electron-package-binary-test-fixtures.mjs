@@ -171,7 +171,7 @@ syncBuiltinESMExports()
 export function initGitRepo(projectDir) {
   runGit(projectDir, ['init', '--quiet', '--initial-branch=main'])
   runGit(projectDir, ['config', 'user.email', 'orca-test@example.com'])
-  runGit(projectDir, ['config', 'user.name', 'Orca Test'])
+  runGit(projectDir, ['config', 'user.name', 'Seal Test'])
   runGit(projectDir, ['commit', '--quiet', '--allow-empty', '-m', 'init'])
 }
 

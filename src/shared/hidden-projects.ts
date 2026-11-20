@@ -3,6 +3,7 @@ import {
   normalizeExecutionHostId,
   type ExecutionHostId
 } from './execution-host'
+import type { ProjectGroup } from './project-group-types'
 import type { Repo } from './repo-types'
 
 type HiddenRepoRow = Pick<Repo, 'id' | 'hiddenAt' | 'connectionId' | 'executionHostId'>
@@ -90,6 +91,11 @@ export function withoutHiddenRepos<R extends Pick<Repo, 'hiddenAt'>>(
 ): readonly R[] {
   return repos.some(isRepoHidden) ? repos.filter((repo) => !isRepoHidden(repo)) : repos
 }
+
+/** Project groups hide as projects do: a hidden group's header drops out of every list. */
+export const withoutHiddenProjectGroups: <G extends Pick<ProjectGroup, 'hiddenAt'>>(
+  groups: readonly G[]
+) => readonly G[] = withoutHiddenRepos
 
 /** Filter ids whose every copy is hidden select nothing visible; drop them rather than show an empty list. */
 export function withoutHiddenFilterRepoIds(

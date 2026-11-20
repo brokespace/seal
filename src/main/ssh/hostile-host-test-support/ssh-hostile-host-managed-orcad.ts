@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join, posix } from 'node:path'
 import { expect } from 'vitest'
 import { NODE_RUNTIME_ASSETS, pinnedNodeRuntimeAsset } from '../../../shared/node-runtime-pin'
-import { ORCAD_MANAGED_REMOTE_PORT } from '../../../shared/orcad-managed-runtime'
+import { SEAL_MANAGED_SSH_PORT } from '../../../shared/orcad-managed-runtime'
 import { ORCAD_RUNTIMES_DIRNAME } from '../../../shared/orcad-artifacts'
 import type { SshTarget } from '../../../shared/ssh-types'
 import { readOrcadActivationRecord } from '../../managed-server/activation/orcad-activation-record-store'
@@ -48,7 +48,7 @@ export async function proveManagedOrcadCell(
   try {
     const context = await resolveOrcadRemoteContext(sshTarget, conn)
     expect(context.serverTarget).toBe(expected.runtime)
-    const slot = managedOrcadSlot(context, ORCAD_MANAGED_REMOTE_PORT)
+    const slot = managedOrcadSlot(context, SEAL_MANAGED_SSH_PORT)
     const desktop = cell.desktopNoEgress ? refuseDesktopDownloads() : null
     const deploy = deployOrcad({
       ...slot,

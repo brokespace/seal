@@ -8,12 +8,14 @@ import {
 } from '../client-pages/single-page-browser-commands-host-test-double'
 import { E2EEChannel } from '../../rpc/mobile/e2ee/e2ee-channel'
 import {
-  decrypt,
-  decryptBytes,
-  deriveSharedKey,
-  encrypt,
-  generateKeyPair
+  createPairedE2EEClientHandshake,
+  pairedE2EEV2TokenAuth
+} from '../../../../shared/remote-runtime/e2ee/paired-e2ee-client-handshake'
+import {
+  generateKeyPair,
+  publicKeyToBase64
 } from '../../../../shared/remote-runtime/e2ee/node/e2ee-crypto'
+import { NODE_PAIRED_E2EE_PRIMITIVES } from '../../../../shared/remote-runtime/e2ee/node/paired-e2ee-node-primitives'
 import type { RpcBinarySender } from '../../rpc/transports/rpc-binary-sender'
 
 const { webContentsFromId, startBrowserScreencast } = vi.hoisted(() => ({
@@ -30,9 +32,8 @@ vi.mock('../../../browser/cdp/screencast/browser-screencast-stream', () => ({
 }))
 vi.mock('../../../telemetry/client', () => ({ track: vi.fn() }))
 
-function connectLegacyChannel() {
+function connectChannel() {
   const serverKeys = generateKeyPair()
-  const clientKeys = generateKeyPair()
   const sent: (string | Buffer)[] = []
   const ws = {
     OPEN: 1 as const,
@@ -58,15 +59,17 @@ function connectLegacyChannel() {
     onReady: vi.fn(),
     onError
   })
-  const sharedKey = deriveSharedKey(clientKeys.secretKey, serverKeys.publicKey)
+  const client = createPairedE2EEClientHandshake({
+    primitives: NODE_PAIRED_E2EE_PRIMITIVES,
+    hostPublicKeyB64: publicKeyToBase64(serverKeys.publicKey),
+    transport: 'direct'
+  })
+  channel.handleRawMessage(client.helloText())
+  client.acceptReadyText(String(sent[0]))
   channel.handleRawMessage(
-    JSON.stringify({
-      type: 'e2ee_hello',
-      publicKeyB64: Buffer.from(clientKeys.publicKey).toString('base64')
-    })
-  )
-  channel.handleRawMessage(
-    encrypt(JSON.stringify({ type: 'e2ee_auth', deviceToken: 'valid-token' }), sharedKey)
+    client.channel.sealText(
+      JSON.stringify(pairedE2EEV2TokenAuth(client.transcriptHashB64()!, 'valid-token'))
+    )
   )
   let reply!: (response: string) => void
   let sendBinary!: RpcBinarySender
@@ -74,11 +77,12 @@ function connectLegacyChannel() {
     reply = textReply
     sendBinary = binaryReply
   })
-  channel.handleRawMessage(encrypt('{"id":"s","method":"browser.screencast"}', sharedKey))
+  channel.handleRawMessage(client.channel.sealText('{"id":"s","method":"browser.screencast"}'))
+  // Frames open once, in the order the host sealed them.
   const decode = (frame: string | Buffer): string =>
     typeof frame === 'string'
-      ? decrypt(frame, sharedKey)!
-      : `binary:${Buffer.from(decryptBytes(new Uint8Array(frame), sharedKey)!).join(',')}`
+      ? client.channel.openText(frame)!
+      : `binary:${Buffer.from(client.channel.openBinary(new Uint8Array(frame))!).join(',')}`
   return { ws, sent, onError, reply, sendBinary, decode, channel }
 }
 
@@ -100,7 +104,7 @@ async function subscribe(sendBinary: RpcBinarySender) {
   return { subscription, onFrame, stop }
 }
 
-describe('screencast over a backlogged legacy E2EE socket', () => {
+describe('screencast over a backlogged E2EE socket', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     webContentsFromId.mockReset()
@@ -113,7 +117,7 @@ describe('screencast over a backlogged legacy E2EE socket', () => {
 
   // Backlogged sockets remain live; ghost eviction would blank working phones.
   it('keeps the viewer through a long backlog and then delivers only the newest frame', async () => {
-    const transport = connectLegacyChannel()
+    const transport = connectChannel()
     const { subscription, onFrame, stop } = await subscribe(transport.sendBinary)
     onFrame(new Uint8Array([0]))
     const baseline = transport.sent.length
@@ -129,10 +133,9 @@ describe('screencast over a backlogged legacy E2EE socket', () => {
 
     transport.ws.bufferedAmount = 0
     await vi.advanceTimersByTimeAsync(SCREENCAST_PENDING_FRAME_RETRY_MS * 2)
-    expect(transport.sent.slice(baseline).map(transport.decode)).toEqual([
-      '{"parked":true}',
-      `binary:${frameCount}`
-    ])
+    // sent[0] is the plaintext ready; every later frame must be opened to reach the newest.
+    const opened = transport.sent.slice(1).map(transport.decode)
+    expect(opened.slice(baseline - 1)).toEqual(['{"parked":true}', `binary:${frameCount}`])
     expect(transport.onError).not.toHaveBeenCalled()
     subscription.session.stop()
     transport.channel.destroy()

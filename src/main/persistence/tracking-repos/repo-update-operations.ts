@@ -6,7 +6,7 @@ import type { RepoHostTarget } from '../../../shared/repo-host-identity'
 import { isLegacyRepoForExternalWorktreeVisibility } from '../../../shared/external-worktree-visibility'
 import { normalizeRepoSourceControlAiOverrides } from '../../../shared/source-control/ai/settings/source-control-ai-repo-settings'
 import { normalizeRepoWorkspaceCleanupPolicy } from '../../../shared/workspace-cleanup/workspace-cleanup-policy'
-import { normalizeWorktreeVisibilitySourcePreferences } from '../../../shared/worktree/visibility-sources'
+import { normalizeWorktreeVisibilitySourcePreferences } from '../../../shared/worktree/visibility/visibility-sources'
 import type { GhAccountBinding } from '../../../shared/github/accounts/account-binding'
 import { invalidateGhAccountTokenCache } from '../../github/accounts/gh-account-token'
 import { sanitizeRepoUpdatesForPersistence } from './repo-sanitization'
@@ -123,6 +123,7 @@ export class RepoUpdatePersistenceOperations {
       workspaceCleanupPolicy?: Repo['workspaceCleanupPolicy'] | null
       externalWorktreeDiscoverySuppressedAt?: Repo['externalWorktreeDiscoverySuppressedAt'] | null
       hiddenAt?: Repo['hiddenAt'] | null
+      autoCreated?: Repo['autoCreated'] | null
       ghAccount?: GhAccountBinding | null
     }
   ): Repo | null {
@@ -233,6 +234,10 @@ export class RepoUpdatePersistenceOperations {
     ) {
       delete repo.externalWorktreeDiscoverySuppressedAt
       delete sanitizedUpdates.externalWorktreeDiscoverySuppressedAt
+    }
+    if ('autoCreated' in sanitizedUpdates && !sanitizedUpdates.autoCreated) {
+      delete repo.autoCreated
+      delete sanitizedUpdates.autoCreated
     }
     if (
       'hiddenAt' in sanitizedUpdates &&

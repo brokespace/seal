@@ -18,6 +18,7 @@ import type {
   getProjectRuntimeShellMenuMode,
   resolveWindowsPowerShellImplementationSetting
 } from './use-tab-bar-runtime-model'
+import { useNewTabMenuEscape } from './use-new-tab-menu-escape'
 const NEW_TAB_MENU_TERMINAL_FOCUS_RETRY_MS = 50
 const NEW_TAB_MENU_TERMINAL_FOCUS_TIMEOUT_MS = 5000
 export function useTabBarCreateMenuController({
@@ -247,6 +248,7 @@ export function useTabBarCreateMenuController({
       })
     }
   }
+  const newTabMenuEscape = useNewTabMenuEscape()
   const menuFocusUnmountRef = useRef<((node: HTMLDivElement | null) => void) | null>(null)
   if (menuFocusUnmountRef.current === null) {
     menuFocusUnmountRef.current = (node: HTMLDivElement | null): void => {
@@ -287,6 +289,7 @@ export function useTabBarCreateMenuController({
     handleSelectCreateMenuOption,
     launchAgentFromNewTabEntry,
     runPendingNewTabMenuFocusAfterClose,
+    ...newTabMenuEscape,
     clearPendingNewTabMenuFocusOnUnmount: menuFocusUnmountRef.current,
     queueNewActiveTerminalFocusAfterNewTabMenuClose,
     queueTerminalTabFocusAfterNewTabMenuClose,

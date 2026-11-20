@@ -37,7 +37,7 @@ export async function startBrowserLinkServer(): Promise<{
         <style>body{margin:40px;font:16px system-ui}h1{font-size:28px}a{display:inline-block}</style></head>
         <body><h1>Image gallery</h1><p>Click the image to open the PNG in a new tab.</p>
         <a href="${origin.replace('127.0.0.1', 'localhost')}/image.png" target="_blank">
-          <img id="linked-image" src="${origin}/image.png" width="320" height="320" alt="Orca illustration">
+          <img id="linked-image" src="${origin}/image.png" width="320" height="320" alt="Seal illustration">
         </a></body></html>`)
       return
     }

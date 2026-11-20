@@ -1,0 +1,91 @@
+{
+  "id": "restart-mid-session",
+  "title": "The app restarts between an open ask and the turn that does it",
+  "categories": ["restart-resume"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The recap survives the restart without a model request, and the tracking leaves the not-addressed list once it is wired up. No request is listed twice.",
+  "steps": [
+    {
+      "user": "Add a 'reorder' button to past orders, and track clicks on it in analytics."
+    },
+    {
+      "edit": "/srv/shop/src/pages/past-orders.tsx"
+    },
+    {
+      "agent": "The reorder button is on each past order and refills the cart with the same items. Analytics tracking is not wired up yet."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "restart": true
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the restart",
+      "check": [
+        {
+          "in": "asked",
+          "has": "reorder",
+          "why": "the recap is read back from disk"
+        },
+        {
+          "in": "ignored",
+          "has": "analytic|track",
+          "why": "tracking is asked for and not done yet"
+        },
+        {
+          "requests": {
+            "max": 2
+          },
+          "why": "a restart alone asks the model nothing (turn 1 took one request and one repair)"
+        }
+      ]
+    },
+    {
+      "user": "add the tracking now"
+    },
+    {
+      "edit": "/srv/shop/src/analytics/events.ts"
+    },
+    {
+      "agent": "Clicks on reorder now send a reorder_clicked event with the order id."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "analytic|track",
+          "why": "tracking was wired up"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "asked",
+          "max": 2,
+          "why": "no request is listed twice"
+        },
+        {
+          "in": "did",
+          "has": "track|event|analytic",
+          "why": "the tracking is recorded as done"
+        }
+      ]
+    }
+  ]
+}

@@ -77,6 +77,8 @@ export async function acquireInstallLock(
     /** False when a held lock is a fence whose age cannot prove its owner's work is finished. */
     allowStaleTakeover?: boolean
     waitTimeoutMs?: number
+    /** Called once, when a holder first answers and this caller starts to wait. */
+    onHeld?: () => void
     /** Atomic owner writes let holders prove continued ownership. */
     owner?: InstallLockOwnerFile
     /** Proven-exited owner token permits early takeover. */
@@ -126,7 +128,10 @@ export async function acquireInstallLock(
       if (result.trim().endsWith('OK') && (await keptAfterGcRecheck())) {
         return
       }
-      sawHolder = true
+      if (!sawHolder) {
+        sawHolder = true
+        options?.onHeld?.()
+      }
     } catch (err) {
       if (isUnconfirmedSshCommandTermination(err)) {
         throw err
