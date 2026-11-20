@@ -30,7 +30,7 @@ export function createClaudeSessionJournalTranslator(
   const { attempt } = failure
   const onLoginFailure = (text: string): void => {
     if (attempt.launch) {
-      reportSealClaudeLoginFailure({ claudeConfigDir: attempt.launch.claudeConfigDir, text })
+      void reportSealClaudeLoginFailure({ claudeConfigDir: attempt.launch.claudeConfigDir, text })
     }
   }
   attempt.delivery.onFailure = createClaudeJournalFailureHandler(failure)

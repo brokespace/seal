@@ -89,15 +89,15 @@ async function verifyRefreshRejected(
 export function reportSealClaudeLoginFailure(
   failure: SealClaudeLoginFailure,
   manager: SealAccountManager | null = getSealAccountManager()
-): void {
+): Promise<void> {
   if (!manager) {
-    return
+    return Promise.resolve()
   }
   manager.recheckLogins()
   if (!isLoginRefreshRejectedText(failure.text)) {
-    return
+    return Promise.resolve()
   }
-  void verifyRefreshRejected(manager, failure).catch((error: unknown) =>
+  return verifyRefreshRejected(manager, failure).catch((error: unknown) =>
     console.warn(
       '[seal-accounts] Could not check a failed login:',
       error instanceof Error ? error.message : 'unknown error'

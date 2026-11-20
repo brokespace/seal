@@ -12,7 +12,7 @@ import {
 import { fetchActiveClaudeRateLimits } from './claude-active-usage-fetch'
 import { resetClaudeOAuthProfileCacheForTests } from './claude-oauth-profile-request'
 
-const usageRequest = vi.hoisted(() => ({ rejectedStatus: null as number | null }))
+const usageRequest = vi.hoisted((): { rejectedStatus: number | null } => ({ rejectedStatus: null }))
 
 vi.mock('./claude-oauth-usage-request', async () => ({
   fetchClaudeOAuthUsage: async (): Promise<ProviderRateLimits> => {

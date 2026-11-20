@@ -1502,7 +1502,6 @@
         "noUsage": "No usage reading yet."
       },
       "action": {
-        "relogin": "Sign in again",
         "signIn": "Sign in",
         "use": "Use for new sessions",
         "more": "Actions for {{value0}}",

@@ -188,7 +188,7 @@ export class SealSessionWatch {
       return
     }
     this.reportedLoginFailures.set(session.id, message)
-    reportSealClaudeLoginFailure(
+    void reportSealClaudeLoginFailure(
       {
         text: message,
         accountKey: session.accountKey ?? undefined,

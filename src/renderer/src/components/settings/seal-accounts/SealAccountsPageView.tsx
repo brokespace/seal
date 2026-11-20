@@ -24,7 +24,7 @@ import { SealAccountGroupSection } from './SealAccountGroupSection'
 import { SealAccountsNotices } from './SealAccountsNotices'
 import { SealAccountsOnboarding } from './SealAccountsOnboarding'
 import { SealSessionsSection, SealSwapHistorySection } from './SealActivitySections'
-import { SealAddAccountDialog } from './SealAddAccountDialog'
+import { SealAddAccountDialog, startSealRelogin } from './SealAddAccountDialog'
 import { SealAutoSwapSection } from './SealAutoSwapSection'
 import { SealEditAccountDialog } from './SealEditAccountDialog'
 import { SealRemoveAccountDialog, type SealRemoveAccountChoice } from './SealRemoveAccountDialog'
@@ -128,9 +128,10 @@ export function SealAccountsPageView({
       sealAccountKeysMatch(entry.key, reloginKey)
     )
     if (account) {
+      startSealRelogin(signIn, account)
       setDialog({ kind: 'relogin', account })
     }
-  }, [reloginKey, machineId, overview])
+  }, [reloginKey, machineId, overview, signIn])
 
   if (!overview || !status) {
     return (
@@ -157,7 +158,10 @@ export function SealAccountsPageView({
   const shown = scopedMachine ? overviewForMachine(overview, scopedMachine.id) : overview
   const actionsFor = (account: SealFleetAccount) => ({
     onUse: () => actions.use(account),
-    onRelogin: () => setDialog({ kind: 'relogin', account }),
+    onRelogin: () => {
+      startSealRelogin(signIn, account)
+      setDialog({ kind: 'relogin', account })
+    },
     onEdit: () => setDialog({ kind: 'edit', account }),
     onRemove: () => setDialog({ kind: 'remove', account }),
     onPush: (machineId: string) => actions.push(account, machineId)

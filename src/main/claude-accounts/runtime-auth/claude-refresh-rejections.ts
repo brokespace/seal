@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import { writeSecureFile } from '../../../shared/secure-storage/secure-file'
 
 // Enough to cover every login on a host and its spent predecessors.
@@ -38,9 +38,7 @@ export function markClaudeRefreshRejected(refreshToken: string): void {
     rejected.delete(rejected.values().next().value ?? '')
   }
   save()
-  for (const listener of listeners) {
-    listener()
-  }
+  notify()
 }
 
 export function onClaudeRefreshRejected(listener: () => void): () => void {
@@ -51,19 +49,26 @@ export function onClaudeRefreshRejected(listener: () => void): () => void {
 }
 
 /** Keeps marks across restarts, so a dead login does not read as signed in until it fails again. */
-export function persistClaudeRefreshRejections(file: string): void {
+export async function persistClaudeRefreshRejections(file: string): Promise<void> {
   persistFile = file
-  try {
-    const saved: unknown = JSON.parse(readFileSync(file, 'utf8'))
-    if (Array.isArray(saved)) {
-      for (const entry of saved.slice(-MAX_REJECTIONS)) {
-        if (typeof entry === 'string' && /^[0-9a-f]{32}$/.test(entry)) {
-          rejected.add(entry)
-        }
-      }
-    }
-  } catch {
+  const saved: unknown = await readFile(file, 'utf8')
+    .then((text) => JSON.parse(text))
     // No file yet, or an unreadable one: start empty.
+    .catch(() => null)
+  if (!Array.isArray(saved)) {
+    return
+  }
+  for (const entry of saved.slice(-MAX_REJECTIONS)) {
+    if (typeof entry === 'string' && /^[0-9a-f]{32}$/.test(entry)) {
+      rejected.add(entry)
+    }
+  }
+  notify()
+}
+
+function notify(): void {
+  for (const listener of listeners) {
+    listener()
   }
 }
 

@@ -42,10 +42,6 @@ function manager() {
   return { fake, recheckLogins }
 }
 
-async function settled(): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 20))
-}
-
 beforeEach(() => {
   root = realpathSync(mkdtempSync(join(tmpdir(), 'seal-login-failure-')))
 })
@@ -59,14 +55,13 @@ describe('reportSealClaudeLoginFailure', () => {
   it('marks the system login refused when Claude says its session could not be refreshed', async () => {
     systemLogin(NOW - 60_000)
     const { fake, recheckLogins } = manager()
-    reportSealClaudeLoginFailure(
+    await reportSealClaudeLoginFailure(
       {
         claudeConfigDir: join(root, 'system'),
         text: 'OAuth session expired and could not be refreshed'
       },
       fake
     )
-    await settled()
     expect(recheckLogins).toHaveBeenCalledTimes(1)
     expect(isClaudeRefreshRejected('refresh-old')).toBe(true)
   })
@@ -74,11 +69,10 @@ describe('reportSealClaudeLoginFailure', () => {
   it('only re-reads login health for an unrelated sign-in failure', async () => {
     systemLogin(NOW - 60_000)
     const { fake, recheckLogins } = manager()
-    reportSealClaudeLoginFailure(
+    await reportSealClaudeLoginFailure(
       { claudeConfigDir: join(root, 'system'), text: 'Not logged in · Please run /login' },
       fake
     )
-    await settled()
     expect(recheckLogins).toHaveBeenCalledTimes(1)
     expect(isClaudeRefreshRejected('refresh-old')).toBe(false)
   })
@@ -86,14 +80,13 @@ describe('reportSealClaudeLoginFailure', () => {
   it('does not condemn a login whose access token is still good', async () => {
     systemLogin(NOW + 8 * 3_600_000)
     const { fake } = manager()
-    reportSealClaudeLoginFailure(
+    await reportSealClaudeLoginFailure(
       {
         claudeConfigDir: join(root, 'system'),
         text: 'OAuth session expired and could not be refreshed'
       },
       fake
     )
-    await settled()
     expect(isClaudeRefreshRejected('refresh-old')).toBe(false)
   })
 })

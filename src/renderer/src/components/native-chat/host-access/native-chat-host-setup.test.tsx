@@ -53,10 +53,12 @@ vi.mock('@/runtime/hosts/wsl/wsl-host-user-start', () => ({
 vi.mock('@/lib/provider-accounts/claude-account-sign-in', () => ({
   signInToClaudeAccount: managedSignIn
 }))
-const sealChat = vi.hoisted(() => ({
-  sessions: [] as { id: string; chat: boolean; accountKey: string }[],
-  relogin: vi.fn()
-}))
+const sealChat = vi.hoisted(
+  (): {
+    sessions: { id: string; chat: boolean; accountKey: string }[]
+    relogin: ReturnType<typeof vi.fn>
+  } => ({ sessions: [], relogin: vi.fn() })
+)
 vi.mock('@/components/seal-session/use-seal-host-snapshot', () => ({
   useSealHostSnapshot: () => ({ status: { sessions: sealChat.sessions }, readAt: 0 })
 }))

@@ -88,12 +88,12 @@ export class SealAccountManager {
 
   start(): void {
     this.host.load(this.deps.installationId)
-    persistClaudeRefreshRejections(join(this.dataRoot, 'seal-accounts', 'refused-logins.json'))
     this.unsubscribe.push(
       this.services.rateLimits.onStateChange(() => this.scheduleEvaluation()),
       this.loginExpiry.onChange(() => this.scheduleEvaluation()),
       onClaudeRefreshRejected(() => this.recheckLogins())
     )
+    void persistClaudeRefreshRejections(join(this.dataRoot, 'seal-accounts', 'refused-logins.json'))
     this.usage.sync()
     this.migrated = runSealAccountsMigration(this).catch((error: unknown) => {
       console.warn('[seal-accounts] Could not merge duplicate accounts:', error)
