@@ -59,7 +59,7 @@ export function startSealMcpEndpoints(input: {
       relayOrigin: input.relayOrigin,
       identity: sealMcpRelayIdentitySource({
         relayOrigin: input.relayOrigin,
-        getKeypair: input.runtimeRpc.getE2EEKeypair
+        getKeypair: () => input.runtimeRpc.getE2EEKeypair()
       }),
       service,
       onStatus: () => service.statusChanged()
