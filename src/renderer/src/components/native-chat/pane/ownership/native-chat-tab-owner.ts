@@ -3,6 +3,7 @@ import {
   chatWorkspaceByTabId as findTerminalTabWorktreeId
 } from '../../../../lib/agent-session/tab-identity/structured-chat-tab-index'
 import type { AppState } from '../../../../store/types'
+import { externalAgentSessionTabWorkspace } from '../../../live-sessions/chat/external-agent-session-tab-workspace'
 
 type NativeChatTabOwnerState = Pick<AppState, 'tabsByWorktree'> & {
   unifiedTabsByWorktree?: AppState['unifiedTabsByWorktree']
@@ -15,7 +16,8 @@ export function findNativeChatTabOwnerWorktreeId(
 ): string | null {
   return (
     findTerminalTabWorktreeId(state.tabsByWorktree, tabId) ??
-    chatWorkspaceByTabId(state.unifiedTabsByWorktree, tabId)
+    chatWorkspaceByTabId(state.unifiedTabsByWorktree, tabId) ??
+    externalAgentSessionTabWorkspace(state.unifiedTabsByWorktree, tabId)
   )
 }
 

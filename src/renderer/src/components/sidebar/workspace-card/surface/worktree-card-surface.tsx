@@ -9,6 +9,15 @@ import { getWorktreeCardFrameGeometry } from './worktree-card-frame-geometry'
 import type { WorktreeCardController } from '../controller/use-worktree-card-controller'
 import { DEFAULT_WORKSPACE_CARD_TEMPLATE } from '../template/default-workspace-card'
 import { renderWorkspaceCardTemplate } from '../template/render-workspace-card-template'
+import { WorktreeCardTitleStatusProvider } from './worktree-card-title-status'
+
+function pressFocusedCard(event: React.KeyboardEvent<HTMLDivElement>): void {
+  if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) {
+    return
+  }
+  event.preventDefault()
+  event.currentTarget.click()
+}
 
 export function WorktreeCardSurface({ card }: { card: WorktreeCardController }): React.JSX.Element {
   const {
@@ -47,7 +56,7 @@ export function WorktreeCardSurface({ card }: { card: WorktreeCardController }):
   const isSleeping = useIsSleepingWorktree(worktree.id)
   const geometryFor = (statusLane: boolean) =>
     getWorktreeCardFrameGeometry({ flushSurface, contentIndent, statusLane })
-  const { content: parentCardContent, frame } = renderWorkspaceCardTemplate(
+  const { content: templateContent, frame } = renderWorkspaceCardTemplate(
     card,
     DEFAULT_WORKSPACE_CARD_TEMPLATE,
     (templateFrame) => {
@@ -57,13 +66,20 @@ export function WorktreeCardSurface({ card }: { card: WorktreeCardController }):
         : undefined
     }
   )
+  const parentCardContent = newCardStyle ? (
+    // One roll-up per card feeds the status lane, the title and the title's right-hand slot.
+    <WorktreeCardTitleStatusProvider card={card}>{templateContent}</WorktreeCardTitleStatusProvider>
+  ) : (
+    templateContent
+  )
   const { cardStyle } = geometryFor(frame.statusLane)
   const titleOnlyCard = frame.singleLine
 
   const cardBody = (
     <div
       className={cn(
-        'relative flex cursor-pointer flex-col pr-1.5 transition-[background-color,border-color,opacity,box-shadow] duration-200 outline-none select-none',
+        'relative flex cursor-pointer flex-col transition-[background-color,border-color,opacity,box-shadow] duration-200 outline-none select-none',
+        'pr-1.5',
         titleOnlyCard ? 'py-2' : 'pt-1.25 pb-1.5',
         flushSurface ? 'ml-1 w-[calc(100%-0.25rem)]' : 'ml-1',
         'overflow-hidden rounded-lg',
@@ -81,8 +97,13 @@ export function WorktreeCardSurface({ card }: { card: WorktreeCardController }):
         titleRenaming && '!border-transparent !bg-transparent !shadow-none !ring-0',
         isDeleting && 'opacity-50 grayscale cursor-not-allowed',
         // Dim disconnected runtimes only; ancestor opacity would make the SSH control’s error tint/spinner illegible.
-        isRuntimeDisconnected && !isDeleting && 'opacity-60'
+        isRuntimeDisconnected && !isDeleting && 'opacity-60',
+        affiliateListMode && 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset'
       )}
+      // Outside the sidebar's listbox no row carries focus for the card, so the card is the tab stop.
+      role={affiliateListMode ? 'button' : undefined}
+      tabIndex={affiliateListMode ? 0 : undefined}
+      onKeyDown={affiliateListMode ? pressFocusedCard : undefined}
       data-worktree-card-surface="true"
       data-worktree-card-active={
         isActiveSurface && !isLineageDropTarget ? activeSurfaceVariant : undefined

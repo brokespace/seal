@@ -1,0 +1,13 @@
+[
+  {
+    "key": "5c1c43ebea735a222756cd5e7f8380f1",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Generate the sitemap and exit.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Generate the sitemap and exit.\n\n[m2] AGENT: sitemap.xml is generated in public/ with 1,204 URLs.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Generate Sitemap\",\n  \"goal\": \"Generate a sitemap and exit.\",\n  \"standing\": \"Sitemap.xml has been generated with 1,204 URLs.\",\n  \"add\": {\n    \"did\": [{\"text\": \"Generate sitemap\", \"state\": \"done\", \"ref\": \"m2\"}]\n  },\n  \"resolve\": [\"firstRequest\"]\n}"
+  }
+]

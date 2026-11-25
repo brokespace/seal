@@ -9,11 +9,13 @@ import {
   DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE,
   DEFAULT_SHOW_SLEEPING_WORKSPACES,
   DEFAULT_STATUS_BAR_ITEMS,
+  normalizeAgentActivityDisplayMode
+} from '../../../../../shared/constants'
+import {
   DEFAULT_WORKTREE_CARD_PROPERTIES,
   getWorktreeCardModeUpdates,
-  normalizeAgentActivityDisplayMode,
   normalizeWorktreeCardProperties
-} from '../../../../../shared/constants'
+} from '../../../../../shared/worktree/row-display/card-properties'
 import {
   DEFAULT_USAGE_PERCENTAGE_DISPLAY,
   normalizeUsagePercentageDisplay
@@ -39,6 +41,7 @@ import {
   WORKSPACE_BOARD_COLUMN_WIDTH_DEFAULT
 } from '../../../../../shared/workspace-statuses'
 import { createHostWorkspaceStatusActions } from './ui-slice-host-workspace-statuses'
+import { isSessionFoldKey } from '../../../components/live-sessions/workspace-rows/session-fold-keys'
 
 /** Builds preference defaults and setters for the UI slice, leaving durable writes to the persistence layer. */
 export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Partial<UISlice> {
@@ -48,10 +51,12 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
     setSidebarBody: (body) => set({ sidebarBody: body }),
 
     groupBy: 'repo',
-    // Why: group keys are mode-specific, so clear collapsed state on mode switch — stale keys are meaningless and accumulate.
+    // Why: project group keys are mode-specific, so clear them on mode switch — stale keys are meaningless and accumulate.
     setGroupBy: (g) => {
-      window.api.ui.set({ groupBy: g, collapsedGroups: [] }).catch(console.error)
-      set({ groupBy: g, collapsedGroups: new Set<string>() })
+      // Session rows share the list but not the grouping; regrouping Projects must not change their folds.
+      const collapsedGroups = new Set([...get().collapsedGroups].filter(isSessionFoldKey))
+      window.api.ui.set({ groupBy: g, collapsedGroups: [...collapsedGroups] }).catch(console.error)
+      set({ groupBy: g, collapsedGroups })
     },
 
     sortBy: 'recent',
@@ -208,6 +213,11 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
     setShowAgentModels: (show) => {
       set({ showAgentModels: show })
       window.api.ui.set({ showAgentModels: show }).catch(console.error)
+    },
+    hideSidebarWorkspaces: true,
+    setHideSidebarWorkspaces: (hide) => {
+      set({ hideSidebarWorkspaces: hide })
+      window.api.ui.set({ hideSidebarWorkspaces: hide }).catch(console.error)
     },
     agentActivityDisplayMode: DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE,
     setAgentActivityDisplayMode: (mode) => {

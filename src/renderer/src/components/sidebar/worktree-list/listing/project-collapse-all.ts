@@ -1,5 +1,20 @@
-import { isProjectOrPinnedSectionGroupKey } from '../../../../../../shared/sidebar-list/group-keys'
-import type { HostSectionRow } from '../../../../../../shared/sidebar-list/host-section-rows'
+import type { ProjectGroup } from '../../../../../../shared/project-group-types'
+import {
+  getProjectGroupHeaderKey,
+  isProjectOrPinnedSectionGroupKey,
+  isProjectSectionGroupKey
+} from '../../../../../../shared/sidebar-list/sections/group-keys'
+import type { HostSectionRow } from '../../../../../../shared/sidebar-list/hosts/host-section-rows'
+
+export function countProjectSections(
+  occurrencePlan: { sections: readonly { key: string }[] },
+  projectGroups: readonly Pick<ProjectGroup, 'id'>[]
+): number {
+  return new Set([
+    ...occurrencePlan.sections.map(({ key }) => key).filter(isProjectSectionGroupKey),
+    ...projectGroups.map(({ id }) => getProjectGroupHeaderKey(id))
+  ]).size
+}
 
 export function getRenderedProjectCollapseKeys(rows: readonly HostSectionRow[]): string[] {
   const keys = new Set<string>()

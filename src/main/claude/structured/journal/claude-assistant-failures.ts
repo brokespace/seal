@@ -7,18 +7,34 @@ import { BoundedMap } from '../../../../shared/bounded-map'
 import { claudeRecord, claudeText } from './claude-structured-item-translation'
 import type { AgentSessionAccountKind } from '../../../../shared/agent-session/agent-session-availability'
 
+function assistantText(message: Record<string, unknown>): string {
+  const content = claudeRecord(message.message)?.content
+  return Array.isArray(content)
+    ? content
+        .flatMap((part) => {
+          const value = claudeRecord(part)
+          return value?.type === 'text' && typeof value.text === 'string' ? [value.text] : []
+        })
+        .join('\n')
+    : ''
+}
+
 /** Associates the assistant's typed error with its duplicate result, never with error text. */
 export class ClaudeAssistantFailures {
   private readonly shown = new BoundedMap<string, string | null>({ maxEntries: 128 })
   constructor(
     private readonly account?: () => AgentSessionAccountKind | undefined,
-    private readonly model?: () => string | undefined
+    private readonly model?: () => string | undefined,
+    private readonly onLoginFailure?: (text: string) => void
   ) {}
 
   assistant(message: Record<string, unknown>) {
     const row = this.notice(message)
     if (row) {
       this.shown.set(this.scopeKey(message), claudeText(message.user_message_uuid))
+      if (message.error === 'authentication_failed') {
+        this.onLoginFailure?.(assistantText(message))
+      }
     } else if (message.type === 'user' || message.type === 'assistant') {
       this.shown.delete(this.scopeKey(message))
     }
@@ -35,15 +51,7 @@ export class ClaudeAssistantFailures {
     ) {
       return null
     }
-    const content = claudeRecord(message.message)?.content
-    const text = Array.isArray(content)
-      ? content
-          .flatMap((part) => {
-            const value = claudeRecord(part)
-            return value?.type === 'text' && typeof value.text === 'string' ? [value.text] : []
-          })
-          .join('\n')
-      : ''
+    const text = assistantText(message)
     return {
       kind: 'status' as const,
       tone: 'error' as const,

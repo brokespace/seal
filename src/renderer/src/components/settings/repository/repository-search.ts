@@ -11,6 +11,8 @@ import type { Translate } from '@/i18n/use-translate'
 import { searchKeywordTranslator } from '../search/settings-search-keywords'
 import { getRepositoryGitAuthorSearchEntries } from './source-control/repository-git-author-search-entries'
 import { getRepositoryMcpConfigSearchEntries } from './mcp/mcp-config-search'
+import { getAgentConfigSearchEntries } from '../agent-config/agent-config-search'
+import { agentConfigAvailable } from '../../agent-config/model/agent-config-client'
 import { getRepositoryGitHooksSearchEntries } from './hooks/repository-git-hooks-search-entries'
 import {
   getRepositoryGitWorktreeSearchEntries,
@@ -18,6 +20,7 @@ import {
 } from './worktrees/repository-git-worktree-search-entries'
 import { getRepositoryFormatterSearchEntry } from './RepositoryFormatterSection'
 import { getRepositoryAgentTrustSearchEntry } from './RepositoryAgentTrustSection'
+import { getRepositoryWorkspaceCleanupSearchEntry } from './workspace-cleanup/repository-workspace-cleanup-search'
 
 type RepositoryPaneSearchOptions = {
   isLocalWindowsProject?: boolean
@@ -216,6 +219,10 @@ function getRepositorySearchParts(
     removeProject,
     sourceControlAi: isFolder ? undefined : getRepositoryGitAuthorSearchEntries(repo, t),
     mcp: isFolder ? undefined : getRepositoryMcpConfigSearchEntries(repo, t),
+    // Folder projects have agent files too; only the desktop window can reach them.
+    agentConfig: agentConfigAvailable()
+      ? getAgentConfigSearchEntries(repo.displayName, t)
+      : undefined,
     hooks: getRepositoryGitHooksSearchEntries(repo, t)
   }
 }
@@ -244,6 +251,7 @@ export function getRepositoryPaneSearchEntries(
   }
   if (!isFolderRepo(repo)) {
     entries.push(...getRepositoryGitWorktreeSearchEntries(repo, t))
+    entries.push(getRepositoryWorkspaceCleanupSearchEntry(repo, t))
   }
   entries.push(parts.sidebarVisibility, parts.removeProject)
   if (parts.sourceControlAi) {
@@ -251,6 +259,9 @@ export function getRepositoryPaneSearchEntries(
   }
   if (parts.mcp) {
     entries.push(...parts.mcp)
+  }
+  if (parts.agentConfig) {
+    entries.push(...parts.agentConfig)
   }
   if (parts.hooks) {
     entries.push(...parts.hooks)

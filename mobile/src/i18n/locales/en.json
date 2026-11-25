@@ -18,10 +18,10 @@
     "aboutScreen": {
       "title": "About",
       "tagline": "Open-source agent IDE for 100x builders",
-      "website": "Orca website",
       "sourceCode": "Orca source code",
-      "socialProfile": "Orca on X",
-      "openLinkFailed": "Could not open the link. Try again."
+      "openLinkFailed": "Could not open the link. Try again.",
+      "website": "Orca website",
+      "socialProfile": "Orca on X"
     },
     "appUpdateSettingsRows": {
       "checking": "Checking…",
@@ -119,8 +119,8 @@
       "retryCleanup": "Retry clearing pairing credentials"
     },
     "menuScreen": {
-      "privacyPolicy": "Privacy Policy",
-      "support": "Support"
+      "support": "Support",
+      "privacyPolicy": "Privacy Policy"
     },
     "uiLanguageSettingsSection": {
       "pseudoLanguage": "Pseudo (en-XA)"
@@ -243,7 +243,6 @@
     },
     "pairScan": {
       "invalidQrCode": "Not a valid Orca QR code",
-      "downloadQrCode": "That's the download code. Scan the pairing code in step 2 on your desktop.",
       "invalidPairingCode": "Not a valid pairing code — copy it from your computer and paste again",
       "connectTimedOut": "Couldn't connect within {{seconds}}s — see log below for where it stalled",
       "pairingFailed": "Pairing failed: {{error}}",
@@ -255,7 +254,6 @@
       "pasteInstead": "Paste code instead",
       "pasteCodeTitle": "Paste pairing code",
       "pasteCodeMessage": "Copy the code shown under the QR on your computer.",
-      "pasteCodePlaceholder": "orca://pair?code=... or paste the code",
       "openDesktopStep": "Open Orca on your computer",
       "openMobileSettingsStep": "Go to Settings → Mobile",
       "scanCodeStep": "Scan the QR code",
@@ -263,7 +261,9 @@
       "connecting": "Connecting…",
       "pairingLog": "Pairing log",
       "tryAgain": "Try Again",
-      "codeNoLongerValid": "This pairing code expired, was already used, or was replaced. Show a new code on your desktop and scan again."
+      "codeNoLongerValid": "This pairing code expired, was already used, or was replaced. Show a new code on your desktop and scan again.",
+      "downloadQrCode": "That's the download code. Scan the pairing code in step 2 on your desktop.",
+      "pasteCodePlaceholder": "orca://pair?code=... or paste the code"
     },
     "pair": {
       "missingCode": "Missing pairing code",
@@ -297,7 +297,6 @@
       "invalidSnapshot": "Invalid accounts snapshot from host",
       "hostNotFound": "Host not found",
       "switchFailed": "Could not switch account",
-      "default": "System default",
       "agentLogin": "Use the agent's own login",
       "sessionWindow": "5h",
       "weeklyWindow": "7d",
@@ -311,7 +310,8 @@
       "pairingInvalidMessage": "Re-pair this phone with your desktop to see its accounts.",
       "otherAgents": "Other agents",
       "fableWindow": "Fable",
-      "mcpWindow": "MCP"
+      "mcpWindow": "MCP",
+      "default": "System default"
     }
   },
   "agentHistory": {
@@ -1273,17 +1273,17 @@
       "updateDesktopTitle": "Update Orca on your computer",
       "refreshWorkspaceTitle": "Refresh the mobile workspace",
       "refreshWorkspaceBody": "The workspace cached for this host is older than the desktop expects. Reconnect to this host to download the current one.",
-      "mobileTooOldAppStore": "This desktop needs a newer Orca Mobile app. Update Orca Mobile from the App Store, then try this host again.",
       "mobileTooOldGitHubReleases": "This desktop needs a newer Orca Mobile app. Update Orca Mobile from GitHub Releases, then try this host again.",
-      "workspaceNeedsUpdateAppStore": "This desktop's mobile workspace needs a newer Orca Mobile app. Update Orca Mobile from the App Store, then try this host again.",
       "workspaceNeedsUpdateGitHubReleases": "This desktop's mobile workspace needs a newer Orca Mobile app. Update Orca Mobile from GitHub Releases, then try this host again.",
       "desktopTooOldBody": "This paired desktop app is too old for your current Orca Mobile app. Update Orca on your computer, then try this host again.",
-      "openAppStore": "Open App Store",
       "openGitHubReleases": "Open GitHub Releases",
       "getVersion": "Get Orca {{version}}",
       "refreshRecoveryNote": "If this message stays, remove this host and pair it again.",
       "updateRecoveryNote": "Already updated? Go back to Hosts and refresh the connection. If this message stays, remove this host and pair it again.",
-      "backToHosts": "Back to hosts"
+      "backToHosts": "Back to hosts",
+      "mobileTooOldAppStore": "This desktop needs a newer Orca Mobile app. Update Orca Mobile from the App Store, then try this host again.",
+      "workspaceNeedsUpdateAppStore": "This desktop's mobile workspace needs a newer Orca Mobile app. Update Orca Mobile from the App Store, then try this host again.",
+      "openAppStore": "Open App Store"
     },
     "setupHookTrustDrawer": {
       "scriptChangedTitle": "{{repoName}}'s setup script changed",
@@ -4918,80 +4918,8 @@
   },
   "agents": {
     "list": {
-      "idleCount": "{{count}} idle",
-      "offlineTitle": "{{desktop}} is offline",
-      "offlineMessage": "Reconnect it to open this agent.",
-      "actions": "Actions for {{title}}",
-      "workers_one": "{{count}} worker",
-      "workers_other": "{{count}} workers",
-      "noMatches": "No agents match “{{query}}”",
       "emptyTitle": "No agents running",
-      "pairDesktop": "Pair a desktop to see its agents here.",
-      "emptyBody": "Start an agent in any workspace and it shows up here.",
-      "unread": "Unread",
-      "noDesktopTitle": "No desktop connected",
-      "noDesktopBody": "Agents show up here once a desktop connects.",
-      "hideWorkers": "Hide {{workers}}",
-      "showWorkers": "Show {{workers}}"
-    },
-    "actions": {
-      "offlineHint": "Its desktop is offline.",
-      "open": "Open",
-      "goToWorkspace": "Go to workspace",
-      "copyTitle": "Copy title",
-      "copied": "Copied",
-      "copyFailed": "Couldn’t copy the title",
-      "markRead": "Mark as read",
-      "markUnread": "Mark as unread",
-      "clear": "Clear from list"
-    },
-    "groupBy": {
-      "status": "Status",
-      "workspace": "Workspace",
-      "project": "Project",
-      "agent": "Agent",
-      "desktop": "Desktop"
-    },
-    "options": {
-      "groupBy": "Group by",
-      "showWorkers": "Show worker agents",
-      "open": "Agent list options",
-      "unreadOnly": "Unread only",
-      "markAllRead": "Mark all read",
-      "clearFinished": "Clear finished"
-    },
-    "search": {
-      "toggle": "Search agents",
-      "placeholder": "Search agents"
-    },
-    "desktops": {
-      "pickerTitle": "Show agents on",
-      "agents_one": "{{count}} agent",
-      "agents_other": "{{count}} agents",
-      "all": "All desktops",
-      "offline": "Offline",
-      "needsYou_one": "{{count}} needs you",
-      "needsYou_other": "{{count}} need you"
-    },
-    "sections": {
-      "needsYou": "Needs you",
-      "working": "Working",
-      "done": "Done",
-      "offline": "Offline",
-      "offlineSeenAgo": "Offline · seen {{ago}} ago",
-      "offlineSeenJustNow": "Offline · seen just now",
-      "seenAgo": "Seen {{ago}} ago",
-      "seenJustNow": "Seen just now",
-      "clear": "Clear"
-    },
-    "swipe": {
-      "read": "Read",
-      "unread": "Unread",
-      "clear": "Clear"
-    },
-    "activity": {
-      "needsWindow": "Couldn’t update. Open Orca on {{desktop}}.",
-      "failed": "Couldn’t update the agent list."
+      "pairDesktop": "Pair a desktop to see its agents here."
     }
   }
 }

@@ -25,11 +25,7 @@ export function worktreeCatalogMountAdapters(
       let disposed = false
       // Home's card for one desktop, read on the connection it was asked on.
       const publish = (failed: boolean) => {
-        const card = homeWorktreeInfo(
-          HOST,
-          { data: counts, dataUpdatedAt: Date.now(), failed },
-          () => true
-        )
+        const card = homeWorktreeInfo(HOST, { data: counts, dataUpdatedAt: Date.now(), failed })
         info = card ? { [HOST]: card } : {}
         const effect = () => context.effect('info', projectObservable(info))
         if (context.captureObservation) {

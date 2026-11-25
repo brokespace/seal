@@ -7,6 +7,7 @@ import { resolvePaneWslDistro } from '@/components/terminal-pane/host-state/term
 import { getHostSettingOverride } from '../../../../../../shared/host-setting-overrides'
 import { isFolderRepo } from '../../../../../../shared/repo-kind'
 import { parseWorkspaceKey } from '../../../../../../shared/workspace-scope'
+import { isPathInsideOrEqual } from '../../../../../../shared/cross-platform-path'
 import { getKnownExecutionHostIdForWorktree } from '@/lib/workspace/ownership/worktree-runtime-owner'
 import { findKnownWorktreeById } from '@/store/slices/worktrees/listing/detected-worktree-meta'
 import {
@@ -41,8 +42,23 @@ const OWNER_CONTEXT_INPUT_KEYS = FILE_LINK_CONTEXT_INPUT_KEYS.filter(
 
 export type NativeChatComposerWorkspaceTarget = Pick<
   NativeChatStructuredComposerTransport,
-  'worktreeId' | 'runtimeEnvironmentId'
->
+  'worktreeId' | 'runtimeEnvironmentId' | 'sessionPlace'
+> &
+  Partial<Pick<NativeChatStructuredComposerTransport, 'sessionId'>>
+
+type ComposerWorkspacePresentation = {
+  worktreeId?: string
+  repoId?: string
+  hostId?: ExecutionHostId
+  machine?: string
+  checkout?: string
+  kind?: 'folder' | 'main' | 'worktree'
+  path?: string
+  branch?: string
+  head?: string
+}
+
+const NOTHING_KNOWN: ComposerWorkspacePresentation = {}
 
 export function createNativeChatComposerWorkspaceSelector(
   tabId: string,
@@ -56,30 +72,27 @@ export function createNativeChatComposerWorkspaceSelector(
   let runtimeSource: AppState['runtimeEnvironments']
   let runtimeIds: string[] = []
   const selectMachine = createComposerMachineSelector(!target)
-  let presentation: {
-    worktreeId?: string
-    repoId?: string
-    hostId?: ExecutionHostId
-    machine?: string
-    checkout?: string
-    kind?: 'folder' | 'main' | 'worktree'
-    path?: string
-    branch?: string
-    head?: string
-  } = {}
+  const place = target?.sessionPlace
+  let presentation: ComposerWorkspacePresentation = {}
   return (state: AppState) => {
-    const worktreeId = target?.worktreeId ?? selectOwner(state)
+    if (place === null) {
+      return NOTHING_KNOWN
+    }
+    // The tab of a session Seal does not host may sit in any workspace: only its record places it.
+    const worktreeId = place ? place.worktreeId : (target?.worktreeId ?? selectOwner(state))
     const unified = worktreeId ? workspaceTabs(state.unifiedTabsByWorktree, worktreeId) : undefined
     if (unifiedBucket !== unified) {
       tabHost = unified?.find((tab) => tab.id === tabId)?.executionHostId
       unifiedBucket = unified
     }
-    // A structured transport's null environment positively identifies this host.
-    const explicitHost = target
-      ? target.runtimeEnvironmentId
-        ? toRuntimeExecutionHostId(target.runtimeEnvironmentId)
-        : 'local'
-      : tabHost
+    // A structured chat runs on a paired server or this computer, so its null environment is this host.
+    const explicitHost = place
+      ? place.executionHostId
+      : target
+        ? target.runtimeEnvironmentId
+          ? toRuntimeExecutionHostId(target.runtimeEnvironmentId)
+          : 'local'
+        : tabHost
     const catalog = {
       repos: state.repos,
       projectGroups: state.projectGroups,
@@ -113,13 +126,23 @@ export function createNativeChatComposerWorkspaceSelector(
     if (!inputs || next.some((input, index) => input !== inputs?.[index])) {
       inputs = next
       const host = explicitHost ?? getKnownExecutionHostIdForWorktree(state, worktreeId)
-      const path = worktreeId ? resolveNativeChatTabDirectory(state, tabId, worktreeId, host) : null
-      const row =
-        path && worktreeId
+      const directory = place
+        ? place.cwd
+        : worktreeId
+          ? resolveNativeChatTabDirectory(state, tabId, worktreeId, host)
+          : null
+      const known =
+        worktreeId && (place || directory)
           ? isFloatingWorkspaceId(worktreeId)
-            ? floatingWorkspaceToWorktree(path)
+            ? directory
+              ? floatingWorkspaceToWorktree(directory)
+              : undefined
             : findKnownWorktreeById(catalog, worktreeId, host ?? undefined)
           : undefined
+      // A linked workspace that does not hold the session's cwd says nothing about its checkout.
+      const row =
+        known && place?.cwd && !isPathInsideOrEqual(known.path, place.cwd) ? undefined : known
+      const path = directory ?? row?.path
       const repo = row
         ? findIndexedRepoOwnerForHost(state.repos, row.repoId, host ?? 'local')
         : undefined
@@ -132,7 +155,7 @@ export function createNativeChatComposerWorkspaceSelector(
       presentation = {
         worktreeId: row?.id,
         repoId: repo?.id,
-        checkout: row?.displayName,
+        checkout: row?.displayName ?? place?.project ?? undefined,
         kind: row
           ? (repo && isFolderRepo(repo)) ||
             parseWorkspaceKey(row.id)?.type === 'folder' ||
@@ -147,7 +170,8 @@ export function createNativeChatComposerWorkspaceSelector(
         head: row?.head
       }
     }
-    const machine = selectMachine(state, context)
+    const machine =
+      place && context.host !== 'local' ? place.machine : selectMachine(state, context)
     if (presentation.hostId !== context.host || presentation.machine !== machine) {
       presentation = { ...presentation, hostId: context.host, machine }
     }

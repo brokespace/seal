@@ -3,6 +3,7 @@ import type { VirtualItem } from '@tanstack/react-virtual'
 import type { Row } from '../../../../../../shared/sidebar-list/row-types'
 import { getVirtualRowTransform } from '../viewport/virtual-rows'
 import { PendingWorktreeRow } from './PendingWorktreeRow'
+import { ProjectHeaderSessionRows } from '@/components/live-sessions/workspace-rows/ProjectHeaderSessionRows'
 import ImportedWorktreesVisibilityLine from '../listing/ImportedWorktreesVisibilityLine'
 import NewExternalWorktreesInboxLine from '../listing/NewExternalWorktreesInboxLine'
 import type { ImportedWorktreeCardActionState } from '../listing/imported-worktrees-card-actions'
@@ -110,6 +111,28 @@ export function renderNewExternalWorktreesInboxVirtualRow(args: {
         error={actionState?.error ?? null}
         onReview={() => args.onReview(row.repo)}
         onSuppress={() => args.onSuppress(row.repo.id)}
+      />
+    </NoticeRowFrame>
+  )
+}
+
+export function renderProjectSessionsVirtualRow(args: {
+  row: Extract<Row, { type: 'project-sessions' }>
+  vItem: VirtualItem
+  measureVirtualRowElement: (element: HTMLDivElement | null) => void
+}): React.JSX.Element {
+  return (
+    <NoticeRowFrame
+      key={args.vItem.key}
+      vItem={args.vItem}
+      measureVirtualRowElement={args.measureVirtualRowElement}
+    >
+      <ProjectHeaderSessionRows
+        headerKey={args.row.headerKey}
+        project={args.row.project}
+        groupDepth={args.row.groupDepth}
+        workspaces={args.row.workspaces}
+        headerSessions={args.row.headerSessions}
       />
     </NoticeRowFrame>
   )

@@ -59,7 +59,8 @@ function measureSource(source: GroupBodyGeometrySource): void {
   }
 }
 
-function measureAllSources(): void {
+/** Observers report resizes only: call after a layout change that can move a body without resizing it. */
+export function measureAllTabGroupBodies(): void {
   for (const sources of sourcesByGroupId.values()) {
     for (const source of sources) {
       measureSource(source)
@@ -119,7 +120,7 @@ function acquireSource(groupId: string, container: HTMLElement): GroupBodyGeomet
   source.observer.observe(container)
   syncObservedBody(source)
   if (sourcesByGroupId.size === 0) {
-    window.addEventListener('resize', measureAllSources)
+    window.addEventListener('resize', measureAllTabGroupBodies)
   }
   if (!sources) {
     sources = new Set()
@@ -137,7 +138,7 @@ function releaseSource(source: GroupBodyGeometrySource): void {
     sourcesByGroupId.delete(source.groupId)
   }
   if (sourcesByGroupId.size === 0) {
-    window.removeEventListener('resize', measureAllSources)
+    window.removeEventListener('resize', measureAllTabGroupBodies)
   }
 }
 

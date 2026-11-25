@@ -1,3 +1,4 @@
+import { isAgentSessionSurfaceTab } from '../../../../shared/tab-types'
 import type React from 'react'
 import { FileText, MessageSquare, SquareTerminal } from 'lucide-react'
 import { AgentIcon } from '@/components/agent/icons/AgentIcon'
@@ -50,7 +51,7 @@ export function WorktreeJumpPaletteWorkspaceTabRow({
     </span>
   ) : result.contentType === 'terminal' ? (
     <SquareTerminal className="size-3.5" aria-hidden="true" />
-  ) : result.contentType === 'agent-session' ? (
+  ) : isAgentSessionSurfaceTab(result.contentType) ? (
     <MessageSquare className="size-3.5" aria-hidden="true" />
   ) : (
     <FileText className="size-3.5" aria-hidden="true" />

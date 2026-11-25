@@ -33,6 +33,7 @@ import type {
   MobileRichMarkdownEditorMessage,
   MobileRichMarkdownEditorProps
 } from './mobile-rich-markdown-editor-contract'
+import { isWebDomElement } from '../platform/web-dom-element'
 
 export type MobileRichMarkdownEditorComponentProps = Omit<
   MobileRichMarkdownEditorProps,
@@ -172,7 +173,7 @@ function MobileRichMarkdownEditorWebInner(
   useEffect(() => {
     // react-native-web renders View as a div and forwards the ref to it.
     const host = hostRef.current
-    if (!(host instanceof HTMLElement)) {
+    if (!isWebDomElement(host)) {
       return
     }
     const live = mountRichMarkdownWebDocument(host, {
@@ -198,7 +199,7 @@ function MobileRichMarkdownEditorWebInner(
   // Layout effect: restore the host's scope class before paint after a themed className swap.
   useLayoutEffect(() => {
     const host = hostRef.current
-    if (documentRef.current && host instanceof HTMLElement) {
+    if (documentRef.current && isWebDomElement(host)) {
       ensureDocumentStyle(host)
     }
   }, [colorScheme])

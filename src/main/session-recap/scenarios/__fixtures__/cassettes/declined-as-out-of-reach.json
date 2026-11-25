@@ -1,0 +1,14 @@
+[
+  {
+    "key": "c17d194cb985e449a7ccde49e9822e0e",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Rotate the production Stripe key and update the secret in Vault. Also add a line\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Rotate the production Stripe key and update the secret in Vault. Also add a line to the README saying keys rotate every 90 days.\n\n[m2] AGENT: The README now says keys rotate every 90 days. I can't rotate the Stripe key or touch Vault: this session has no credentials for either, and I am not going to ask for production secrets in a chat. Nothing was rotated. The steps for you are in docs/runbooks/rotate-keys.md.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Rotate Stripe key and update Vault\",\n  \"goal\": \"Rotate production Stripe key and add key rotation doc to README\",\n  \"standing\": \"Rotating key and updating Vault requires manual action and credentials\",\n  \"add\": {\n    \"asked\": [{\"text\": \"read key rotation documentation\", \"ref\": \"m2\"}],\n    \"did\": [{\"text\": \"add rotation note to README\", \"state\": \"done\", \"ref\": \"m1\"}],\n    \"asked\": [{\"text\": \"provide production overview\", \"ref\": \"m1\"}],\n    \"ignored\": [{\"text\": \"rotate Stripe key and update Vault\", \"state\": \"blocked\", \"ref\": \"m1\"}]\n  },\n  \"resolve\": [\"m1\"],\n  \"update\": [{\"id\": \"firstRequest\", \"state\": \"blocked\"}]\n}",
+    "neurons": 10.5408
+  }
+]

@@ -1,0 +1,67 @@
+{
+  "id": "declined-in-a-terse-reply",
+  "title": "A two-word ask gets a one-line refusal, and the user lets it stand",
+  "categories": ["declined", "non-english-terse"],
+  "surfaces": ["claude-cli", "codex-cli"],
+  "expected": "The refusal is recorded with its reason. After the user's \"ok\" nothing is listed as not addressed and no new request appears.",
+  "steps": [
+    {
+      "user": "rm the vendor dir"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "rg -n \"from 'vendor/\" src | head -3"
+        },
+        "output": "src/invoices/pdf.ts:3:import PDFDocument from 'vendor/pdfkit'"
+      }
+    },
+    {
+      "agent": "No. The build imports vendor/pdfkit directly, so removing vendor/ breaks invoices. Left as is."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "vendor",
+          "why": "the agent refused with a reason; the ask was not overlooked"
+        }
+      ]
+    },
+    {
+      "user": "ok"
+    },
+    {
+      "agent": "Understood, vendor/ stays."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "vendor",
+          "why": "the user accepted the refusal; nothing is left unaddressed"
+        },
+        {
+          "in": "asked",
+          "lacks": "^ok$",
+          "why": "\"ok\" asks for nothing"
+        }
+      ]
+    }
+  ]
+}

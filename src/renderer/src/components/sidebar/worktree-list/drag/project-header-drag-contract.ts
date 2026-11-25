@@ -3,6 +3,7 @@ import type { PointerEvent } from 'react'
 
 import type { ProjectHeaderDragBucketKey, ProjectHeaderDragRect } from './project-header-drop'
 import type { Repo } from '../../../../../../shared/repo-types'
+import type { ProjectHeaderPaneDrop } from './project-header-pane-drop'
 
 export type RepoDragState = {
   draggingRepoId: string | null
@@ -46,6 +47,8 @@ export type ProjectHeaderDragSession = {
   startY: number
   latestPointerY: number
   promoted: boolean
+  /** The hand-off to split-view panes, from promotion until the drag ends. */
+  paneDrop: ProjectHeaderPaneDrop | null
 }
 
 export const PROJECT_HEADER_DRAG_THRESHOLD_PX = 4

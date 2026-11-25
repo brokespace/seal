@@ -1,4 +1,4 @@
-import { memo, Suspense, useCallback, useRef } from 'react'
+import { memo, Suspense, useCallback, useRef, useState } from 'react'
 import { lazyWithRetry as lazy } from '@/app-shell/startup/lazy-with-retry'
 import { useTranslate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store/index'
@@ -6,11 +6,13 @@ import { usePluginViewCaptureStore } from '@/store/plugins/capture/plugin-view-c
 import { pendingCreationOpensNativeChat } from '@/lib/workspace/creation/pending-worktree-creation'
 import { showsFloatingRightSidebarToggle } from '@/components/right-sidebar/visibility/right-sidebar-visibility'
 import Sidebar from '../components/Sidebar'
-import RightSidebar from '../components/right-sidebar/index'
+import RightSidebar from '../components/right-sidebar/RightSidebar'
 import { RecoverableRenderErrorBoundary } from '../components/error-boundaries/RecoverableRenderErrorBoundary'
 import { FloatingTerminalToggleButton } from '../components/floating-terminal/FloatingTerminalToggleButton'
 import { TerminalWorkbenchContainer } from '../components/TerminalWorkbenchContainer'
 import type { VirtualizedScrollAnchor } from '../hooks/useVirtualizedScrollAnchor'
+import { leaveSplitView } from '../components/split-view/split-view-commands'
+import { SplitViewDropPreview } from '../components/split-view/SplitViewDropPreview'
 import { TitlebarLeftControls } from './TitlebarLeftControls'
 import { RightSidebarToggle, TitlebarMainStrip } from './TitlebarMainStrip'
 import type { AppChromeLayout } from './use-app-chrome-layout'
@@ -20,6 +22,7 @@ import type { FloatingWorkspacePanelState } from './use-floating-workspace-panel
 const MemoFloatingTerminalToggleButton = memo(FloatingTerminalToggleButton)
 
 const Landing = lazy(() => import('../components/Landing'))
+const HomeOverviewPage = lazy(() => import('../components/home-overview/HomeOverviewPage'))
 const WorktreeCreationPanel = lazy(
   () => import('../components/worktree-creation/WorktreeCreationPanel')
 )
@@ -31,10 +34,14 @@ const AutomationsPage = lazy(() => import('../components/automations/Automations
 const ActivityPrototypePage = lazy(() => import('../components/activity/ActivityPrototypePage'))
 const Settings = lazy(() => import('../components/settings/Settings'))
 const SkillsPage = lazy(() => import('../components/skills/SkillsPage'))
+const MachinesPage = lazy(() => import('../components/machines/MachinesPage'))
+const ProjectOverviewPage = lazy(() => import('../components/project-overview/ProjectOverviewPage'))
 const ArtifactsPage = lazy(() => import('../components/artifacts/ArtifactsPage'))
 const WorkspaceSpacePage = lazy(() => import('../components/workspace-space/WorkspaceSpacePage'))
 const MobilePage = lazy(() => import('../components/mobile/MobilePage'))
 const Terminal = lazy(() => import('../components/Terminal'))
+const SplitViewLayer = lazy(() => import('../components/split-view/SplitViewLayer'))
+const ItemSurfaceLayer = lazy(() => import('../components/split-view/ItemSurfaceLayer'))
 
 type WorktreeSidebarScrollRefs = {
   scrollOffsetRef: React.MutableRefObject<number>
@@ -87,18 +94,37 @@ function PendingCreationSurface(props: {
   return opensChat ? <PendingNativeChatCreation {...props} /> : <WorktreeCreationPanel {...props} />
 }
 
-function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element {
+// Home is the landing surface once a project exists; first-run onboarding stays on Landing.
+function HomeOrLanding(): React.JSX.Element {
+  const hasProjects = useAppStore((s) => s.repos.length > 0)
+  return hasProjects ? (
+    <div className="absolute inset-0 flex">
+      <HomeOverviewPage />
+    </div>
+  ) : (
+    <Landing />
+  )
+}
+
+function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element | null {
   const { activeView, hasActiveWorktree, activePendingCreationId, creationLayoutActive } = layout
+  // The grid renders projects in panes; the page would draw beside it.
+  if (layout.splitViewShowing) {
+    return null
+  }
   return (
     <>
+      {activeView === 'home' ? <HomeOrLanding /> : null}
       {activeView === 'settings' ? <Settings /> : null}
       {activeView === 'skills' ? <SkillsPage /> : null}
+      {activeView === 'machines' ? <MachinesPage /> : null}
       {activeView === 'artifacts' ? <ArtifactsPage /> : null}
       {activeView === 'tasks' ? <TaskPage /> : null}
       {activeView === 'automations' ? <AutomationsPage /> : null}
       {activeView === 'activity' ? <ActivityPrototypePage /> : null}
       {activeView === 'space' ? <WorkspaceSpacePage /> : null}
       {activeView === 'mobile' ? <MobilePage /> : null}
+      {activeView === 'project' ? <ProjectOverviewPage /> : null}
       {activeView === 'terminal' && creationLayoutActive && activePendingCreationId ? (
         <PendingCreationSurface
           creationId={activePendingCreationId}
@@ -106,9 +132,37 @@ function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element 
         />
       ) : null}
       {activeView === 'terminal' && !hasActiveWorktree && !creationLayoutActive ? (
-        <Landing />
+        <HomeOrLanding />
       ) : null}
     </>
+  )
+}
+
+const renderNothing = (): null => null
+
+/** Projects, kept mounted while the layout around them changes. */
+function ItemSurfaces({ layout }: { layout: AppChromeLayout }): React.JSX.Element | null {
+  const wanted = layout.splitViewShowing || layout.activeView === 'project'
+  // Once loaded it stays: a grid behind another page keeps its projects as they were left.
+  const [loaded, setLoaded] = useState(wanted)
+  if (wanted && !loaded) {
+    setLoaded(true)
+  }
+  if (!loaded) {
+    return null
+  }
+  return (
+    <Suspense fallback={null}>
+      {/* Each surface contains its own errors; this one only keeps the layer's from the shell. */}
+      <RecoverableRenderErrorBoundary
+        boundaryId="item-surfaces"
+        surface="page"
+        resetKey={layout.activeView}
+        fallback={renderNothing}
+      >
+        <ItemSurfaceLayer />
+      </RecoverableRenderErrorBoundary>
+    </Suspense>
   )
 }
 
@@ -193,7 +247,10 @@ export function AppWorkspaceShell(props: {
               layout.activeView !== 'artifacts' ? (
                 <div className="titlebar">{titlebarMainStrip}</div>
               ) : null}
-              <div className="relative flex flex-1 min-w-0 min-h-0 overflow-hidden">
+              <div
+                className="relative flex flex-1 min-w-0 min-h-0 overflow-hidden"
+                data-split-view-drop-area=""
+              >
                 {/* Match the open sidebar header’s alignment to prevent toggle jitter. */}
                 {showsFloatingRightSidebarToggle(layout) && (
                   <div
@@ -243,6 +300,28 @@ export function AppWorkspaceShell(props: {
                     </RecoverableRenderErrorBoundary>
                   </Suspense>
                 </div>
+                <ItemSurfaces layout={layout} />
+                {layout.splitViewShowing ? (
+                  <Suspense fallback={null}>
+                    <RecoverableRenderErrorBoundary
+                      boundaryId="split-view"
+                      surface="page"
+                      resetKey="split-view"
+                      title={t('seal.splitView.error.title', 'Split view hit an error.')}
+                      description={t(
+                        'seal.splitView.error.description',
+                        'Retry, or close the other panes to return to a single view.'
+                      )}
+                      action={{
+                        label: t('seal.splitView.error.leave', 'Close other panes'),
+                        run: leaveSplitView
+                      }}
+                    >
+                      <SplitViewLayer />
+                    </RecoverableRenderErrorBoundary>
+                  </Suspense>
+                ) : null}
+                <SplitViewDropPreview />
                 {floatingWorkspace.showToggleButton && !capturingPluginShot ? (
                   <MemoFloatingTerminalToggleButton
                     open={floatingWorkspace.open}

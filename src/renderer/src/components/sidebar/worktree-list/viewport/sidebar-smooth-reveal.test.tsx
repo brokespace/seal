@@ -67,7 +67,9 @@ function setup() {
       firstHeaderIndex: -1,
       scrollRef,
       scrollOffsetRef,
-      programmaticScrollMarks: marks
+      programmaticScrollMarks: marks,
+      scrollElement: null,
+      scrollAnchorRef: { current: null }
     })
     const input = useWorktreeSidebarScrollSuppression(scrollRef)
     useVirtualRowMeasurementSync({

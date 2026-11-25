@@ -168,6 +168,13 @@
     "count": 1
   },
   {
+    "filePath": "mobile/src/diagnostics/connection-diagnostics-submission.ts",
+    "kind": "object-property:error",
+    "text": "diagnostics upload is not available",
+    "dynamic": false,
+    "count": 1
+  },
+  {
     "filePath": "mobile/src/diagnostics/native-render-log.ts",
     "kind": "object-property:message",
     "text": "Native screen failed to render",
@@ -303,7 +310,7 @@
   {
     "filePath": "mobile/src/settings/about-screen.tsx",
     "kind": "jsx-attribute:title",
-    "text": "stablyai/orca",
+    "text": "brokespace/seal",
     "dynamic": false,
     "count": 1
   },

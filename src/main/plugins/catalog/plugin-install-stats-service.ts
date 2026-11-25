@@ -6,8 +6,8 @@ import {
 } from '../../../shared/plugins/catalog/plugin-install-stats'
 import { writePluginFileAtomically } from '../installation/plugin-atomic-file-write'
 import { fetchBoundedJson } from './plugin-bounded-json-fetch'
+import { cleanCloudServiceUrl } from '../../../shared/cloud-service-url'
 
-export const PLUGIN_INSTALL_STATS_URL = 'https://orca.dev/plugins/stats.json'
 const PLUGIN_INSTALL_STATS_MAX_BYTES = 2 * 1024 * 1024
 const PLUGIN_INSTALL_STATS_FETCH_TIMEOUT_MS = 30_000
 // Why 6h: the file is rebuilt daily; counts are display-only, so staleness costs nothing.
@@ -16,13 +16,18 @@ export const PLUGIN_INSTALL_STATS_RETRY_MS = 15 * 60 * 1000
 
 type PluginInstallStatsFetcher = () => Promise<PluginInstallStats>
 
+/** Seal hosts no plugin directory; counts are fetched only from an explicit override. */
+export function pluginInstallStatsUrl(env: NodeJS.ProcessEnv = process.env): string | null {
+  return cleanCloudServiceUrl(env.SEAL_PLUGIN_INSTALL_STATS_URL, false)
+}
+
 /**
  * Public install counts for catalog plugins. Reads return the cached counts at once and start a
  * refresh when stale; any failure only leaves counts hidden or old. Never feeds install decisions.
  */
 export class PluginInstallStatsService {
   private readonly filePath: string
-  private readonly fetcher: PluginInstallStatsFetcher
+  private readonly fetcher: PluginInstallStatsFetcher | null
   private readonly isFetchAllowed: () => boolean
   private readonly now: () => number
   private readonly listeners = new Set<() => void>()
@@ -39,7 +44,8 @@ export class PluginInstallStatsService {
   }) {
     this.filePath = join(options.pluginsDataDir, 'plugin-install-stats.json')
     this.isFetchAllowed = options.isFetchAllowed
-    this.fetcher = options.fetcher ?? (() => fetchPluginInstallStats())
+    const url = pluginInstallStatsUrl()
+    this.fetcher = options.fetcher ?? (url ? () => fetchPluginInstallStats(fetch, url) : null)
     this.now = options.now ?? Date.now
   }
 
@@ -80,10 +86,11 @@ export class PluginInstallStatsService {
   }
 
   private refreshIfStale(): void {
-    if (this.inFlight || this.now() < this.nextFetchAt || !this.isFetchAllowed()) {
+    const fetcher = this.fetcher
+    if (!fetcher || this.inFlight || this.now() < this.nextFetchAt || !this.isFetchAllowed()) {
       return
     }
-    this.inFlight = this.performRefresh()
+    this.inFlight = this.performRefresh(fetcher)
       .then(
         () => {
           this.nextFetchAt = this.now() + PLUGIN_INSTALL_STATS_REFRESH_MS
@@ -98,8 +105,8 @@ export class PluginInstallStatsService {
       })
   }
 
-  private async performRefresh(): Promise<void> {
-    const fetched = await this.fetcher()
+  private async performRefresh(fetcher: PluginInstallStatsFetcher): Promise<void> {
+    const fetched = await fetcher()
     if (this.current && isOlderSnapshot(fetched, this.current)) {
       return
     }
@@ -152,8 +159,8 @@ function isOlderSnapshot(fetched: PluginInstallStats, current: PluginInstallStat
 }
 
 export async function fetchPluginInstallStats(
-  fetcher: typeof fetch = fetch,
-  url = PLUGIN_INSTALL_STATS_URL
+  fetcher: typeof fetch,
+  url: string
 ): Promise<PluginInstallStats> {
   const json = await fetchBoundedJson(fetcher, url, {
     label: 'plugin install-stats',

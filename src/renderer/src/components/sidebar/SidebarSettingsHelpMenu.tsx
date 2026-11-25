@@ -39,6 +39,7 @@ import {
   getUpdateCheckHint
 } from '@/app-shell/updates/update-check-click-options'
 import { openAppHttpLink } from '@/lib/browser/navigation/app-http-link-open'
+import { SEAL_RELEASES_URL, SEAL_REPOSITORY_URL } from '../../../../shared/seal-project-links'
 
 // Keep feedback off the boot graph; menu warming and selection share the same lazy module entry.
 const loadSidebarFeedbackDialog = (): Promise<typeof SidebarFeedbackDialogModule> =>
@@ -49,9 +50,9 @@ const SidebarFeedbackDialog = lazyWithRetry(
   { reloadKey: 'sidebar-feedback-dialog' }
 )
 
-const DOCS_URL = 'https://orca.dev/docs'
-const CHANGELOG_URL = 'https://orca.dev/changelog'
-const GITHUB_URL = 'https://github.com/stablyai/orca'
+const DOCS_URL = SEAL_REPOSITORY_URL
+const CHANGELOG_URL = SEAL_RELEASES_URL
+const GITHUB_URL = SEAL_REPOSITORY_URL
 const DISCORD_URL = 'https://discord.gg/fzjDKHxv8Q'
 const X_URL = 'https://x.com/orca_build'
 const NO_UPDATE_CHECK_MODIFIERS = {

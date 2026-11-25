@@ -10,6 +10,7 @@ import type {
   PairedE2EEPrimitives,
   PairedE2EEV2KeySchedule
 } from './paired-e2ee-primitives'
+import { contributoryX25519SharedSecret } from './x25519-low-order-points'
 
 export type PairedE2EEV2ClientSessionArgs = {
   primitives: PairedE2EEPrimitives
@@ -27,12 +28,16 @@ export class PairedE2EEV2ClientSession {
   private schedule: PairedE2EEV2KeySchedule | null = null
   private transcriptHashB64Value: string | null = null
 
+  // Null once the session is keyed: nothing kept here can re-derive its keys.
+  private clientSecretKey: Uint8Array | null
+
   private constructor(
     private readonly primitives: PairedE2EEPrimitives,
-    private readonly clientSecretKey: Uint8Array,
+    clientSecretKey: Uint8Array,
     private readonly pinnedDesktopPublicKey: Uint8Array,
     hello: MobileE2EEV2Hello
   ) {
+    this.clientSecretKey = clientSecretKey
     this.hello = hello
   }
 
@@ -45,14 +50,15 @@ export class PairedE2EEV2ClientSession {
     }
     return new PairedE2EEV2ClientSession(
       primitives,
-      keyPair.secretKey,
+      // Why copied: the session wipes its secret once keyed; an injected pair stays the caller's.
+      Uint8Array.from(keyPair.secretKey),
       primitives.publicKeyFromBase64(args.desktopPublicKeyB64),
       {
         type: 'e2ee_hello',
         v: 2,
         clientPublicKeyB64: primitives.publicKeyToBase64(keyPair.publicKey),
         clientNonceB64: primitives.encodeBase64(clientNonce),
-        capabilities: { framing: [2], payloadKinds: ['text', 'binary'] },
+        capabilities: { framing: [2], payloadKinds: ['text', 'binary'], forwardSecrecy: true },
         context: {
           protocol: 'orca-mobile-e2ee',
           initiator: 'mobile',
@@ -66,18 +72,40 @@ export class PairedE2EEV2ClientSession {
 
   acceptReady(ready: unknown): boolean {
     const handshake = validateMobileE2EEV2Handshake(this.hello, ready)
-    if (!handshake || !equalBytes(handshake.desktopPublicKey, this.pinnedDesktopPublicKey)) {
+    const clientSecretKey = this.clientSecretKey
+    if (
+      !handshake ||
+      !clientSecretKey ||
+      !equalBytes(handshake.desktopPublicKey, this.pinnedDesktopPublicKey)
+    ) {
+      return false
+    }
+    const { x25519 } = this.primitives
+    const staticSharedSecret = contributoryX25519SharedSecret(
+      x25519,
+      clientSecretKey,
+      this.pinnedDesktopPublicKey
+    )
+    const ephemeralSharedSecret = contributoryX25519SharedSecret(
+      x25519,
+      clientSecretKey,
+      handshake.desktopEphemeralPublicKey
+    )
+    if (!staticSharedSecret || !ephemeralSharedSecret) {
       return false
     }
     this.schedule = this.primitives.deriveV2KeySchedule({
-      sharedSecret: this.primitives.deriveSharedKey(
-        this.clientSecretKey,
-        this.pinnedDesktopPublicKey
-      ),
+      staticSharedSecret,
+      ephemeralSharedSecret,
       transcript: encodeMobileE2EEV2Transcript(handshake),
       clientNonce: handshake.clientNonce,
       desktopNonce: handshake.desktopNonce
     })
+    // Why wiped: forward secrecy holds only if this socket's ephemeral secrets do not outlive the handshake.
+    clientSecretKey.fill(0)
+    staticSharedSecret.fill(0)
+    ephemeralSharedSecret.fill(0)
+    this.clientSecretKey = null
     this.transcriptHashB64Value = this.primitives.encodeBase64(this.schedule.transcriptHash)
     return true
   }

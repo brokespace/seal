@@ -1,0 +1,23 @@
+{
+  "model": "clef-flash",
+  "questionBook": "7d0976546dbd",
+  "waitingCut": 0.5197,
+  "wrong": {
+    "tune": [],
+    "held-out": []
+  },
+  "unanswered": [
+    "subagent-detached-cache-build-sweep-chained",
+    "subagent-detached-job-alone-terse",
+    "detached-training-main-thread",
+    "named-job-launch-not-read",
+    "detached-dev-server-this-turn",
+    "detached-sync-from-earlier-turn-answer-done",
+    "nohup-job-nothing-else",
+    "subagent-detached-benchmark-says-running",
+    "named-pid-still-running",
+    "detached-eval-beside-old-server",
+    "detached-tunnel-left-for-reviewer",
+    "detached-backfill-from-earlier-turn-new-fix-done"
+  ]
+}

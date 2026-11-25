@@ -1,0 +1,44 @@
+{
+  "id": "multiple-asks-all-done",
+  "title": "Three small asks in one message, all done",
+  "categories": ["multiple-asks", "addressed-same-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "Nothing is listed as not addressed.",
+  "steps": [
+    {
+      "user": "Three small things: rename the 'Buy' button to 'Add to cart', make the price bold, and remove the old banner from the product page."
+    },
+    {
+      "edit": "/srv/shop/src/pages/product.tsx"
+    },
+    {
+      "agent": "All three are done on the product page: the button says Add to cart, the price is bold, and the old banner is gone."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "asked",
+          "has": "banner",
+          "why": "the banner removal is recorded as asked"
+        },
+        {
+          "in": "did",
+          "min": 1,
+          "why": "the work is recorded"
+        }
+      ]
+    }
+  ]
+}

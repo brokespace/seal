@@ -39,7 +39,7 @@ function delegatedRegistry() {
   }
   const principal = {
     deviceId: child.deviceId,
-    credentialRevision: child.credentialRevision ?? 0,
+    credentialRevision: registry.getDevice(child.deviceId)?.credentialRevision ?? 0,
     deviceToken: child.token
   }
   return { registry, desktop, child, principal }

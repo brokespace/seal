@@ -1,0 +1,14 @@
+[
+  {
+    "key": "f285655f9e1199d018b11cfd40203998",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a favicon to the site.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add a favicon to the site.\n\n[m2] AGENT: The site has a favicon now: public/favicon.ico, linked from the HTML head.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [\n      { \"ref\": \"m1\", \"text\": \"Add a favicon to the site.\" }\n    ],\n    \"did\": [\n      { \"ref\": \"m2\", \"text\": \"Added favicon with HTML link\", \"state\": \"done\" }\n    ]\n  },\n  \"resolve\": [\n    \"add.asked.0\"\n  ]\n}",
+    "neurons": 6.6703
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {
+    "key": "c50ea3a8ab71a20d6eb7bf189d2f169d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a CSV export to the orders page and a date filter above the table.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add a CSV export to the orders page and a date filter above the table.\n\n[m2] AGENT: Both are on the orders page: a date filter above the table and an Export CSV button that exports the filtered rows.\n\n[m3] USER: make the date filter default to the last 30 days\n\n[m4] AGENT: The date filter defaults to the last 30 days now.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [\n      {\n        \"text\": \"Set date filter default to last 30 days\",\n        \"ref\": \"m3\"\n      }\n    ],\n    \"did\": [\n      {\n        \"text\": \"Add CSV export to orders page\",\n        \"state\": \"done\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Add date filter above orders table\",\n        \"state\": \"done\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Set date filter default to last 30 days\",\n        \"state\": \"done\",\n        \"ref\": \"m3\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"resolve\": [\n    \"m1\"\n  ]\n}"
+  }
+]

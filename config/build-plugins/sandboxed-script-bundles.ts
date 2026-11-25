@@ -1,5 +1,6 @@
 import { resolve } from 'node:path'
 import { build, type Plugin } from 'vite'
+import { sealBrandCopy } from '../seal/brand-copy/seal-brand-vite-plugin.mjs'
 import { verifySandboxPreloadImports } from '../scripts/desktop-build/output-contracts/sandbox-preload-imports.mjs'
 import {
   BROWSER_EXTENSION_CONTENT_SCRIPT_FILE,
@@ -18,8 +19,8 @@ const GUEST_PRELOADS = [
   { entry: 'src/preload/browser-extension-preload.ts', fileName: 'browser-extension-preload.js' },
   { entry: 'src/preload/browser-guest.ts', fileName: 'browser-guest-preload.js' },
   {
-    entry: 'src/preload/browser-passkey-request.ts',
-    fileName: 'browser-passkey-request-preload.js'
+    entry: 'src/preload/browser-system-dialogs.ts',
+    fileName: 'browser-system-dialogs-preload.js'
   },
   { entry: 'src/preload/doc-preview-link.ts', fileName: 'doc-preview-link-preload.js' },
   { entry: 'src/preload/plugin-frame-guest.ts', fileName: 'plugin-frame-guest-preload.js' }
@@ -47,6 +48,7 @@ async function bundleScript(
   const result = await build({
     configFile: false,
     logLevel: 'silent',
+    plugins: [sealBrandCopy()],
     build: {
       write: false,
       minify: false,

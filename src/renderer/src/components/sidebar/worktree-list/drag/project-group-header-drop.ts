@@ -164,6 +164,7 @@ export function computeProjectGroupHeaderDropPreview(args: {
   rects: readonly ProjectGroupHeaderDragRect[]
   sidebarProjectGroupHeaderIds: readonly string[]
   contentBottom?: number
+  viewTop?: number
 }): ProjectGroupHeaderDropPreview | null {
   const { rects, sidebarProjectGroupHeaderIds } = args
   return computeWorktreeSidebarHeaderDropPreview({
@@ -173,6 +174,7 @@ export function computeProjectGroupHeaderDropPreview(args: {
     rects,
     headerCount: sidebarProjectGroupHeaderIds.length,
     getId: (rect) => rect.groupId,
-    contentBottom: args.contentBottom
+    contentBottom: args.contentBottom,
+    viewTop: args.viewTop
   })
 }

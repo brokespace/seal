@@ -2,6 +2,7 @@ import { wasPushDismissed } from './push-dismissal-watermarks'
 import * as TaskManager from 'expo-task-manager'
 import * as Notifications from 'expo-notifications'
 import { readOrcaPushPayload } from '../payload-identity/push-payload'
+import { resolvePairedPushHostId } from '../payload-identity/paired-push-host'
 import { dismissPresentedPushNotification } from './push-tray-dismissal'
 
 const TASK_NAME = 'orca-push-dismissal'
@@ -21,8 +22,12 @@ TaskManager.defineTask<Notifications.NotificationTaskPayload>(
       }
     }
     const payload = readOrcaPushPayload(raw)
+    // First: a host this phone is not paired with must not add to the dismissal ledger.
+    if (!payload || !(await resolvePairedPushHostId(payload))) {
+      return
+    }
     if (
-      payload?.notificationId &&
+      payload.notificationId &&
       (payload.kind === 'dismiss' || (await wasPushDismissed(payload)))
     ) {
       await dismissPresentedPushNotification(

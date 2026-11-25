@@ -18,23 +18,10 @@ export type HomeWorktreeSummary = {
   agents?: RuntimeWorktreeAgentRow[]
 }
 
-/** One agent on a desktop, with the workspace it runs in. */
-export type HomeAgentEntry = Readonly<{
-  worktreeId: string
-  workspaceName: string
-  repo: string
-  branch: string
-  agent: RuntimeWorktreeAgentRow
-}>
-
 export type HostWorktreeInfo = {
   hostId: string
   totalWorktrees: number
   activeCount: number
-  /** Every agent from this connection's latest list read. */
-  agents?: readonly HomeAgentEntry[]
-  /** The agents of a read the connection has since lost: what they were, not what they are. */
-  lastSeenAgents?: readonly HomeAgentEntry[]
   catalogUnavailable?: boolean
   // The counts are the last proven ones, kept across a failed refresh.
   staleCounts?: boolean
@@ -42,38 +29,18 @@ export type HostWorktreeInfo = {
   countsProvenAt?: number
 }
 
-export function homeAgentEntries(worktrees: readonly HomeWorktreeSummary[]): HomeAgentEntry[] {
-  return worktrees.flatMap((worktree) =>
-    Array.isArray(worktree.agents)
-      ? worktree.agents.map((agent) => ({
-          worktreeId: worktree.worktreeId,
-          workspaceName: worktree.displayName || worktree.repo,
-          repo: worktree.repo,
-          branch: worktree.branch,
-          agent
-        }))
-      : []
-  )
-}
-
-/** One desktop's counts read, as its card and the Agents list see it. */
+/** One desktop's counts read, as its card sees it. */
 export type HomeWorktreeRead = {
-  data:
-    | { totalWorktrees: number; activeCount: number; agents: readonly HomeAgentEntry[] }
-    | undefined
+  data: { totalWorktrees: number; activeCount: number } | undefined
   dataUpdatedAt: number
   // The latest read failed; counts it had stay, as stale ones.
   failed: boolean
 }
 
-/**
- * A card's worktree info, or undefined while nothing is known. Agents read on this connection are live;
- * older ones, from a lost connection or an earlier launch's store (which keeps none), are only last seen.
- */
+/** A card's worktree info, or undefined while nothing is known. */
 export function homeWorktreeInfo(
   hostId: string,
-  read: HomeWorktreeRead,
-  isLive: (hostId: string, readAt: number) => boolean
+  read: HomeWorktreeRead
 ): HostWorktreeInfo | undefined {
   const { data, failed } = read
   if (!data) {
@@ -82,16 +49,35 @@ export function homeWorktreeInfo(
       ? { hostId, totalWorktrees: 0, activeCount: 0, catalogUnavailable: true }
       : undefined
   }
-  const live = isLive(hostId, read.dataUpdatedAt)
-  const agents = data.agents.length > 0 ? data.agents : undefined
   return {
     hostId,
     totalWorktrees: data.totalWorktrees,
     activeCount: data.activeCount,
-    ...(live ? { agents: data.agents } : agents ? { lastSeenAgents: agents } : {}),
     ...(failed ? { catalogUnavailable: true, staleCounts: true } : {}),
     countsProvenAt: read.dataUpdatedAt
   }
+}
+
+/** Adds the workspaces on a desktop's servers to the card of a desktop whose own count is known. */
+export function withServerWorktreeCounts(
+  byHost: Readonly<Record<string, HostWorktreeInfo>>,
+  servers: Readonly<Record<string, { totalWorktrees: number; activeCount: number }>>
+): Record<string, HostWorktreeInfo> {
+  return Object.fromEntries(
+    Object.entries(byHost).map(([hostId, info]) => {
+      const server = servers[hostId]
+      return [
+        hostId,
+        server
+          ? {
+              ...info,
+              totalWorktrees: info.totalWorktrees + server.totalWorktrees,
+              activeCount: info.activeCount + server.activeCount
+            }
+          : info
+      ]
+    })
+  )
 }
 
 /** The host card's worktree line, or null when nothing is known yet. */

@@ -12,6 +12,7 @@ const { setupMock, milestoneMock, getMainWindowMock } = vi.hoisted(() => ({
 
 vi.mock('electron', () => ({ app: {}, ipcMain: {} }))
 vi.mock('../updater-service', () => ({ setupAutoUpdater: setupMock }))
+vi.mock('../../upstream-service-policy', () => ({ isUpstreamUpdateFeedEnabled: () => true }))
 vi.mock('./electron-updater-proxy-session', () => ({
   applyProxyToElectronUpdaterSession: vi.fn()
 }))

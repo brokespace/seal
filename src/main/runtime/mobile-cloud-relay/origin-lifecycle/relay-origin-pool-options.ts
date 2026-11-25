@@ -7,6 +7,8 @@ import type { RelayRegion } from '../region-selection/relay-region-probe'
 
 export type RelayOriginPoolOptions = {
   directorUrl: string
+  /** Cells besides the director this host may be sent to; defaults to the build list plus `SEAL_RELAY_CELL_ORIGINS`. */
+  allowedCellOrigins?: readonly string[]
   relayHostId: string
   identity: RelayIdentity
   keypair: E2EEKeypair

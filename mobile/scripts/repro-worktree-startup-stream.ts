@@ -2,12 +2,15 @@
  * Captures the mobile WebSocket stream during worktree startup.
  *
  * Usage:
- *   pnpm exec tsx mobile/scripts/repro-worktree-startup-stream.ts <repoSelector> <worktreeName> [startupCommand]
+ *   ORCA_MOBILE_DEVICE_TOKEN=<token from a pairing code> pnpm exec tsx mobile/scripts/repro-worktree-startup-stream.ts <repoSelector> <worktreeName> [startupCommand]
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import nacl from 'tweetnacl'
 import WebSocket from 'ws'
+import {
+  authenticatePairedE2EEV2TestClient,
+  type PairedE2EEV2TestClient
+} from '../../src/main/runtime/rpc/mobile/e2ee/paired-e2ee-v2-test-client'
 import {
   saveStartupCaptures,
   summarizeStartupCapture,
@@ -54,57 +57,31 @@ function readJson<T>(path: string): T {
   return JSON.parse(readFileSync(path, 'utf8')) as T
 }
 
-const devices = readJson<Array<{ token: string }>>(join(USER_DATA, 'orca-devices.json'))
-const token = devices[0]?.token
+// The host stores only a hash of a signed-in device's token, so it comes from the pairing code.
+const token = process.env.ORCA_MOBILE_DEVICE_TOKEN ?? ''
 const keypair = readJson<{ publicKeyB64: string }>(join(USER_DATA, 'orca-e2ee-keypair.json'))
 
 if (!token || !keypair.publicKeyB64) {
-  throw new Error(`Missing mobile token or E2EE public key in ${USER_DATA}`)
+  throw new Error(`Set ORCA_MOBILE_DEVICE_TOKEN; the E2EE public key is read from ${USER_DATA}`)
 }
 
 let reqId = 0
 const pending = new Map<string, PendingRequest>()
 const streamListeners = new Map<string, (result: Record<string, unknown>) => void>()
-const clientKeys = nacl.box.keyPair()
-const serverPublicKey = Buffer.from(keypair.publicKeyB64, 'base64')
-const sharedKey = nacl.box.before(new Uint8Array(serverPublicKey), clientKeys.secretKey)
+// Why per socket: a v2 frame opens once, in order, so one owner reads each socket.
+const channels = new WeakMap<WebSocket, PairedE2EEV2TestClient>()
 
 function nextId(): string {
   reqId += 1
   return `startup-repro-${reqId}`
 }
 
-function toBase64(bytes: Uint8Array): string {
-  return Buffer.from(bytes).toString('base64')
-}
-
-function fromBase64(value: string): Uint8Array {
-  return new Uint8Array(Buffer.from(value, 'base64'))
-}
-
-function encrypt(plaintext: string): string {
-  const nonce = nacl.randomBytes(nacl.box.nonceLength)
-  const message = new TextEncoder().encode(plaintext)
-  const ciphertext = nacl.box.after(message, nonce, sharedKey)
-  const bundle = new Uint8Array(nonce.length + ciphertext.length)
-  bundle.set(nonce)
-  bundle.set(ciphertext, nonce.length)
-  return toBase64(bundle)
-}
-
-function decrypt(payload: string): string | null {
-  const bundle = fromBase64(payload)
-  if (bundle.length < nacl.box.nonceLength + nacl.box.overheadLength) {
-    return null
-  }
-  const nonce = bundle.subarray(0, nacl.box.nonceLength)
-  const ciphertext = bundle.subarray(nacl.box.nonceLength)
-  const plaintext = nacl.box.open.after(ciphertext, nonce, sharedKey)
-  return plaintext ? new TextDecoder().decode(plaintext) : null
-}
-
 function sendRaw(ws: WebSocket, payload: unknown): void {
-  ws.send(encrypt(JSON.stringify(payload)))
+  const channel = channels.get(ws)
+  if (!channel) {
+    throw new Error('Socket is not authenticated yet')
+  }
+  channel.sendText(JSON.stringify(payload))
 }
 
 function send(
@@ -182,43 +159,12 @@ async function subscribe(ws: WebSocket, capture: StartupTerminalCapture): Promis
 }
 
 async function run(ws: WebSocket): Promise<void> {
-  ws.send(
-    JSON.stringify({
-      type: 'e2ee_hello',
-      publicKeyB64: toBase64(clientKeys.publicKey)
-    })
-  )
-
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Timed out waiting for e2ee_ready')), 5000)
-    ws.once('message', (data) => {
-      clearTimeout(timeout)
-      const msg = JSON.parse(data.toString()) as { type?: string }
-      if (msg.type !== 'e2ee_ready') {
-        reject(new Error(`Unexpected handshake response: ${data.toString()}`))
-        return
-      }
-      resolve()
-    })
+  const channel = await authenticatePairedE2EEV2TestClient(ws, {
+    hostPublicKeyB64: keypair.publicKeyB64,
+    deviceToken: token
   })
-
-  sendRaw(ws, { type: 'e2ee_auth', deviceToken: token })
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(
-      () => reject(new Error('Timed out waiting for e2ee_authenticated')),
-      5000
-    )
-    ws.once('message', (data) => {
-      clearTimeout(timeout)
-      const plaintext = decrypt(data.toString())
-      const msg = plaintext ? (JSON.parse(plaintext) as { type?: string }) : null
-      if (msg?.type !== 'e2ee_authenticated') {
-        reject(new Error(`Unexpected auth response: ${data.toString()}`))
-        return
-      }
-      resolve()
-    })
-  })
+  channels.set(ws, channel)
+  channel.onText(handleHostText)
 
   const created = await send(
     ws,
@@ -271,16 +217,7 @@ ws.on('open', () => {
     })
 })
 
-ws.on('message', (data) => {
-  const raw = data.toString()
-  if (raw.startsWith('{')) {
-    return
-  }
-  const plaintext = decrypt(raw)
-  if (!plaintext) {
-    return
-  }
-
+function handleHostText(plaintext: string): void {
   const response = JSON.parse(plaintext) as RpcResponse
   const result = response.result
   const streamListener = streamListeners.get(response.id)
@@ -295,7 +232,7 @@ ws.on('message', (data) => {
   }
   pending.delete(response.id)
   request.resolve(response)
-})
+}
 
 ws.on('close', () => {
   for (const request of pending.values()) {

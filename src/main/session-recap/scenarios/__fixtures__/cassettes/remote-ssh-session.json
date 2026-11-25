@@ -1,0 +1,24 @@
+[
+  {
+    "key": "ece3b5d8ac50d4f51134907f8a77cb14",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a --dry-run flag to the import script and document it in docs/import.md.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add a --dry-run flag to the import script and document it in docs/import.md.\n\n[m2] AGENT: Added --dry-run to scripts/import.ts: it parses and validates every row and writes nothing. I haven't documented it yet.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Add dry-run flag to import script\",\n  \"goal\": \"Add --dry-run flag to import script and document it.\",\n  \"standing\": \"Added --dry-run to scripts/import.ts but not yet documented.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\"text\": \"Added --dry-run to scripts/import.ts\", \"state\": \"done\", \"ref\": \"m2\"}\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [\n      {\"text\": \"Document --dry-run flag in docs/import.md\", \"state\": \"in-progress\", \"ref\": \"m1\"}\n    ],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": []\n}"
+  },
+  {
+    "key": "c6fa4fc31f0fad261cc4ff8bf4c400d1",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Add dry-run flag to import script\",\"goal\":\"Add --dry-run flag to import script and document it.\",\"standing\":\"Added --dry-run to scripts/import.ts but not yet documented.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Added --dry-run to scripts/import.ts\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[{\"id\":\"t2\",\"text\":\"Document --dry-run flag in docs/import.md\"}],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: document it please\n\n[m2] AGENT: Documented --dry-run in docs/import.md with an example.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Add dry-run flag to import script\",\n  \"goal\": \"Add --dry-run flag to import script and document it.\",\n  \"standing\": \"Added --dry-run to scripts/import.ts and documented it.\",\n  \"did\": [\n    {\n      \"id\": \"w1\",\n      \"text\": \"Added --dry-run to scripts/import.ts\",\n      \"state\": \"done\"\n    },\n    {\n      \"id\": \"w2\",\n      \"text\": \"Documented --dry-run flag in docs/import.md\",\n      \"state\": \"done\"\n    }\n  ],\n  \"resolve\": [\"t2\"]\n}"
+  }
+]

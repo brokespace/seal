@@ -1,11 +1,12 @@
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { CodexRateLimitAccountsState } from '../../../../shared/managed-account-types'
-import { translate } from '@/i18n/i18n'
 import {
   getCodexAccountDisplayDetail,
   getCodexAccountDisplayLabel
 } from '@/lib/provider-accounts/codex-account-display-label'
 import {
+  showsSystemLoginRowFor,
+  systemLoginRowLabel,
   getCodexStatusRuntimeKey,
   getCodexStatusRuntimeLabel,
   getCodexStatusWslKey,
@@ -83,27 +84,30 @@ export function buildCodexStatusSwitchGroups(
   const makeGroup = (target: CodexStatusRuntimeTarget): CodexStatusSwitchGroup => {
     const activeId = getCodexStatusActiveId(state, target)
     const accountsForTarget = getCodexStatusAccountsForTarget(state, target)
-    const systemDefaultLabel = translate(
-      'auto.components.status.bar.StatusBar.c676918adc',
-      'System default'
-    )
+    const systemLoginLabel = systemLoginRowLabel(target, options.seal)
     return {
       key: getCodexStatusRuntimeKey(target),
       label: getCodexStatusRuntimeLabel(target, options.hostLabel),
       runtimeTarget: target,
       targets: [
-        {
-          id: null,
-          label: systemDefaultLabel,
-          name: systemDefaultLabel,
-          detail: null,
-          active: activeId === null,
-          runtimeTarget: target
-        },
+        ...(showsSystemLoginRowFor(target, activeId, options.seal)
+          ? [
+              {
+                id: null,
+                label: systemLoginLabel,
+                name: systemLoginLabel,
+                detail: null,
+                active: activeId === null,
+                runtimeTarget: target
+              }
+            ]
+          : []),
         ...accountsForTarget.map((account) => ({
           id: account.id,
-          label: getCodexAccountDisplayLabel(account, accountsForTarget),
-          name: account.email,
+          label:
+            (target.runtime === 'host' && options.seal?.labels[account.id]) ||
+            getCodexAccountDisplayLabel(account, accountsForTarget),
+          name: (target.runtime === 'host' && options.seal?.labels[account.id]) || account.email,
           detail: getCodexAccountDisplayDetail(account, accountsForTarget),
           active: account.id === activeId,
           runtimeTarget: target

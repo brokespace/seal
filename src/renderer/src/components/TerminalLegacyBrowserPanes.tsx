@@ -9,9 +9,8 @@ export function TerminalLegacyBrowserPanes({
   const {
     activeBrowserTabId,
     activeTabType,
-    activeView,
     browserTabsByWorktree,
-    renderedActiveWorktreeId,
+    visibleWorkspacePanes,
     workspaceSurfaces
   } = controller
   return (
@@ -22,8 +21,7 @@ export function TerminalLegacyBrowserPanes({
     >
       {workspaceSurfaces.map((workspace) => {
         const browserTabs = browserTabsByWorktree[workspace.id] ?? []
-        const isVisibleWorktree =
-          activeView === 'terminal' && workspace.id === renderedActiveWorktreeId
+        const isVisibleWorktree = visibleWorkspacePanes.get(workspace.id) === null
         if (browserTabs.length === 0) {
           return null
         }

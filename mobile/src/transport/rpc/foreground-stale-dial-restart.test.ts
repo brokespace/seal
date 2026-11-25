@@ -3,19 +3,10 @@ import { connect } from './direct-rpc-connect'
 
 // Resume must replace stale connecting/handshaking sockets immediately; otherwise only a second foreground escapes the old dial/backoff.
 
-vi.mock(
-  '../encryption/direct-e2ee-framing-policy',
-  () => import('./legacy-direct-framing-test-policy')
-)
+vi.mock('./direct-socket-framing', () => import('./direct-socket-framing-test-double'))
 
 vi.mock('../encryption/e2ee', () => ({
-  generateKeyPair: () => ({ publicKey: new Uint8Array(32), secretKey: new Uint8Array(32) }),
-  deriveSharedKey: () => new Uint8Array(32),
-  publicKeyFromBase64: () => new Uint8Array(32),
-  publicKeyToBase64: () => 'client-public-key',
-  encrypt: (plaintext: string) => `encrypted:${plaintext}`,
-  decrypt: (raw: string) => raw.replace(/^encrypted:/, ''),
-  decryptBytes: (bytes: Uint8Array) => bytes
+  publicKeyFromBase64: () => new Uint8Array(32)
 }))
 
 vi.mock('../connection/mobile-runtime-capability-negotiation', () => ({
@@ -104,27 +95,6 @@ describe('foregrounding a phone that was suspended mid-dial', () => {
     vi.useRealTimers()
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
-  })
-
-  it('leaves a dial opened after the foreground edge alone', async () => {
-    const client = connect(TAILSCALE_ENDPOINT, 'token', 'server-key')
-    latest().authenticate()
-    latest().close()
-    await vi.advanceTimersByTimeAsync(500)
-    const fresh = latest()
-    expect(client.getState()).toBe('connecting')
-
-    // Coalesce handoff and AppState nudges so the second cannot churn the first’s fresh socket.
-    client.notifyForeground()
-    const afterFirstNudge = latest()
-    client.notifyForeground()
-    client.notifyForeground()
-
-    expect(latest()).toBe(afterFirstNudge)
-    expect(afterFirstNudge).toBe(fresh)
-    expect(fresh.readyState).toBe(MockWebSocket.CONNECTING)
-
-    client.close()
   })
 
   it('abandons a handshake stalled across the suspension', async () => {

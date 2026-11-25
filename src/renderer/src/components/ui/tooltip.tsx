@@ -3,6 +3,7 @@ import * as TooltipPrimitive from 'radix-ui/tooltip'
 
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/class-names'
+import { noteHoverLayerEscape } from '@/lib/overlay-interaction/hover-layer-escape'
 import { PortalContainerContext, usePortalContainer } from './portal-container-context'
 
 function TooltipProvider({
@@ -54,6 +55,7 @@ function TooltipContent({
   portalContainer,
   variant,
   children,
+  onEscapeKeyDown,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Content> &
   VariantProps<typeof tooltipContentVariants> & {
@@ -70,6 +72,10 @@ function TooltipContent({
           sideOffset={sideOffset}
           // Tooltip portals must layer above the menus/popovers that trigger them.
           className={cn(tooltipContentVariants({ variant }), className)}
+          onEscapeKeyDown={(event) => {
+            onEscapeKeyDown?.(event)
+            noteHoverLayerEscape(event)
+          }}
           {...props}
         >
           {children}

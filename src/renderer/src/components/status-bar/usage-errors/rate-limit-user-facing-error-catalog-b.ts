@@ -2,9 +2,17 @@ import type { RateLimitKnownError } from './rate-limit-user-facing-error-types'
 
 export const KNOWN_RATE_LIMIT_ERRORS_B: RateLimitKnownError[] = [
   {
+    test: 'Claude is throttling usage checks right now. This is not the account’s own limit; figures update when checks resume.',
+    key: 'seal.usage.checkThrottled.message',
+    fallback:
+      'Claude is throttling usage checks right now. This is not the account’s own limit; figures update when checks resume.'
+  },
+  {
+    // What hosts on an older build still send for the same throttled check.
     test: 'Claude usage is rate limited right now.',
-    key: 'auto.lib.rateLimits.errors.claudeRateLimited',
-    fallback: 'Claude usage is rate limited right now.'
+    key: 'seal.usage.checkThrottled.message',
+    fallback:
+      'Claude is throttling usage checks right now. This is not the account’s own limit; figures update when checks resume.'
   },
   {
     test: 'Claude usage is unavailable right now.',

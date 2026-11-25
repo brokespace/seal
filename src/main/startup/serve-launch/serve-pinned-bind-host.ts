@@ -1,7 +1,7 @@
 import { WS_BIND_HOST_LOOPBACK } from '../../runtime/rpc/server/runtime-rpc-pairing-types'
 import type { ServeOptions } from './serve-options'
 
-/** Undefined keeps the runtime's own choice: all interfaces for serve, loopback until pairing for the desktop. */
+/** Serve listens where the operator said, loopback by default. Undefined is the desktop: loopback until a LAN pairing. */
 export function resolveServePinnedBindHost(input: {
   orcadSidecar: boolean
   serveOptions: Pick<ServeOptions, 'bind'> | null | undefined
@@ -10,5 +10,5 @@ export function resolveServePinnedBindHost(input: {
   if (input.orcadSidecar) {
     return WS_BIND_HOST_LOOPBACK
   }
-  return input.serveOptions?.bind
+  return input.serveOptions ? (input.serveOptions.bind ?? WS_BIND_HOST_LOOPBACK) : undefined
 }

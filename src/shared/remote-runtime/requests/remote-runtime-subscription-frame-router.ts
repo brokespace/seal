@@ -3,7 +3,10 @@ import type { PairedE2EEClientHandshake } from '../e2ee/paired-e2ee-client-hands
 import type { RemoteRuntimeHandshakeState } from '../remote-runtime-client-handshake'
 import { RemoteRuntimeClientError } from '../remote-runtime-client-error'
 import { RuntimeRpcEnvelopeSchema, type RuntimeRpcResponse } from '../../runtime-rpc-envelope'
-import { parseRemoteRuntimeJsonText } from './remote-runtime-request-frames'
+import {
+  parseRemoteRuntimeJsonText,
+  remoteRuntimeReadyFailureMessage
+} from './remote-runtime-request-frames'
 import {
   openSealedFrame,
   readSealedFrame,
@@ -65,9 +68,7 @@ export class RemoteRuntimeSubscriptionFrameRouter<TResult> {
       this.options.fail(
         new RemoteRuntimeClientError(
           'invalid_runtime_response',
-          readyFrame === 'invalid'
-            ? 'Remote Orca runtime returned an invalid E2EE handshake frame.'
-            : 'Remote Orca runtime returned an unexpected E2EE handshake frame.'
+          remoteRuntimeReadyFailureMessage(readyFrame)
         )
       )
       return

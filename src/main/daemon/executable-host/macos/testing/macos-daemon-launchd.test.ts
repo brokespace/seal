@@ -92,7 +92,7 @@ const nativePlatform = process.platform
 const originalGetuid = Object.getOwnPropertyDescriptor(process, 'getuid')
 const originalGetSystemVersion = Object.getOwnPropertyDescriptor(process, 'getSystemVersion')
 const roomyDeadline = (): number => Date.now() + 60_000
-const helperExec = (): string => join(copyDir, 'MacOS', 'orca-terminal-host')
+const helperExec = (): string => join(copyDir, 'MacOS', 'Orca Agents')
 const helperEntry = (): string => join(copyDir, 'daemon-entry.js')
 const service = (): string => `gui/501/${macDaemonJobLabel(state.root)}`
 const launchctlCalls = (verb: string): ProcessSpec[] =>
@@ -217,7 +217,7 @@ it('launches the copied helper on plain Node and leaves no inherited credentials
   expect(job).toMatchObject({
     Label: macDaemonJobLabel(state.root),
     KeepAlive: false,
-    AssociatedBundleIdentifiers: ['com.stablyai.orca'],
+    AssociatedBundleIdentifiers: ['com.brokespace.seal'],
     MaterializeDatalessFiles: true,
     EnvironmentVariables: { ORCA_TEST_SECRET: 'test-value' }
   })

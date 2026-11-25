@@ -13,6 +13,10 @@ import type { CodexRuntimeHomeService } from './runtime-home-service'
 import type { Store } from '../persistence/loading-store/store'
 import type { RateLimitService } from '../rate-limits/service/rate-limit-service'
 import { admitSelfInitiatedTreeKill } from '../pty/process-retirement/own-chromium-tree-kill-guard'
+import {
+  reapAccountCliProcess,
+  trackAccountCliProcess
+} from '../provider-process/account-cli-process-reaper'
 import type { CodexAccountSelectionTarget } from '../../shared/codex-selection-lane'
 import { CodexAccountIdentity } from './credentials/codex-account-identity'
 import type { CodexAuthIdentity as ResolvedCodexIdentity } from './credentials/codex-auth-identity'
@@ -64,7 +68,12 @@ function killLoginProcessTree(
       // If the tree already exited, still try signaling the direct child.
     }
   }
-  child.kill()
+  if (process.platform === 'win32') {
+    child.kill()
+    return
+  }
+  // SIGTERM lets codex close its login server; SIGKILL follows if anything is still running.
+  reapAccountCliProcess(child, { group: true })
 }
 
 export class CodexAccountService {
@@ -290,12 +299,16 @@ export class CodexAccountService {
         wslCommand: 'wsl.exe',
         spawn: ({ command, args, env, stdio }) => {
           assertWslDistroAllowed(command, args)
-          return spawn(command, args, {
+          const child = spawn(command, args, {
             stdio,
             // Hide the outer wrapper; the dedicated login console remains visible.
             windowsHide: true,
+            // Its own process group, so a cancel reaches the binary behind an npm wrapper.
+            detached: process.platform !== 'win32',
             env
           })
+          trackAccountCliProcess(child, { group: process.platform !== 'win32' })
+          return child
         },
         killProcessTree: killLoginProcessTree,
         setCancel: (cancel) => {

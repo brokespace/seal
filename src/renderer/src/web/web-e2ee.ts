@@ -1,5 +1,6 @@
 import nacl from 'tweetnacl'
 import { decodeBase64Bytes } from '@/lib/base64-bytes'
+import { isLowOrderX25519PublicKey } from '../../../shared/remote-runtime/e2ee/x25519-low-order-points'
 
 if (globalThis.crypto?.getRandomValues) {
   nacl.setPRNG((bytes, count) => {
@@ -11,8 +12,8 @@ export function generateKeyPair(): nacl.BoxKeyPair {
   return nacl.box.keyPair()
 }
 
-export function deriveSharedKey(ourSecretKey: Uint8Array, peerPublicKey: Uint8Array): Uint8Array {
-  return nacl.box.before(peerPublicKey, ourSecretKey)
+export function x25519(ourSecretKey: Uint8Array, peerPublicKey: Uint8Array): Uint8Array {
+  return nacl.scalarMult(ourSecretKey, peerPublicKey)
 }
 
 export function publicKeyFromBase64(b64: string): Uint8Array {
@@ -20,45 +21,14 @@ export function publicKeyFromBase64(b64: string): Uint8Array {
   if (key.length !== 32) {
     throw new Error(`Invalid public key: expected 32 bytes, got ${key.length}`)
   }
+  if (isLowOrderX25519PublicKey(key)) {
+    throw new Error('Invalid public key: low-order point')
+  }
   return key
 }
 
 export function publicKeyToBase64(key: Uint8Array): string {
   return bytesToBase64(key)
-}
-
-export function encrypt(plaintext: string, sharedKey: Uint8Array): string {
-  return bytesToBase64(encryptBytes(new TextEncoder().encode(plaintext), sharedKey))
-}
-
-export function decrypt(encrypted: string, sharedKey: Uint8Array): string | null {
-  const plaintext = decryptBytes(decodeBase64Bytes(encrypted), sharedKey)
-  return plaintext ? new TextDecoder().decode(plaintext) : null
-}
-
-export function encryptBytes(
-  plaintext: Uint8Array<ArrayBufferLike>,
-  sharedKey: Uint8Array
-): Uint8Array<ArrayBuffer> {
-  const nonce = nacl.randomBytes(nacl.box.nonceLength)
-  const ciphertext = nacl.box.after(plaintext, nonce, sharedKey)
-  const bundle = new Uint8Array(nonce.length + ciphertext.length)
-  bundle.set(nonce)
-  bundle.set(ciphertext, nonce.length)
-  return bundle
-}
-
-export function decryptBytes(
-  bundle: Uint8Array<ArrayBufferLike>,
-  sharedKey: Uint8Array
-): Uint8Array<ArrayBuffer> | null {
-  if (bundle.length < nacl.box.nonceLength + nacl.box.overheadLength) {
-    return null
-  }
-  const nonce = bundle.slice(0, nacl.box.nonceLength)
-  const ciphertext = bundle.slice(nacl.box.nonceLength)
-  const plaintext = nacl.box.open.after(ciphertext, nonce, sharedKey)
-  return plaintext ? new Uint8Array(plaintext) : null
 }
 
 function bytesToBase64(bytes: Uint8Array): string {

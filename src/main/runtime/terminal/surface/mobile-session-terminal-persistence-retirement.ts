@@ -21,6 +21,9 @@ function visibleTypeForContentType(
   if (contentType === 'simulator') {
     return 'simulator'
   }
+  if (contentType === 'external-agent-session') {
+    return 'agent-session'
+  }
   return contentType ? 'editor' : undefined
 }
 

@@ -37,7 +37,8 @@ import {
   collectWorktreeTrashSweepRoots,
   sweepStaleWorktreeTrash
 } from '../workspaces/removal/worktree-trash'
-import { loadWorktreeRemovalRecordsForStore } from './workspace-startup/worktree-removal-records-load'
+import { prepareWorktreeRemovalsForStore } from '../workspaces/removal/worktree-removal-records-load'
+import { worktreeRemovalLifetime } from '../workspaces/removal/worktree-removal-lifetime'
 import { runAfterFirstWindowShown } from './main-window/first-window-deferral'
 import { startSpeechModelWarmup } from '../speech/speech-model-warmup'
 import { logStartupMilestone } from './diagnostics/startup-diagnostics'
@@ -50,6 +51,15 @@ import { WslUsageReporter } from '../telemetry/wsl-usage-reporter'
 import { ALL_RPC_METHODS } from '../runtime/rpc/methods/rpc-method-registry'
 import { startClaudeCodeThemeSync } from '../claude/theme-sync/claude-code-theme-sync-schedule'
 import { startWorkspaceCleanupRunner } from '../workspaces/cleanup/workspace-cleanup-runner-startup'
+import { installLiveSessions } from '../live-sessions/live-sessions-install'
+import { startMachineDiskIndexKeeper } from '../machines/resources/machine-disk-index-keeper'
+import { isOrcadSidecarLaunch } from '../window/activation/foreground-activation-policy'
+import { installSealMcp } from '../seal-mcp/seal-mcp-install'
+import { getSealAccountManager } from '../seal-accounts/seal-account-manager'
+import { installDesktopSessionSummaries } from '../session-summaries/desktop-session-summaries'
+import { registerLiveSessionIpc } from '../live-sessions/live-sessions-ipc'
+import { installLiveSessionDesktopNotifications } from '../live-sessions/live-session-desktop-notifications'
+import { createExternalSessionPhonePush } from '../runtime/push/notifications/external-session-phone-push'
 
 // Headless serve has no first window; timer fallback must still sweep trash.
 const WORKTREE_TRASH_SWEEP_FALLBACK_MS = 15_000
@@ -62,13 +72,25 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
   // Renderers fork from zygotes that exist already, so this must land before the first window.
   await refuseRealtimeSchedulingUnderZeroRtTime()
   // Load interrupted deletion records before listings so first paint shows Deleting.
-  await loadWorktreeRemovalRecordsForStore(store)
+  await prepareWorktreeRemovalsForStore(store)
   initializeMainProcessObservers()
   initializeMainProcessAccountServices()
   const runtime = initializeMainProcessRuntime()
   initializeMainProcessAutomations()
   startWorkspaceCleanupRunner(runtime, store)
   configureRuntimeServices(runtime)
+  const liveSessions = installLiveSessions(runtime, store)
+  installSealMcp(runtime)
+  startMachineDiskIndexKeeper({ orcadSidecar: isOrcadSidecarLaunch() })
+  if (liveSessions) {
+    registerLiveSessionIpc(liveSessions.service, liveSessions.shellIntegration)
+    installLiveSessionDesktopNotifications(
+      liveSessions.service,
+      store,
+      createExternalSessionPhonePush(runtime, liveSessions.service.registry)
+    )
+    installDesktopSessionSummaries(runtime, store, liveSessions.service)
+  }
   installFirstWorkRenameHookSubscription()
   await initializeMainProcessPlugins(runtime)
   state.starNag = new StarNagService(store, state.stats!)
@@ -110,7 +132,7 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
     ).catch((error) => {
       console.warn('[worktrees] Failed to sweep leftover worktree directories:', error)
     })
-    runtime.finishInterruptedWorktreeRemovals()
+    worktreeRemovalLifetime.resume(() => runtime.finishInterruptedWorktreeRemovals())
   }, WORKTREE_TRASH_SWEEP_FALLBACK_MS)
   // Defer noncritical plugin-file refresh past first paint.
   runAfterFirstWindowShown(() => {
@@ -132,6 +154,8 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
   runAfterFirstWindowShown(() => {
     app.on('browser-window-focus', startSpeechModelWarmup(store))
   }, WORKTREE_TRASH_SWEEP_FALLBACK_MS)
+  // A login can lapse or be redone in a terminal while Seal is in the background.
+  app.on('browser-window-focus', () => getSealAccountManager()?.recheckLogins(60_000))
   runAfterFirstWindowShown(() => {
     startClaudeCodeThemeSync({
       getSettings: () => store.getSettings(),

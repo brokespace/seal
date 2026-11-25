@@ -1,3 +1,4 @@
+import { isAgentSessionSurfaceTab } from '../../../../shared/tab-types'
 import type { applyWorktreeRecordUpdates } from './apply-worktree-records'
 import { withWorktreeEntry, sameStringArray } from './state-equality-core'
 import { toVisibleTabType } from './state-equality-files'
@@ -202,7 +203,8 @@ export function applyActiveStateUpdates(context: ActiveStateContext) {
       : currentVisibleTabType === 'agent-session' &&
           currentVisibleUnifiedTabId &&
           nextUnifiedTabs?.some(
-            (tab) => tab.id === currentVisibleUnifiedTabId && tab.contentType === 'agent-session'
+            (tab) =>
+              tab.id === currentVisibleUnifiedTabId && isAgentSessionSurfaceTab(tab.contentType)
           )
         ? ('agent-session' as const)
         : currentVisibleTabType === 'browser' && currentActiveBrowserStillExists

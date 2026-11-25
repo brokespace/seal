@@ -4,7 +4,8 @@ import type {
   AntigravityAccountUsage,
   InactiveAccountUsage,
   ProviderRateLimits,
-  RateLimitState
+  RateLimitState,
+  SystemLoginUsage
 } from '../../../shared/rate-limit-types'
 import type { AntigravityAccountUsageRecorder } from '../providers/antigravity/antigravity-account-usage'
 import {
@@ -143,6 +144,7 @@ export abstract class RateLimitServiceState {
   protected inactiveClaudeFetching = new Set<string>()
   protected inactiveCodexFetching = new Set<string>()
   protected inactiveCodexFetchInFlight = false
+  protected systemLoginUsage: Partial<Record<'claude' | 'codex', SystemLoginUsage>> = {}
   protected lastInactiveClaudeFetchAt = 0
   protected inactiveClaudeAccountsGeneration = 0
   protected lastInactiveCodexFetchAt = 0

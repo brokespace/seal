@@ -19,16 +19,15 @@ import { getTerminalWorktreeColdParkRecheckDelayMs } from './terminal-pane/parki
 import { haveSameIdSet } from './terminal-workspace-model'
 import { collectTerminalParkingPassCandidates } from './terminal-parking-pass-candidates'
 import type { TerminalParkingFoundation } from './use-terminal-parking-foundation'
+import { addWorkspacesWithChangedVisibility } from './split-view/visible-workspace-panes'
 
 export function useTerminalParkingPass(controller: TerminalParkingFoundation): void {
   const {
-    activeView,
     activityTerminalPortals,
     backgroundMountRevision,
     parkedCaptureDoneRef,
     pairedRuntimeParkingEnvironmentIds,
     pendingStartupByTabId,
-    renderedActiveWorktreeId,
     setEvictionExemptTerminalTabIds,
     setForceParkedTerminalWorktreeIds,
     setParkedTerminalWorktreeIds,
@@ -37,6 +36,7 @@ export function useTerminalParkingPass(controller: TerminalParkingFoundation): v
     terminalProviderSnapshotCapabilityRevision,
     terminalRetentionBudgetEnabled,
     terminalSshParkingEnabled,
+    visibleWorkspacePanes,
     workspaceSurfaceIds
   } = controller
   // Why: this effect is the sole writer, so these mirror the queued state without a render.
@@ -61,17 +61,11 @@ export function useTerminalParkingPass(controller: TerminalParkingFoundation): v
       }
     }
     if (previous) {
-      if (
-        previous.activeView !== activeView ||
-        previous.renderedActiveWorktreeId !== renderedActiveWorktreeId
-      ) {
-        if (previous.renderedActiveWorktreeId) {
-          dirty.add(previous.renderedActiveWorktreeId)
-        }
-        if (renderedActiveWorktreeId) {
-          dirty.add(renderedActiveWorktreeId)
-        }
-      }
+      addWorkspacesWithChangedVisibility(
+        dirty,
+        previous.visibleWorkspacePanes,
+        visibleWorkspacePanes
+      )
       if (previous.activityTerminalPortals !== activityTerminalPortals) {
         for (const portal of [...previous.activityTerminalPortals, ...activityTerminalPortals]) {
           dirty.add(portal.worktreeId)
@@ -283,13 +277,12 @@ export function useTerminalParkingPass(controller: TerminalParkingFoundation): v
   }, [
     revision,
     takeChangedWorkspaces,
-    activeView,
+    visibleWorkspacePanes,
     activityTerminalPortals,
     backgroundMountRevision,
     parkedCaptureDoneRef,
     pendingStartupByTabId,
     pairedRuntimeParkingEnvironmentIds,
-    renderedActiveWorktreeId,
     setEvictionExemptTerminalTabIds,
     setForceParkedTerminalWorktreeIds,
     setParkedTerminalWorktreeIds,

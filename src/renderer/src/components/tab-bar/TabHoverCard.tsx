@@ -9,7 +9,8 @@ export function TabHoverCard({
   programName,
   description,
   alert,
-  showWhenUnclipped = false
+  showWhenUnclipped = false,
+  disabled = false
 }: {
   children: ReactNode
   title: string
@@ -20,6 +21,8 @@ export function TabHoverCard({
   alert?: ReactNode | ((dismiss: () => void) => ReactNode)
   /** The program row says something the tab cannot, so the card opens even for a full title. */
   showWhenUnclipped?: boolean
+  /** Stays closed (a menu is open on the tab) without remounting the tab, which may hold the keyboard. */
+  disabled?: boolean
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLElement>(null)
@@ -50,8 +53,8 @@ export function TabHoverCard({
 
   return (
     <Tooltip
-      open={open}
-      onOpenChange={(nextOpen) => setOpen(nextOpen && canOpen())}
+      open={open && !disabled}
+      onOpenChange={(nextOpen) => setOpen(nextOpen && !disabled && canOpen())}
       disableHoverableContent={!interactive}
     >
       <TooltipTrigger

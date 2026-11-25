@@ -1,13 +1,13 @@
 <h1 align="center">
-  <a href="https://orca.dev"><img src="../../resources/build/icon.png" alt="Orca" width="64" valign="middle" /></a> Orca
+  <a href="https://orca.dev"><img src="../../resources/build/icon.png" alt="Seal" width="64" valign="middle" /></a> Seal
 </h1>
 
 <p align="center">
   <a href="https://github.com/stablyai/orca"><img src="https://img.shields.io/github/stars/stablyai/orca?style=flat&amp;label=%E2%98%85&amp;color=08C" alt="Estrelas no GitHub" /></a>
   <a href="https://github.com/stablyai/orca/releases"><img src="../assets/readme-downloads.svg" alt="Total de downloads em todas as versões" /></a>
   <img src="https://img.shields.io/badge/license-MIT-08C?style=flat" alt="Licença: MIT" />
-  <a href="https://discord.gg/fzjDKHxv8Q"><img src="https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white" alt="Entre no Discord do Orca" /></a>
-  <a href="https://x.com/orca_build"><img src="https://img.shields.io/badge/X-000000?logo=x&logoColor=white" alt="Siga o Orca no X" /></a>
+  <a href="https://discord.gg/fzjDKHxv8Q"><img src="https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white" alt="Entre no Discord do Seal" /></a>
+  <a href="https://x.com/orca_build"><img src="https://img.shields.io/badge/X-000000?logo=x&logoColor=white" alt="Siga o Seal no X" /></a>
   <img src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-4493F8?style=flat-square" alt="Plataformas compatíveis: macOS, Windows e Linux" />
 </p>
 
@@ -20,10 +20,10 @@
   Rode Codex, ClaudeCode, OpenCode ou Pi lado a lado — cada um em seu próprio worktree, acompanhado em um só lugar.
 </p>
 
-<h3 align="center"><a href="https://orca.dev/download"><ins>Baixar o Orca</ins></a></h3>
+<h3 align="center"><a href="https://orca.dev/download"><ins>Baixar o Seal</ins></a></h3>
 
 <p align="center">
-  <img src="../assets/readme-hero.jpg" alt="App desktop do Orca executando agentes em worktrees paralelos, com o app companion móvel do Orca no canto" width="960" />
+  <img src="../assets/readme-hero.jpg" alt="App desktop do Seal executando agentes em worktrees paralelos, com o app companion móvel do Seal no canto" width="960" />
 </p>
 
 ## Recursos
@@ -40,7 +40,7 @@ Monitore e conduza seus agentes pelo celular — receba uma notificação quando
 
 </td>
 <td width="50%">
-  <a href="https://orca.dev/docs/mobile"><picture><source srcset="../assets/feature-wall/mobile-companion-app-showcase.gif" type="image/gif"><img src="../assets/feature-wall/mobile-companion-app-showcase.jpg" alt="Orca desktop com o app companion móvel" width="100%" /></picture></a>
+  <a href="https://orca.dev/docs/mobile"><picture><source srcset="../assets/feature-wall/mobile-companion-app-showcase.gif" type="image/gif"><img src="../assets/feature-wall/mobile-companion-app-showcase.jpg" alt="Seal desktop com o app companion móvel" width="100%" /></picture></a>
 </td>
 </tr>
 <tr>
@@ -96,7 +96,7 @@ Navegue por PRs, issues e quadros de projeto dentro do app — abra um worktree 
 
 </td>
 <td width="50%">
-  <a href="https://orca.dev/docs/review/linear"><picture><source srcset="../../resources/onboarding/feature-wall/tile-03.webp" type="image/webp"><img src="../../resources/onboarding/feature-wall/tile-03.poster.jpg" alt="Fluxos de trabalho de tarefas do GitHub e Linear no Orca" width="100%" /></picture></a>
+  <a href="https://orca.dev/docs/review/linear"><picture><source srcset="../../resources/onboarding/feature-wall/tile-03.webp" type="image/webp"><img src="../../resources/onboarding/feature-wall/tile-03.poster.jpg" alt="Fluxos de trabalho de tarefas do GitHub e Linear no Seal" width="100%" /></picture></a>
 </td>
 </tr>
 <tr>
@@ -118,7 +118,7 @@ Execute agentes em uma máquina remota potente com edição completa de arquivos
 
 ### Anotar diffs de IA
 
-Deixe comentários em qualquer linha de diff e envie-os de volta ao agente — revise, edite e faça commit sem sair do Orca.
+Deixe comentários em qualquer linha de diff e envie-os de volta ao agente — revise, edite e faça commit sem sair do Seal.
 
 [Docs →](https://orca.dev/docs/review/annotate-ai-diff)
 
@@ -144,15 +144,15 @@ O editor do VS Code com salvamento automático em todos os lugares — arraste a
 <tr>
 <td width="50%" valign="middle">
 
-### Orca CLI
+### Seal CLI
 
-Agentes também controlam o Orca — automatize qualquer fluxo de trabalho com `orca worktree create`, `snapshot`, `click` e `fill`.
+Agentes também controlam o Seal — automatize qualquer fluxo de trabalho com `seal worktree create`, `snapshot`, `click` e `fill`.
 
 [Docs →](https://orca.dev/docs/cli/overview)
 
 </td>
 <td width="50%">
-  <a href="https://orca.dev/docs/cli/overview"><picture><source srcset="../../resources/onboarding/feature-wall/tile-09.webp" type="image/webp"><img src="../../resources/onboarding/feature-wall/tile-09.poster.jpg" alt="Automatize o Orca pela CLI" width="100%" /></picture></a>
+  <a href="https://orca.dev/docs/cli/overview"><picture><source srcset="../../resources/onboarding/feature-wall/tile-09.webp" type="image/webp"><img src="../../resources/onboarding/feature-wall/tile-09.poster.jpg" alt="Automatize o Seal pela CLI" width="100%" /></picture></a>
 </td>
 </tr>
 </table>
@@ -170,7 +170,7 @@ Agentes também controlam o Orca — automatize qualquer fluxo de trabalho com `
 
 ## Agentes compatíveis
 
-Funciona com **qualquer agente CLI** — se roda em um terminal, roda no Orca.
+Funciona com **qualquer agente CLI** — se roda em um terminal, roda no Seal.
 
 <p>
   <a href="https://docs.anthropic.com/claude/docs/claude-code"><kbd><img src="../assets/claude-logo.svg" alt="Logotipo do Claude Code" width="16" valign="middle" /> Claude Code</kbd></a> &nbsp;
@@ -222,7 +222,7 @@ _Ou por um gerenciador de pacotes:_
 
 ```bash
 # macOS (Homebrew)
-# Use sempre o nome completo; `orca` sozinho é um cask do Plotly sem relação.
+# Use sempre o nome completo; `seal` sozinho é um cask do Plotly sem relação.
 brew install --cask stablyai/orca/orca
 # Atualizar uma instalação existente
 brew upgrade --cask stablyai/orca/orca
@@ -245,7 +245,7 @@ Conecte ao app desktop para monitorar e conduzir seus agentes pelo celular.
 - **Discord:** Entre na comunidade no **[Discord](https://discord.gg/fzjDKHxv8Q)**.
 - **Twitter / X:** Siga **[@orca_build](https://x.com/orca_build)** para atualizações e anúncios.
 - **Feedback e ideias:** Lançamos rápido. Sentiu falta de algo? [Peça um novo recurso](https://github.com/stablyai/orca/issues).
-- **Privacidade:** Veja a [documentação de privacidade e telemetria](https://orca.dev/docs/telemetry) para saber quais dados anônimos de uso o Orca coleta e como desativar.
+- **Privacidade:** Veja a [documentação de privacidade e telemetria](https://orca.dev/docs/telemetry) para saber quais dados anônimos de uso o Seal coleta e como desativar.
 - **Mostre apoio:** Dê uma [estrela](https://github.com/stablyai/orca) neste repositório para acompanhar nossos lançamentos diários.
 
 ---
@@ -255,9 +255,9 @@ Conecte ao app desktop para monitorar e conduzir seus agentes pelo celular.
 Quer contribuir ou rodar localmente? Veja nosso guia [CONTRIBUTING.md](../../.github/CONTRIBUTING.md).
 
 <a href="https://github.com/stablyai/orca/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=stablyai/orca" alt="Contribuidores do Orca" />
+  <img src="https://contrib.rocks/image?repo=stablyai/orca" alt="Contribuidores do Seal" />
 </a>
 
 ## Licença
 
-Orca é livre e de código aberto sob a [Licença MIT](../../LICENSE).
+Seal é livre e de código aberto sob a [Licença MIT](../../LICENSE).

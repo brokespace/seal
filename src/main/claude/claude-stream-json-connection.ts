@@ -2,11 +2,11 @@ import { withOrcaClaudeChatEntrypoint } from '../../shared/agent-launch/startup/
 import { claudeStartupAnswerObservation } from './child-process/claude-startup-answer-observation'
 import type { PipedProcessSpawner } from '@orca/process-host/process-spec'
 import type * as ClaudeAgentSdk from '@anthropic-ai/claude-agent-sdk'
-import type { CanUseTool, OnUserDialog, SDKUserMessage } from '@anthropic-ai/claude-agent-sdk'
 import { spawnProcess } from '@orca/process-host'
 import { buildClaudeChildProcessEnv } from './child-process/claude-child-process-environment'
 import { withoutInheritedClaudeConfigDir } from './structured/launch/claude-config-dir-pin'
 import { withoutRejectedClaudeApiKey } from './configuration/claude-rejected-api-key'
+import { prepareClaudeFreshStart } from './configuration/claude-fresh-start-hook-race'
 import {
   createClaudeControlSurface,
   type ClaudeControlSurface
@@ -42,22 +42,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
+type ToolScopeOption = 'mcpServers' | 'allowedTools' | 'disallowedTools'
 export type ClaudeStreamJsonLaunch = {
   /** Orca's resolved user CLI; the SDK falls back to a bundled binary that is not installed. */
   pathToClaudeCodeExecutable: string
   prefixArgs?: readonly string[]
-  options: ClaudeStructuredSdkOptions
+  options: ClaudeStructuredSdkOptions &
+    Pick<ClaudeAgentSdk.Options, ToolScopeOption | 'tools' | 'persistSession'>
   cwd: string
   env?: Record<string, string>
   /** Delete these keys after merging inherited and launch env. */
   envToDelete?: readonly string[]
-}
-
-function withoutKeys(env: Record<string, string>, keys: readonly string[]): Record<string, string> {
-  for (const key of keys) {
-    delete env[key]
-  }
-  return env
 }
 
 export type ClaudeStreamJsonConnectionHandlers = {
@@ -65,9 +60,9 @@ export type ClaudeStreamJsonConnectionHandlers = {
   /** Raw stdout before the SDK reads it, for state that must keep wire order with permission requests. */
   onStdout?: (chunk: Buffer | string) => void
   /** The SDK handles request IDs, aborts and deduplication; cannot combine with permissionPromptToolName. */
-  canUseTool?: CanUseTool
+  canUseTool?: ClaudeAgentSdk.CanUseTool
   /** `request_user_dialog` control; the CLI only emits kinds declared in `supportedDialogKinds`. */
-  onUserDialog?: OnUserDialog
+  onUserDialog?: ClaudeAgentSdk.OnUserDialog
   /** A transport/process fault; a physical root exit arrives marked observed and is followed by onExit. */
   onFault?: (error: Error) => void
   /** Report observed root exit once; expected stays true even after an unproven close attempt. */
@@ -90,6 +85,8 @@ export type ClaudeStreamJsonConnection = ClaudeControlSurface & {
   readonly executableMissing?: boolean
   exited?: Promise<Error>
   startupFailure?: () => Error | undefined
+  /** A fresh start whose settings have an `asyncRewake` SessionStart hook that can hold it. */
+  readonly rewakeHookMayHold?: boolean
   pauseReading?: () => void
   resumeReading?: () => void
   send: (message: Record<string, unknown>, beforeDispatch?: () => Promise<void>) => Promise<void>
@@ -107,19 +104,19 @@ export async function openClaudeStreamJsonConnection(
   const startup = claudeStartupAnswerObservation(handlers.onStdout)
   const spawner = createClaudeCodeProcessSpawn(spawnImpl, process.platform, launch, startup.feed)
   // Always supply scrubbed env to prevent ambient auth leaks; only launch.env may pin CLAUDE_CONFIG_DIR.
-  const env = await withoutRejectedClaudeApiKey(
-    withoutKeys(
-      buildClaudeChildProcessEnv(launch.env, {
-        inheritedEnv: withoutInheritedClaudeConfigDir(process.env)
-      }),
-      launch.envToDelete ?? []
-    )
-  )
+  const childEnv = buildClaudeChildProcessEnv(launch.env, {
+    inheritedEnv: withoutInheritedClaudeConfigDir(process.env)
+  })
+  for (const key of launch.envToDelete ?? []) {
+    delete childEnv[key]
+  }
+  const env = await withoutRejectedClaudeApiKey(childEnv)
   const inbox = createClaudeUserMessageQueue()
+  const fresh = await prepareClaudeFreshStart(launch.options, env, launch.cwd)
   const session = (queryImpl ?? query)({
     prompt: inbox.messages,
     options: {
-      ...launch.options,
+      ...fresh.options,
       cwd: launch.cwd,
       env: withOrcaClaudeChatEntrypoint(env, process.platform),
       pathToClaudeCodeExecutable: launch.pathToClaudeCodeExecutable,
@@ -266,7 +263,7 @@ export async function openClaudeStreamJsonConnection(
     }
     startup.finish()
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: dispatch constructs the SDK user envelope after mapping every content block.
-    return inbox.push(message as unknown as SDKUserMessage, beforeDispatch)
+    return inbox.push(message as unknown as ClaudeAgentSdk.SDKUserMessage, beforeDispatch)
   }
 
   const close = (options?: ProviderProcessCloseOptions): Promise<boolean> => {
@@ -308,6 +305,7 @@ export async function openClaudeStreamJsonConnection(
   return {
     ...controls,
     startupFailure: startup.failure,
+    rewakeHookMayHold: fresh.rewakeHookMayHold,
     exited: exited.promise,
     get pid() {
       return spawner.pid

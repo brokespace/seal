@@ -1,0 +1,165 @@
+import type {
+  AgentConfigCommandResult,
+  AgentConfigPluginCommand,
+  AgentConfigScope,
+  AgentConfigTarget,
+  AgentConfigWriteResult
+} from '../../shared/agent-config/agent-config-types'
+import { quotePosixShell } from '../../shared/shell/launch/shell-argument-quoting'
+import {
+  execWithAgentPath,
+  type MachineConnection
+} from '../machines/connection/machine-connection'
+import { patchSettings } from './agent-config-settings-ops'
+
+/** Installing clones a repository; a slow link needs room. */
+const COMMAND_TIMEOUT_MS = 5 * 60_000
+const MAX_OUTPUT_CHARS = 4_000
+const PLUGIN_ID = /^[A-Za-z0-9][A-Za-z0-9._-]*(@[A-Za-z0-9][A-Za-z0-9._-]*)?$/
+const MARKETPLACE_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
+// eslint-disable-next-line no-control-regex -- strips the terminal colours the CLI prints.
+const ANSI = /\u001B\[[0-9;?]*[ -/]*[@-~]/g
+
+function requirePlugin(plugin: unknown): string {
+  if (typeof plugin !== 'string' || !PLUGIN_ID.test(plugin)) {
+    throw new Error('Name the plugin as name@marketplace')
+  }
+  return plugin
+}
+
+function requireScope(scope: unknown): AgentConfigScope {
+  if (scope !== 'user' && scope !== 'project' && scope !== 'local') {
+    throw new Error('Unknown scope')
+  }
+  return scope
+}
+
+/** The `claude plugin` arguments for an action, exactly as a person would type them. */
+export function pluginCommandArgs(command: AgentConfigPluginCommand): string[] {
+  switch (command.kind) {
+    case 'install':
+      return [
+        'plugin',
+        'install',
+        requirePlugin(command.plugin),
+        '--scope',
+        requireScope(command.scope)
+      ]
+    case 'uninstall':
+      return [
+        'plugin',
+        'uninstall',
+        requirePlugin(command.plugin),
+        '--scope',
+        requireScope(command.scope)
+      ]
+    case 'update':
+      return [
+        'plugin',
+        'update',
+        requirePlugin(command.plugin),
+        '--scope',
+        requireScope(command.scope)
+      ]
+    case 'marketplace-add': {
+      const source = typeof command.source === 'string' ? command.source.trim() : ''
+      if (source === '' || source.startsWith('-') || /[\n\r\0]/.test(source)) {
+        throw new Error('Enter owner/repo, a git URL or a folder')
+      }
+      return ['plugin', 'marketplace', 'add', source]
+    }
+    case 'marketplace-remove':
+      if (typeof command.name !== 'string' || !MARKETPLACE_NAME.test(command.name)) {
+        throw new Error('That is not a marketplace name')
+      }
+      return ['plugin', 'marketplace', 'remove', command.name]
+    case 'marketplace-update':
+      if (
+        command.name !== null &&
+        (typeof command.name !== 'string' || !MARKETPLACE_NAME.test(command.name))
+      ) {
+        throw new Error('That is not a marketplace name')
+      }
+      return ['plugin', 'marketplace', 'update', ...(command.name ? [command.name] : [])]
+  }
+}
+
+function powerShellLiteral(value: string): string {
+  return `'${value.replaceAll("'", "''")}'`
+}
+
+/** The agents whose CLI installs plugins from their own marketplaces. */
+export type AgentPluginCli = 'claude' | 'codex'
+
+const CLI_LABELS: Record<AgentPluginCli, string> = { claude: 'Claude Code', codex: 'Codex' }
+
+export type AgentCliRun = AgentConfigCommandResult & { stdout: string }
+
+/** Runs an agent's own CLI on the machine with no terminal attached. */
+export async function runAgentCli(
+  connection: MachineConnection,
+  cli: AgentPluginCli,
+  argv: readonly string[],
+  options: { cwd?: string; timeoutMs?: number; env?: Record<string, string> } = {}
+): Promise<AgentCliRun> {
+  const timeoutMs = options.timeoutMs ?? COMMAND_TIMEOUT_MS
+  const powershell = (await connection.dialect()) === 'powershell'
+  const env = Object.entries(options.env ?? {})
+  const args = argv.map(powershell ? powerShellLiteral : quotePosixShell).join(' ')
+  const script = powershell
+    ? `${env.map(([key, value]) => `$env:${key}=${powerShellLiteral(value)}; `).join('')}& ${cli} ${args}; exit $LASTEXITCODE`
+    : [
+        `command -v ${cli} >/dev/null 2>&1 || { echo '${CLI_LABELS[cli]} is not installed on this machine (${cli} is not on the PATH).' >&2; exit 127; }`,
+        `${env.length > 0 ? `env ${env.map(([key, value]) => `${key}=${quotePosixShell(value)}`).join(' ')} ` : ''}${cli} ${args} </dev/null`
+      ].join('\n')
+  const result = await execWithAgentPath(connection, script, {
+    timeoutMs,
+    ...(options.cwd ? { cwd: options.cwd } : {})
+  })
+  const output = `${result.stdout}\n${result.stderr}`.replace(ANSI, '').trim()
+  return {
+    ok: result.exitCode === 0 && !result.timedOut,
+    command: `${cli} ${argv.join(' ')}`,
+    stdout: result.stdout,
+    output: result.timedOut
+      ? `${output}\nTimed out after ${Math.round(timeoutMs / 1000)} seconds`.trim()
+      : output.slice(-MAX_OUTPUT_CHARS)
+  }
+}
+
+/**
+ * Installs, updates and removes go through Claude Code's own CLI on the machine: it clones the
+ * repositories, resolves versions and writes its registry, which Seal should not imitate.
+ */
+export async function runPluginCommand(
+  connection: MachineConnection,
+  args: { target: AgentConfigTarget; command: AgentConfigPluginCommand }
+): Promise<AgentConfigCommandResult> {
+  const { ok, command, output } = await runAgentCli(
+    connection,
+    'claude',
+    pluginCommandArgs(args.command),
+    // Project and local installs are recorded against the folder the CLI runs in.
+    args.target.projectPath ? { cwd: args.target.projectPath } : {}
+  )
+  return { ok, command, output }
+}
+
+/** Switching a plugin on or off is one key in a settings file; no CLI needed. */
+export function setPluginEnabled(
+  connection: MachineConnection,
+  args: {
+    target: AgentConfigTarget
+    scope: AgentConfigScope
+    plugin: string
+    /** Null removes this scope's say, so a weaker scope decides again. */
+    enabled: boolean | null
+  }
+): Promise<AgentConfigWriteResult> {
+  const path = ['enabledPlugins', requirePlugin(args.plugin)]
+  return patchSettings(connection, {
+    target: args.target,
+    scope: args.scope,
+    edits: [args.enabled === null ? { path, remove: true } : { path, value: args.enabled }]
+  })
+}

@@ -27,12 +27,11 @@ export function WorktreeCardSecondaryRows({
     onLineageToggle,
     remoteBranchConflict,
     showInlineAgentList,
-    agentActivityDisplayMode,
-    compactInlineAgentRows,
+    inlineAgentRows,
     showLineageChildChip,
     lineageChildAriaLabel,
     childWorkspaceShortLabel,
-    isDeleting
+    deleteFailure
   } = card
   const { hasMetaRow } = presentation
 
@@ -45,10 +44,8 @@ export function WorktreeCardSecondaryRows({
         />
       )}
 
-      {/* The host retains failed deletes until resolved; show its path-leading error in a tooltip. */}
-      {worktree.removalError && !isDeleting ? (
-        <WorktreeCardDeleteFailed error={worktree.removalError} />
-      ) : null}
+      {/* A failed delete stays on the row until retried; its error is in the tooltip. */}
+      {deleteFailure ? <WorktreeCardDeleteFailed error={deleteFailure} /> : null}
 
       {isActive && worktree.linkedLinearIssue ? (
         <LinearAgentSkillSetupPrompt
@@ -63,7 +60,8 @@ export function WorktreeCardSecondaryRows({
       {showInlineAgentList && (
         <WorktreeCardAgents
           worktreeId={worktree.id}
-          agents={agentActivityDisplayMode === 'compact' ? compactInlineAgentRows : undefined}
+          executionHostId={worktree.hostId}
+          agents={inlineAgentRows}
           className={hasMetaRow || remoteBranchConflict ? 'mt-0' : '-mt-1'}
         />
       )}

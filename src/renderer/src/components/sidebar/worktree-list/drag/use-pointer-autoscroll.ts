@@ -1,10 +1,11 @@
-import {
-  requestVirtualizedScrollAnchorRecord,
-  supersedeVirtualizedScrollAnchorRestore
-} from '@/hooks/requestVirtualizedScrollAnchorRecord'
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import type React from 'react'
 import { getWorktreeSidebarDragAutoscroll } from './worktree-sidebar-drag-autoscroll'
+import {
+  haveWorktreeRowsMoved,
+  measureWorktreeRowsAutoscrollView,
+  scrollWorktreeRowsForDrag
+} from './worktree-rows-drag-view'
 import type { WorktreeDragRuntime } from './use-runtime'
 import type { WorktreeDragSession } from './use-session'
 import type { WorktreePointerDrag } from './row-state'
@@ -26,6 +27,7 @@ export function useWorktreePointerDragAutoscroll(args: {
     clearWorktreeDrag
   } = runtime
 
+  const rowsGeometryKeyRef = useRef<string | null>(null)
   const runFrame = useCallback(
     (frameTime: number) => {
       pointerAutoscrollFrameIdRef.current = null
@@ -41,17 +43,14 @@ export function useWorktreePointerDragAutoscroll(args: {
       pointerAutoscrollLastFrameTimeRef.current = frameTime
       const autoscroll = getWorktreeSidebarDragAutoscroll({
         point: { clientX: drag.currentX, clientY: drag.currentY },
-        containerRect: container.getBoundingClientRect(),
-        scrollTop: container.scrollTop,
-        scrollHeight: container.scrollHeight,
-        clientHeight: container.clientHeight,
+        ...measureWorktreeRowsAutoscrollView(container),
         elapsedMs: frameTime - previousFrameTime
       })
       if (autoscroll) {
         markScrollMovement()
-        supersedeVirtualizedScrollAnchorRestore(container, autoscroll.scrollTop)
-        container.scrollTop = autoscroll.scrollTop
-        requestVirtualizedScrollAnchorRecord(container)
+        scrollWorktreeRowsForDrag(container, autoscroll.scrollTop)
+      }
+      if (haveWorktreeRowsMoved(container, rowsGeometryKeyRef)) {
         if (!session.refreshWorktreeDragSession()) {
           clearWorktreeDrag()
           return

@@ -1,13 +1,13 @@
 <h1 align="center">
-  <a href="https://orca.dev"><img src="../../resources/build/icon.png" alt="Orca" width="64" valign="middle" /></a> Orca
+  <a href="https://orca.dev"><img src="../../resources/build/icon.png" alt="Seal" width="64" valign="middle" /></a> Seal
 </h1>
 
 <p align="center">
   <a href="https://github.com/stablyai/orca"><img src="https://img.shields.io/github/stars/stablyai/orca?style=flat&amp;label=%E2%98%85&amp;color=08C" alt="Звёзды на GitHub" /></a>
   <a href="https://github.com/stablyai/orca/releases"><img src="../assets/readme-downloads.svg" alt="Общее число скачиваний всех выпусков" /></a>
   <img src="https://img.shields.io/badge/license-MIT-08C?style=flat" alt="Лицензия: MIT" />
-  <a href="https://discord.gg/fzjDKHxv8Q"><img src="https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white" alt="Присоединяйтесь к сообществу Orca в Discord" /></a>
-  <a href="https://x.com/orca_build"><img src="https://img.shields.io/badge/X-000000?logo=x&logoColor=white" alt="Подпишитесь на Orca в X" /></a>
+  <a href="https://discord.gg/fzjDKHxv8Q"><img src="https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white" alt="Присоединяйтесь к сообществу Seal в Discord" /></a>
+  <a href="https://x.com/orca_build"><img src="https://img.shields.io/badge/X-000000?logo=x&logoColor=white" alt="Подпишитесь на Seal в X" /></a>
   <img src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-4493F8?style=flat-square" alt="Поддерживаемые платформы: macOS, Windows и Linux" />
 </p>
 
@@ -20,10 +20,10 @@
   Запускайте Codex, ClaudeCode, OpenCode или Pi параллельно — каждый в своём рабочем дереве, все под контролем в одном месте.
 </p>
 
-<h3 align="center"><a href="https://orca.dev/download"><ins>Скачать Orca</ins></a></h3>
+<h3 align="center"><a href="https://orca.dev/download"><ins>Скачать Seal</ins></a></h3>
 
 <p align="center">
-  <img src="../assets/readme-hero.jpg" alt="Настольное приложение Orca с агентами в параллельных рабочих деревьях и мобильным приложением Orca в углу" width="960" />
+  <img src="../assets/readme-hero.jpg" alt="Настольное приложение Seal с агентами в параллельных рабочих деревьях и мобильным приложением Seal в углу" width="960" />
 </p>
 
 ## Возможности
@@ -40,7 +40,7 @@
 
 </td>
 <td width="50%">
-  <a href="https://orca.dev/docs/mobile"><picture><source srcset="../assets/feature-wall/mobile-companion-app-showcase.gif" type="image/gif"><img src="../assets/feature-wall/mobile-companion-app-showcase.jpg" alt="Настольное и мобильное приложения Orca" width="100%" /></picture></a>
+  <a href="https://orca.dev/docs/mobile"><picture><source srcset="../assets/feature-wall/mobile-companion-app-showcase.gif" type="image/gif"><img src="../assets/feature-wall/mobile-companion-app-showcase.jpg" alt="Настольное и мобильное приложения Seal" width="100%" /></picture></a>
 </td>
 </tr>
 <tr>
@@ -96,7 +96,7 @@
 
 </td>
 <td width="50%">
-  <a href="https://orca.dev/docs/review/linear"><picture><source srcset="../../resources/onboarding/feature-wall/tile-03.webp" type="image/webp"><img src="../../resources/onboarding/feature-wall/tile-03.poster.jpg" alt="Работа с задачами GitHub и Linear в Orca" width="100%" /></picture></a>
+  <a href="https://orca.dev/docs/review/linear"><picture><source srcset="../../resources/onboarding/feature-wall/tile-03.webp" type="image/webp"><img src="../../resources/onboarding/feature-wall/tile-03.poster.jpg" alt="Работа с задачами GitHub и Linear в Seal" width="100%" /></picture></a>
 </td>
 </tr>
 <tr>
@@ -118,7 +118,7 @@
 
 ### Комментарии к изменениям ИИ
 
-Оставляйте комментарии к любой строке в сравнении и отправляйте их агенту — проверяйте и редактируйте код, создавайте коммиты, не выходя из Orca.
+Оставляйте комментарии к любой строке в сравнении и отправляйте их агенту — проверяйте и редактируйте код, создавайте коммиты, не выходя из Seal.
 
 [Документация →](https://orca.dev/docs/review/annotate-ai-diff)
 
@@ -144,15 +144,15 @@
 <tr>
 <td width="50%" valign="middle">
 
-### Orca CLI
+### Seal CLI
 
-Агенты тоже управляют Orca — автоматизируйте любые рабочие процессы с помощью `orca worktree create`, `snapshot`, `click` и `fill`.
+Агенты тоже управляют Seal — автоматизируйте любые рабочие процессы с помощью `seal worktree create`, `snapshot`, `click` и `fill`.
 
 [Документация →](https://orca.dev/docs/cli/overview)
 
 </td>
 <td width="50%">
-  <a href="https://orca.dev/docs/cli/overview"><picture><source srcset="../../resources/onboarding/feature-wall/tile-09.webp" type="image/webp"><img src="../../resources/onboarding/feature-wall/tile-09.poster.jpg" alt="Автоматизация Orca через CLI" width="100%" /></picture></a>
+  <a href="https://orca.dev/docs/cli/overview"><picture><source srcset="../../resources/onboarding/feature-wall/tile-09.webp" type="image/webp"><img src="../../resources/onboarding/feature-wall/tile-09.poster.jpg" alt="Автоматизация Seal через CLI" width="100%" /></picture></a>
 </td>
 </tr>
 </table>
@@ -170,7 +170,7 @@
 
 ## Поддерживаемые агенты
 
-Работает с **любым CLI-агентом** — если он запускается в терминале, то запустится и в Orca.
+Работает с **любым CLI-агентом** — если он запускается в терминале, то запустится и в Seal.
 
 <p>
   <a href="https://docs.anthropic.com/claude/docs/claude-code"><kbd><img src="../assets/claude-logo.svg" alt="Логотип Claude Code" width="16" valign="middle" /> Claude Code</kbd></a> &nbsp;
@@ -223,7 +223,7 @@ _Или через менеджер пакетов:_
 
 ```bash
 # macOS (Homebrew)
-# Always use the full name; bare `orca` is an unrelated Plotly cask.
+# Always use the full name; bare `seal` is an unrelated Plotly cask.
 brew install --cask stablyai/orca/orca
 # Upgrade an existing install
 brew upgrade --cask stablyai/orca/orca
@@ -245,12 +245,12 @@ yay -S stably-orca-bin
 
 - **Discord:** Присоединяйтесь к сообществу в **[Discord](https://discord.gg/fzjDKHxv8Q)**.
 - **Twitter / X:** Подпишитесь на **[@orca_build](https://x.com/orca_build)**, чтобы узнавать об обновлениях и анонсах.
-- **WeChat:** Отсканируйте QR-код, чтобы присоединиться к группе сообщества Orca в WeChat.
+- **WeChat:** Отсканируйте QR-код, чтобы присоединиться к группе сообщества Seal в WeChat.
 
-  <img src="../assets/wechat-qr.jpg" alt="QR-код группы сообщества Orca в WeChat" width="160" />
+  <img src="../assets/wechat-qr.jpg" alt="QR-код группы сообщества Seal в WeChat" width="160" />
 
 - **Отзывы и идеи:** Мы быстро выпускаем обновления. Чего-то не хватает? [Предложите новую возможность](https://github.com/stablyai/orca/issues).
-- **Конфиденциальность:** В [документации о конфиденциальности и телеметрии](https://orca.dev/docs/telemetry) описано, какие анонимные данные об использовании собирает Orca и как отказаться от их сбора.
+- **Конфиденциальность:** В [документации о конфиденциальности и телеметрии](https://orca.dev/docs/telemetry) описано, какие анонимные данные об использовании собирает Seal и как отказаться от их сбора.
 - **Поддержите проект:** Отметьте этот репозиторий [звездой](https://github.com/stablyai/orca), чтобы следить за нашими ежедневными выпусками.
 
 ---
@@ -263,7 +263,7 @@ yay -S stably-orca-bin
 в [`cloud/`](../../cloud/README.md), с отдельным рабочим пространством pnpm и руководством по настройке.
 
 <a href="https://github.com/stablyai/orca/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=stablyai/orca" alt="Участники проекта Orca" />
+  <img src="https://contrib.rocks/image?repo=stablyai/orca" alt="Участники проекта Seal" />
 </a>
 
 <p align="center">
@@ -276,4 +276,4 @@ yay -S stably-orca-bin
 
 ## Лицензия
 
-Orca — бесплатное ПО с открытым исходным кодом под [лицензией MIT](../../LICENSE).
+Seal — бесплатное ПО с открытым исходным кодом под [лицензией MIT](../../LICENSE).

@@ -1,0 +1,91 @@
+{
+  "id": "resumed-under-a-new-id",
+  "title": "The session is resumed, which gives it a new id and a new transcript file",
+  "categories": ["restart-resume"],
+  "surfaces": ["claude-cli", "codex-cli"],
+  "expected": "The recap follows the session to its new id, and the restore command leaves the not-addressed list once it is written.",
+  "steps": [
+    {
+      "user": "Write a script that backs up the uploads bucket nightly, and add a restore command."
+    },
+    {
+      "edit": "/srv/shop/scripts/backup-uploads.ts"
+    },
+    {
+      "agent": "scripts/backup-uploads.ts copies the bucket to the backup bucket and is scheduled nightly at 02:00. I have not written the restore command."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "resume": true
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the resume",
+      "check": [
+        {
+          "view": "exists",
+          "is": true,
+          "why": "the recap follows the session to its new id"
+        },
+        {
+          "in": "ignored",
+          "has": "restore",
+          "why": "the restore command is asked for and not written yet"
+        },
+        {
+          "requests": {
+            "max": 1
+          },
+          "why": "a resume alone asks the model nothing"
+        }
+      ]
+    },
+    {
+      "user": "now the restore command"
+    },
+    {
+      "edit": "/srv/shop/scripts/restore-uploads.ts"
+    },
+    {
+      "agent": "Added scripts/restore-uploads.ts: it takes a date and copies that night's backup back into the uploads bucket."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "restore",
+          "why": "the restore command was written"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "asked",
+          "max": 3,
+          "why": "no request is listed twice"
+        },
+        {
+          "in": "did",
+          "has": "restore",
+          "why": "the restore command is recorded as done"
+        }
+      ]
+    }
+  ]
+}

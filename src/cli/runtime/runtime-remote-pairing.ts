@@ -5,22 +5,8 @@ import {
 import { parsePairingCode } from '../../shared/remote-runtime/pairing/pairing'
 import { resolveEnvironmentPairingOffer } from './environments'
 import { RuntimeClientError } from './types'
-import { configureRemoteRuntimeE2EEV2HostLatch } from '../../shared/remote-runtime/e2ee/node/remote-runtime-e2ee-v2-host-latch'
 
 export function resolveRemoteConnection(
-  userDataPath: string,
-  pairingCode: string | null,
-  environmentSelector: string | null
-): PairedRuntimeConnection | null {
-  const connection = resolvePairedConnection(userDataPath, pairingCode, environmentSelector)
-  if (connection) {
-    // Why: the CLI and the desktop app share which hosts have proven E2EE v2.
-    configureRemoteRuntimeE2EEV2HostLatch(userDataPath)
-  }
-  return connection
-}
-
-function resolvePairedConnection(
   userDataPath: string,
   pairingCode: string | null,
   environmentSelector: string | null
@@ -43,7 +29,7 @@ function resolvePairedConnection(
   if (!pairing) {
     throw new RuntimeClientError(
       'invalid_argument',
-      'Invalid remote pairing code. Expected an orca://pair?... URL or bare pairing payload.'
+      'Invalid remote pairing code. Expected an seal://pair?... URL or bare pairing payload.'
     )
   }
   return pairedRuntimeConnectionFromOffer(pairing)

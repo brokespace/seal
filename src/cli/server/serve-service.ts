@@ -1,3 +1,4 @@
+import { reenterPackagedElectron } from '../runtime/packaged-cli-interpreter'
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname } from 'node:path'
@@ -161,8 +162,18 @@ export async function installServeService(
     manager: spec.manager,
     name: spec.name,
     unitPath: spec.unitPath,
-    linger: await lingerState(deps)
+    linger: await keepServiceAcrossLogout(deps)
   }
+}
+
+/** Lingering needs no sudo where polkit allows it; where it refuses (typically over SSH) the format says what to run. */
+async function keepServiceAcrossLogout(deps: ServeServiceDeps): Promise<'yes' | 'no' | 'unknown'> {
+  const before = await lingerState(deps)
+  if (before === 'no') {
+    await deps.run('loginctl', ['enable-linger'])
+    return lingerState(deps)
+  }
+  return before
 }
 
 export type ServeServiceStatus = {
@@ -174,6 +185,8 @@ export type ServeServiceStatus = {
   verdict: 'live' | 'exited' | 'unverifiable'
   pid: number | null
   detail: string
+  /** systemd only: what logind answers for this user. */
+  linger?: 'yes' | 'no' | 'unknown'
   gaveUp: string | null
 }
 
@@ -232,7 +245,8 @@ export async function readServeServiceStatus(
     ...base,
     verdict: active === 'active' && pid ? 'live' : 'exited',
     pid,
-    detail: `${active || 'unknown'} (${field('SubState') || 'unknown'})`
+    detail: `${active || 'unknown'} (${field('SubState') || 'unknown'})`,
+    linger: await lingerState(deps)
   }
 }
 
@@ -268,7 +282,7 @@ export const SERVE_SERVICE_HANDLERS: Record<string, CommandHandler> = {
         'Use either --allow-public or --refuse-public, not both.'
       )
     }
-    const result = await installServeService({
+    const options = {
       command: optionalString(flags.get('command')),
       // Validate before launchd can loop on a bad value and trip the supervisor brake.
       port: getOptionalServePort(flags),
@@ -277,7 +291,9 @@ export const SERVE_SERVICE_HANDLERS: Record<string, CommandHandler> = {
       allowPublic: flags.get('allow-public') === true,
       refusePublic: flags.get('refuse-public') === true,
       dryRun: flags.get('dry-run') === true
-    })
+    }
+    reenterPackagedElectron()
+    const result = await installServeService(options)
     emit(result, json, formatServeServiceInstall)
   },
   'serve service status': async ({ json }) => {

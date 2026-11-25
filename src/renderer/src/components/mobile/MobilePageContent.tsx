@@ -1,24 +1,22 @@
 import { useTranslate } from '@/i18n/use-translate'
 import type { PairingNetworkInterface } from '../../../../shared/pairing-address-auto-selection'
-import { HeroFlow, type Platform, type StepIndex } from './MobileHero'
+import { HeroFlow, type StepIndex } from './MobileHero'
 import { HeroIntro } from './MobileHeroIntro'
 import { HeroPaired } from './MobileHeroPairedDevices'
 import type { PairedMobileDevice } from './paired-mobile-devices'
-import { getInstallCopy } from './mobile-platform-copy'
 import type { MobilePageStage } from './mobile-page-stage'
 import { MobilePageToolbar } from './MobilePageToolbar'
 import { PhoneCarousel } from './PhoneCarousel'
+import { PageLayout, PagePanes } from '@/components/page-layout/PageLayout'
 import type { MobilePairingConnectionMode } from '../../../../shared/remote-runtime/pairing/mobile-pairing-connection-mode'
 import type { MobileRelayMintFailure } from '../../../../shared/remote-runtime/relay/mobile-relay-mint-failure'
 
 type MobilePageContentProps = {
   closeMobilePage: () => void
-  copyInstallUrl: () => void
   copyPairingCode: () => void
   devices: readonly PairedMobileDevice[]
   enterFlow: () => void
   generatePairing: (rotate: boolean) => void
-  canGeneratePairing: boolean
   handleAddressChange: (address: string) => void
   customAddresses: readonly string[]
   selectedAddressIsCustom: boolean
@@ -27,11 +25,9 @@ type MobilePageContentProps = {
   beforeCustomAddressChange: (address: string) => Promise<boolean>
   handleBack: () => void
   handleContinue: () => void
-  installQrUrl: string | null
   loadNetworkInterfaces: () => void
   networkInterfaces: PairingNetworkInterface[]
-  openAndroidInstallGuide: () => void
-  openInstallUrl: () => void
+  openInstallGuide: () => void
   pairAnotherDevice: () => void
   pairLoading: boolean
   connectionMode: MobilePairingConnectionMode
@@ -44,12 +40,10 @@ type MobilePageContentProps = {
   onUseLan: () => void
   onRetryRelay: () => void
   onCopyRelayDiagnostics: () => void
-  platform: Platform
   refreshingNetworkInterfaces: boolean
   revokeDevice: (id: string) => void
   revokingDeviceIds: readonly string[]
   selectedAddress: string | undefined
-  setPlatform: (platform: Platform) => void
   showMobileButton: boolean
   showPairedDevices: (deviceCount: number) => void
   stage: MobilePageStage | null
@@ -59,12 +53,10 @@ type MobilePageContentProps = {
 
 export function MobilePageContent({
   closeMobilePage,
-  copyInstallUrl,
   copyPairingCode,
   devices,
   enterFlow,
   generatePairing,
-  canGeneratePairing,
   handleAddressChange,
   customAddresses,
   selectedAddressIsCustom,
@@ -73,11 +65,9 @@ export function MobilePageContent({
   beforeCustomAddressChange,
   handleBack,
   handleContinue,
-  installQrUrl,
   loadNetworkInterfaces,
   networkInterfaces,
-  openAndroidInstallGuide,
-  openInstallUrl,
+  openInstallGuide,
   pairAnotherDevice,
   pairLoading,
   connectionMode,
@@ -90,12 +80,10 @@ export function MobilePageContent({
   onUseLan,
   onRetryRelay,
   onCopyRelayDiagnostics,
-  platform,
   refreshingNetworkInterfaces,
   revokeDevice,
   revokingDeviceIds,
   selectedAddress,
-  setPlatform,
   showMobileButton,
   showPairedDevices,
   stage,
@@ -104,71 +92,66 @@ export function MobilePageContent({
 }: MobilePageContentProps): React.JSX.Element {
   const t = useTranslate()
   return (
-    <div className="mobile-page-root scrollbar-sleek">
+    <PageLayout>
       <MobilePageToolbar
         showMobileButton={showMobileButton}
         onClose={closeMobilePage}
         onToggleMobileSidebarButton={toggleMobileSidebarButton}
       />
-      <section className="mp-hero">
-        <div className="mp-hero-copy">
-          {stage === null ? null : stage === 'intro' ? (
-            <HeroIntro onStart={enterFlow} />
-          ) : stage === 'paired' ? (
-            <HeroPaired
-              devices={devices}
-              onPairAnother={pairAnotherDevice}
-              onRevoke={(id) => revokeDevice(id)}
-              revokingDeviceIds={revokingDeviceIds}
-            />
-          ) : (
-            <HeroFlow
-              stepIdx={stepIdx}
-              platform={platform}
-              onPlatformChange={setPlatform}
-              installQrUrl={installQrUrl}
-              installCopy={getInstallCopy(platform, t)}
-              onOpenAndroidInstallGuide={openAndroidInstallGuide}
-              onOpenInstallUrl={openInstallUrl}
-              onCopyInstallUrl={copyInstallUrl}
-              pairQrDataUrl={pairQrDataUrl}
-              pairQrSize={pairQrSize}
-              pairingUrl={pairingUrl}
-              pairingQrError={pairingQrError}
-              relayMintFailure={relayMintFailure}
-              onUseLan={onUseLan}
-              onRetryRelay={onRetryRelay}
-              onCopyRelayDiagnostics={onCopyRelayDiagnostics}
-              pairLoading={pairLoading}
-              connectionMode={connectionMode}
-              onConnectionModeChange={handleConnectionModeChange}
-              onRegeneratePairing={() => generatePairing(true)}
-              canGeneratePairing={canGeneratePairing}
-              onCopyPairingCode={copyPairingCode}
-              networkInterfaces={networkInterfaces}
-              customAddresses={customAddresses}
-              selectedAddress={selectedAddress}
-              selectedAddressIsCustom={selectedAddressIsCustom}
-              onSelectedAddressChange={handleAddressChange}
-              onCustomAddressSelect={onCustomAddressSelect}
-              onCustomAddressRemove={onCustomAddressRemove}
-              beforeCustomAddressChange={beforeCustomAddressChange}
-              onRefreshNetworkInterfaces={loadNetworkInterfaces}
-              refreshingNetworkInterfaces={refreshingNetworkInterfaces}
-              onBack={handleBack}
-              onContinue={handleContinue}
-              onDone={devices.length > 0 ? () => showPairedDevices(devices.length) : undefined}
-            />
-          )}
-        </div>
+      <PagePanes className="mobile-page-root scrollbar-sleek">
+        <section className="mp-hero">
+          <div className="mp-hero-copy">
+            {stage === null ? null : stage === 'intro' ? (
+              <HeroIntro onStart={enterFlow} />
+            ) : stage === 'paired' ? (
+              <HeroPaired
+                devices={devices}
+                onPairAnother={pairAnotherDevice}
+                onRevoke={(id) => revokeDevice(id)}
+                revokingDeviceIds={revokingDeviceIds}
+              />
+            ) : (
+              <HeroFlow
+                stepIdx={stepIdx}
+                onOpenInstallGuide={openInstallGuide}
+                pairQrDataUrl={pairQrDataUrl}
+                pairQrSize={pairQrSize}
+                pairingUrl={pairingUrl}
+                pairingQrError={pairingQrError}
+                relayMintFailure={relayMintFailure}
+                onUseLan={onUseLan}
+                onRetryRelay={onRetryRelay}
+                onCopyRelayDiagnostics={onCopyRelayDiagnostics}
+                pairLoading={pairLoading}
+                connectionMode={connectionMode}
+                onConnectionModeChange={handleConnectionModeChange}
+                onRegeneratePairing={() => generatePairing(true)}
+                onCopyPairingCode={copyPairingCode}
+                networkInterfaces={networkInterfaces}
+                customAddresses={customAddresses}
+                selectedAddress={selectedAddress}
+                selectedAddressIsCustom={selectedAddressIsCustom}
+                onSelectedAddressChange={handleAddressChange}
+                onCustomAddressSelect={onCustomAddressSelect}
+                onCustomAddressRemove={onCustomAddressRemove}
+                beforeCustomAddressChange={beforeCustomAddressChange}
+                onRefreshNetworkInterfaces={loadNetworkInterfaces}
+                refreshingNetworkInterfaces={refreshingNetworkInterfaces}
+                onBack={handleBack}
+                onContinue={handleContinue}
+                onDone={devices.length > 0 ? () => showPairedDevices(devices.length) : undefined}
+              />
+            )}
+          </div>
 
-        <div
-          className="mp-stage"
-          aria-label={t('auto.components.mobile.MobilePage.e17393c6a3', 'Phone preview')}
-        >
-          <PhoneCarousel />
-        </div>
-      </section>
-    </div>
+          <div
+            className="mp-stage"
+            aria-label={t('auto.components.mobile.MobilePage.e17393c6a3', 'Phone preview')}
+          >
+            <PhoneCarousel />
+          </div>
+        </section>
+      </PagePanes>
+    </PageLayout>
   )
 }

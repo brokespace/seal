@@ -127,6 +127,8 @@ export type ProviderRateLimits = {
   } | null
   /** Subscription plan tier for the active account (Codex `plan_type`, e.g. "plus"). */
   planType?: string | null
+  /** Claude: how the login is billed, when its organization or credentials say so. */
+  billing?: 'subscription' | 'api' | null
   /** Unix ms timestamp of the last successful data update. */
   updatedAt: number
   /** Human-readable error message, null when status is 'ok'. */
@@ -151,6 +153,14 @@ export type InactiveAccountUsage = {
   accountId: string
   rateLimits: ProviderRateLimits | null
   updatedAt: number
+  isFetching: boolean
+}
+
+/** The machine's own login, read while another account is the host's selection. */
+export type SystemLoginUsage = {
+  /** The reader's name for the login it read; a reading never describes another identity. */
+  identity: string
+  rateLimits: ProviderRateLimits | null
   isFetching: boolean
 }
 
@@ -211,6 +221,7 @@ export type RateLimitState = {
   codexTarget: RateLimitRuntimeTarget
   inactiveClaudeAccounts: InactiveAccountUsage[]
   inactiveCodexAccounts: InactiveAccountUsage[]
+  systemLoginUsage?: Partial<Record<'claude' | 'codex', SystemLoginUsage>>
   /** Saved Antigravity accounts; agy has one shared login, so only the active one is ever read. */
   antigravityAccounts: AntigravityAccountUsage[]
 }

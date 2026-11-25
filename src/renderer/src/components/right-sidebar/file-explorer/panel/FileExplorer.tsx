@@ -3,7 +3,7 @@ import { useAppStore } from '@/store/index'
 import { runtimeEnvironmentIdOrLocalUnlessTwin } from '@/lib/workspace/ownership/worktree-runtime-owner'
 import { getWorkspaceFileRevealOwner } from '@/lib/files/os-open/reveal-in-file-manager'
 import { getRouteForLocalPathOpenOwner } from '@/lib/files/os-open/local-path-open-guard'
-import { useActiveWorktree } from '@/store/workspaces/selection/use-selected-worktree'
+import { useWorktreeById } from '@/store/workspaces/selection/use-selected-worktree'
 import { useRepoById } from '@/store/repos/use-repository-catalog'
 import {
   getExplorerDisplayRootOptions,
@@ -44,21 +44,29 @@ import { useWslHostUnavailableReason } from '../../../../runtime/hosts/wsl/wsl-h
 import { useWslHostReadOutage } from '../../../wsl-host-stopped/use-stopped-wsl-host'
 import { useTranslate } from '@/i18n/use-translate'
 import { useUiLanguageRevision } from '@/i18n/use-ui-language-revision'
+import {
+  FileExplorerMountContext,
+  useFileExplorerMount,
+  useFileExplorerMountFor,
+  useFileExplorerWorktreeId,
+  type FileExplorerProps
+} from './file-explorer-mount'
 
 /** Coordinates scoped navigation while retaining the actual worktree root for file operations and runtime routing. */
 function FileExplorerFiles(): React.JSX.Element {
   const t = useTranslate()
   useUiLanguageRevision()
-  const explorerView = useAppStore((s) => s.rightSidebarExplorerView)
+  const { executionHostId, embedded } = useFileExplorerMount()
+  const explorerView = useAppStore((s) => (embedded ? 'files' : s.rightSidebarExplorerView))
   const setRightSidebarExplorerView = useAppStore((s) => s.setRightSidebarExplorerView)
-  const searchPanel = useFileSearchPanel(explorerView)
-  const activeWorktreeId = useAppStore((s) => s.activeWorktreeId)
+  const searchPanel = useFileSearchPanel(explorerView, !embedded)
+  const activeWorktreeId = useFileExplorerWorktreeId()
   const runtimeEnvironmentId = useAppStore((s) =>
     runtimeEnvironmentIdOrLocalUnlessTwin(s, activeWorktreeId)
   )
   const wslHostUnavailable = useWslHostUnavailableReason(activeWorktreeId)
   const stoppedWslHost = useWslHostReadOutage(activeWorktreeId)
-  const activeWorktree = useActiveWorktree()
+  const activeWorktree = useWorktreeById(activeWorktreeId, executionHostId)
   const activeRepo = useRepoById(activeWorktree?.repoId ?? null)
   // Why: a folder workspace has no repo row, so only the catalog owner names its SSH host.
   const openInOwner = useAppStore((s) =>
@@ -73,7 +81,7 @@ function FileExplorerFiles(): React.JSX.Element {
   const collapseAllDirs = useAppStore((s) => s.collapseAllDirs)
   const activeFileId = useAppStore((s) => s.activeFileId)
   const openFiles = useAppStore((s) => s.openFiles)
-  const rightSidebarOpen = useAppStore((s) => s.rightSidebarOpen)
+  const rightSidebarOpen = useAppStore((s) => embedded || s.rightSidebarOpen)
   const showDotfiles = useAppStore((s) =>
     activeWorktreeId ? (s.showDotfilesByWorktree[activeWorktreeId] ?? true) : true
   )
@@ -364,12 +372,23 @@ function FileExplorerFiles(): React.JSX.Element {
 
 const FileExplorerFilesMemo = React.memo(FileExplorerFiles)
 
-function FileExplorer(): React.JSX.Element {
+function FileExplorer(props: FileExplorerProps): React.JSX.Element {
+  const mount = useFileExplorerMountFor(props)
   const ownerKey = useAppStore((state) =>
-    JSON.stringify(getFileExplorerOperationOwnerFromState(state, state.activeWorktreeId))
+    JSON.stringify(
+      getFileExplorerOperationOwnerFromState(
+        state,
+        mount.worktreeId ?? state.activeWorktreeId,
+        mount.executionHostId
+      )
+    )
   )
   // Different hosts can expose the same path; their explorer caches must have separate lifetimes.
-  return <FileExplorerFilesMemo key={ownerKey} />
+  return (
+    <FileExplorerMountContext.Provider value={mount}>
+      <FileExplorerFilesMemo key={ownerKey} />
+    </FileExplorerMountContext.Provider>
+  )
 }
 
 export default React.memo(FileExplorer)

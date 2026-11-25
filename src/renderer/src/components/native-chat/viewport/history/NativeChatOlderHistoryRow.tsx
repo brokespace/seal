@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { useTranslate } from '@/i18n/use-translate'
 import type { NativeChatOlderHistoryAutoload } from './use-native-chat-older-history-autoload'
 
@@ -14,7 +15,10 @@ function DelayedLoadingLabel(): React.JSX.Element | null {
     return () => window.clearTimeout(timer)
   }, [])
   return visible ? (
-    <>{t('components.native-chat.loadingEarlierMessages', 'Loading earlier messages…')}</>
+    <>
+      <LoadingSpinner className="size-3.5 shrink-0" />
+      {t('components.native-chat.loadingEarlierMessages', 'Loading earlier messages…')}
+    </>
   ) : null
 }
 
@@ -34,7 +38,11 @@ export function NativeChatOlderHistoryRow({
       className="absolute inset-x-0 top-0 flex h-10 items-center justify-center"
     >
       {olderHistory.isAutoLoadEnabled ? (
-        <span role="status" aria-live="polite" className="text-xs text-chat-foreground-faint">
+        <span
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-1.5 text-xs text-chat-foreground-faint"
+        >
           {loadingEarlier ? <DelayedLoadingLabel /> : null}
         </span>
       ) : (

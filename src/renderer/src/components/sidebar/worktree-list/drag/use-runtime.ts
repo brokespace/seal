@@ -66,6 +66,7 @@ export function useWorktreeDragRuntime(args: {
       window.cancelAnimationFrame(drag.frameId)
     }
     drag.preview?.remove()
+    drag.endSplitViewDrag?.()
     worktreePointerDragRef.current = null
     setSidebarPointerDragDocumentStyles(false)
     setDragOverStatus(null)

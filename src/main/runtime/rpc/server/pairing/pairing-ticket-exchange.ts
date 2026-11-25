@@ -1,6 +1,7 @@
-import type { DeviceEntry } from './device-entry'
+import { deviceTokenHashOf, type DeviceEntry } from './device-entry'
 import { mintDeviceCredential } from './device-credential'
 import { devicePrincipalOf } from './device-principal'
+import { hashDeviceToken, sameDeviceTokenHash } from './device-token-hash'
 
 /**
  * Single-use pairing tickets. A client signed in with the pairing token proposes its own
@@ -48,20 +49,22 @@ export function planTicketExchange(
   if (row.parentDeviceId !== undefined) {
     throw new PairingTicketExchangeError('delegated_device')
   }
-  if (row.ticket !== true || row.credentialKind !== undefined || row.token === undefined) {
+  const pairingTokenHash = deviceTokenHashOf(row)
+  if (row.ticket !== true || row.credentialKind !== undefined || pairingTokenHash === undefined) {
     throw new PairingTicketExchangeError('not_a_ticket')
   }
   // Only the pairing token may propose; a client already on its replacement has nothing to exchange.
-  if (row.token !== presentedToken) {
+  if (!sameDeviceTokenHash(pairingTokenHash, hashDeviceToken(presentedToken))) {
     throw new PairingTicketExchangeError('ticket_already_exchanged')
   }
+  const exchangeTokenHash = hashDeviceToken(exchangeToken)
   // A resent proposal (same token) is idempotent.
-  if (row.exchangeToken === exchangeToken) {
+  if (sameDeviceTokenHash(row.exchangeTokenHash, exchangeTokenHash)) {
     return [...devices]
   }
   // The first client to propose keeps its claim: a second one keeps using the code and is
   // refused only once the first signs in with its token (single use), never the other way round.
-  if (row.exchangeToken !== undefined) {
+  if (row.exchangeTokenHash !== undefined) {
     throw new PairingTicketExchangeError('ticket_exchange_pending')
   }
   if (!isWithinTicketWindow(row, now)) {
@@ -69,20 +72,24 @@ export function planTicketExchange(
   }
   if (
     devices.some(
-      (device) => device.token === exchangeToken || device.exchangeToken === exchangeToken
+      (device) =>
+        sameDeviceTokenHash(deviceTokenHashOf(device), exchangeTokenHash) ||
+        sameDeviceTokenHash(device.exchangeTokenHash, exchangeTokenHash)
     )
   ) {
     throw new PairingTicketExchangeError('device_token_in_use')
   }
-  return devices.map((device) => (device === row ? { ...row, exchangeToken } : device))
+  return devices.map((device) => (device === row ? { ...row, exchangeTokenHash } : device))
 }
 
 /** The row after its client first signed in with the replacement. */
-export function promoteExchangedTicket(row: DeviceEntry & { exchangeToken: string }): DeviceEntry {
-  const { exchangeToken, ticket: _ticket, ...rest } = row
+export function promoteExchangedTicket(
+  row: DeviceEntry & { exchangeTokenHash: string }
+): DeviceEntry {
+  const { exchangeTokenHash, ticket: _ticket, token: _pairingToken, ...rest } = row
   return {
     ...rest,
-    token: exchangeToken,
+    tokenHash: exchangeTokenHash,
     // Keep orchestration ownership and per-client state keyed to the pairing.
     callerFingerprint: devicePrincipalOf(row).callerFingerprint,
     // Sockets still on the pairing token fail their next request.
@@ -93,8 +100,8 @@ export function promoteExchangedTicket(row: DeviceEntry & { exchangeToken: strin
 export function isExchangeSignIn(
   device: DeviceEntry,
   token: string
-): device is DeviceEntry & { exchangeToken: string } {
-  return device.exchangeToken !== undefined && device.exchangeToken === token
+): device is DeviceEntry & { exchangeTokenHash: string } {
+  return sameDeviceTokenHash(device.exchangeTokenHash, hashDeviceToken(token))
 }
 
 /**
@@ -113,20 +120,20 @@ export function planForkedTicketRetirement(
   const ticket = devices.find((device) => device.deviceId === fork.forkedFrom)
   if (
     ticket?.ticket !== true ||
-    ticket.token === undefined ||
+    deviceTokenHashOf(ticket) === undefined ||
     ticket.parentDeviceId ||
     // Another client already claimed the code with its own token; that claim wins.
-    ticket.exchangeToken !== undefined ||
+    ticket.exchangeTokenHash !== undefined ||
     // Registered long after the first sign-in: the link may already be shared by older clients.
     !isWithinTicketWindow(ticket, fork.pairedAt)
   ) {
     return null
   }
-  const { ticket: _ticket, exchangeToken: _exchange, ...rest } = ticket
+  const { ticket: _ticket, exchangeTokenHash: _exchange, token: _pairingToken, ...rest } = ticket
   const retired: DeviceEntry = {
     ...rest,
     // Nobody holds this value; the row stays only as the fork's anchor.
-    token: mintDeviceCredential().token,
+    tokenHash: hashDeviceToken(mintDeviceCredential().token),
     callerFingerprint: devicePrincipalOf(ticket).callerFingerprint,
     credentialRevision: (ticket.credentialRevision ?? 0) + 1
   }
@@ -145,7 +152,7 @@ export function usesOlderPairingMethod(
   return (
     device.ticket === true &&
     device.lastSeenAt > 0 &&
-    device.exchangeToken === undefined &&
+    device.exchangeTokenHash === undefined &&
     // Still pairing: an updated client exchanges within moments.
     !isWithinTicketWindow(device, now) &&
     // Plain-http browsers must keep the link; their session keys vanish on every host restart.

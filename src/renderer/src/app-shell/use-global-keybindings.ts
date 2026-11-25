@@ -18,8 +18,13 @@ import {
 } from '../components/right-sidebar/file-explorer/content-search/file-search-include-pattern'
 import { usePluginCommands } from '@/store/plugins/catalog/plugin-contribution-catalog'
 import { useAppStore } from '../store/index'
-import { keybindingMatchesAction, type KeybindingActionId } from '../../../shared/keybindings'
+import {
+  keybindingMatchesAction,
+  type KeybindingActionId,
+  type PhysicalModifierToken
+} from '../../../shared/keybindings'
 import { PLUGIN_COMMAND_ALIAS_ACTION_IDS } from '../../../shared/plugins/contributions/plugin-command-actions'
+import { SPLIT_VIEW_ACTION_IDS } from '../../../shared/keybindings/definitions-split-view'
 import {
   ModifierDoubleTapDetector,
   toModifierDoubleTapEvent
@@ -36,7 +41,10 @@ import type { AppChromeLayout } from './use-app-chrome-layout'
 import type { FloatingWorkspacePanelState } from './use-floating-workspace-panel'
 import { addAppKeyListener, removeAppKeyListener } from '@/lib/keyboard/app-keyboard-router'
 import { textInputOwnsComposition } from '../../../shared/text-input-shortcut-policy'
-import { isAgentTerminalPreviewTarget } from '../components/dashboard-popout/agent-terminal-preview-target'
+import { isAgentTerminalPreviewTarget } from '../components/dashboard/terminal-preview/agent-terminal-preview-target'
+
+// A handler that returns false leaves the key to whatever has focus.
+const APP_HANDLER_ACTION_IDS = [...PLUGIN_COMMAND_ALIAS_ACTION_IDS, ...SPLIT_VIEW_ACTION_IDS]
 
 /** Register window listeners once; each key event reads the latest committed shortcut state through a ref. */
 export function useGlobalKeybindings(args: {
@@ -61,7 +69,7 @@ export function useGlobalKeybindings(args: {
     pluginCommands,
     setFloatingTerminalOpen: floatingWorkspace.setOpenWithFocus,
     terminalShortcutPolicy,
-    workspaceChromeActive: layout.workspaceChromeActive
+    workspaceChromeActive: layout.workspaceCommandsActive
   }
   const shortcutStateRef = useRef(shortcutState)
   // Mirror committed state before discrete key events; render-phase writes could leak discarded renders.
@@ -227,10 +235,14 @@ export function useGlobalKeybindings(args: {
       ) {
         return
       }
-      if (matchAppShortcut('view.plugins') && handlers.get('view.plugins')?.()) {
+      if (
+        input.key !== 'Dead' &&
+        matchAppShortcut('view.plugins') &&
+        handlers.get('view.plugins')?.()
+      ) {
         return
       }
-      for (const actionId of PLUGIN_COMMAND_ALIAS_ACTION_IDS) {
+      for (const actionId of APP_HANDLER_ACTION_IDS) {
         if (matchAppShortcut(actionId) && handlers.get(actionId)?.()) {
           return
         }
@@ -264,17 +276,17 @@ export function useGlobalKeybindings(args: {
         Date.now()
       )
     }
-    const onKeyDown = (e: KeyboardEvent): void => {
+    const onKeyDown = (e: KeyboardEvent & { doubleTapModifier?: PhysicalModifierToken }): void => {
       const detected = detectDoubleTap(e, 'keyDown')
       if (e.repeat) {
         return
       }
-      if (detected) {
+      if (detected || e.doubleTapModifier) {
         // No key/modifier flags: synthetic input matches only DoubleTap bindings.
         dispatchShortcutInput({
           isComposing: e.isComposing,
           altGraph: e.getModifierState('AltGraph'),
-          doubleTapModifier: detected.modifier,
+          doubleTapModifier: detected?.modifier ?? e.doubleTapModifier,
           target: e.target,
           defaultPrevented: e.defaultPrevented,
           preventDefault: () => e.preventDefault()

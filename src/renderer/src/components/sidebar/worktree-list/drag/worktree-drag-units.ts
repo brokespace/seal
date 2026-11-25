@@ -1,6 +1,9 @@
 import type { WorktreeDragGroup } from './worktree-manual-order'
-import { isFolderLaneSectionKey } from '../../../../../../shared/sidebar-list/folder-workspace-occurrences'
-import { ALL_GROUP_KEY, PINNED_GROUP_KEY } from '../../../../../../shared/sidebar-list/group-keys'
+import { isFolderLaneSectionKey } from '../../../../../../shared/sidebar-list/folders/folder-workspace-occurrences'
+import {
+  ALL_GROUP_KEY,
+  PINNED_GROUP_KEY
+} from '../../../../../../shared/sidebar-list/sections/group-keys'
 import { getNaturalWorktreeKeys } from '../listing/natural-worktree-keys'
 import { composeWorktreeHostIdentity } from '../../../../../../shared/worktree/host-qualified-identity'
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
@@ -21,6 +24,7 @@ type WorktreeDragUnitRow =
   | { type: 'imported-worktrees-card' }
   | { type: 'new-external-worktrees-inbox' }
   | { type: 'pending-creation' }
+  | { type: 'project-sessions' }
   | { type: 'folder-workspace' }
 
 /** Unit members are host identities, matching getWorktreeDragGroups. */
@@ -51,6 +55,7 @@ export function getWorktreeDragUnitGroups(
       row.type === 'imported-worktrees-card' ||
       row.type === 'new-external-worktrees-inbox' ||
       row.type === 'pending-creation' ||
+      row.type === 'project-sessions' ||
       row.type === 'folder-workspace'
     ) {
       if (row.type === 'folder-workspace') {

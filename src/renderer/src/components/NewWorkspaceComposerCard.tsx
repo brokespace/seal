@@ -26,7 +26,11 @@ import type { RuntimeStatus } from '../../../shared/runtime-session-contracts'
 import type { AddRepoDialogEntryRequest } from '@/components/sidebar/project-admission/dialog/add-repo-dialog-types'
 import type { TuiAgent } from '../../../shared/agent-launch/catalog/tui-agent'
 import { NewWorkspaceComposerAdvancedSection } from './new-workspace/composer/NewWorkspaceComposerAdvancedSection'
-import { NewWorkspaceComposerAgentSection } from './new-workspace/composer/NewWorkspaceComposerAgentSection'
+import {
+  NewWorkspaceComposerAdvancedToggle,
+  NewWorkspaceComposerAgentSection
+} from './new-workspace/composer/NewWorkspaceComposerAgentSection'
+import { AgentSessionWorktreeToggle } from './new-workspace/agent-session/AgentSessionWorktreeToggle'
 import { NewWorkspaceComposerFooter } from './new-workspace/composer/NewWorkspaceComposerFooter'
 import { NewWorkspaceComposerNameSection } from './new-workspace/composer/NewWorkspaceComposerNameSection'
 import { NewWorkspaceComposerProjectSection } from './new-workspace/composer/NewWorkspaceComposerProjectSection'
@@ -285,6 +289,12 @@ export default function NewWorkspaceComposerCard(
     agentTrigger?.focus()
   }, [composerRef])
 
+  const { agentSession } = props
+  const showWorktreeFields = !agentSession || agentSession.createWorktree
+  const nameSection = (
+    <NewWorkspaceComposerNameSection {...props} onNamePlainEnter={handleNamePlainEnter} />
+  )
+
   useContextualTour(
     'workspace-creation',
     projectOptions.length > 0 && Boolean(selectedProjectId),
@@ -298,6 +308,7 @@ export default function NewWorkspaceComposerCard(
     <div
       ref={setComposerNode}
       data-workspace-composer-root="true"
+      data-agent-session={agentSession ? 'true' : undefined}
       data-sparse-preset-editing={sparseEditing ? 'true' : undefined}
       onDragEnter={dragHandlers.onDragEnter}
       onDragLeave={dragHandlers.onDragLeave}
@@ -333,27 +344,43 @@ export default function NewWorkspaceComposerCard(
           connectButtonLabel={connectButtonLabel}
           selectedProjectName={selectedProjectName}
         />
-        <NewWorkspaceComposerNameSection {...props} onNamePlainEnter={handleNamePlainEnter} />
+        {agentSession ? null : nameSection}
         <NewWorkspaceComposerAgentSection
           {...props}
           createDisabled={props.createDisabled || sparseEditing}
-          advancedLocked={sparseEditing}
           visibleQuickAgents={visibleQuickAgents}
           defaultTuiAgent={defaultTuiAgent}
           handleSetDefaultAgent={handleSetDefaultAgent}
         />
-        <NewWorkspaceComposerAdvancedSection
-          {...props}
-          onSparseEditingChange={setSparseEditing}
-          sparseEditing={sparseEditing}
-          branchNameInputId={branchNameInputId}
-          showSetupAgentStartupPolicy={showSetupAgentStartupPolicy}
-          parentWorktreeId={parentWorktreeId}
-          onParentWorktreeIdChange={onParentWorktreeIdChange}
-          selectedRepoExecutionHostId={selectedRepoExecutionHostId}
-          selectedRepoProjectId={selectedRepoProjectId}
-          activeFolderWorkspaceId={activeFolderWorkspaceId}
-        />
+        {agentSession?.accountField}
+        {agentSession?.onCreateWorktreeChange ? (
+          <AgentSessionWorktreeToggle
+            checked={agentSession.createWorktree}
+            onCheckedChange={agentSession.onCreateWorktreeChange}
+          />
+        ) : null}
+        {agentSession?.createWorktree ? nameSection : null}
+        {showWorktreeFields ? (
+          <>
+            <NewWorkspaceComposerAdvancedToggle
+              advancedOpen={props.advancedOpen}
+              advancedLocked={sparseEditing}
+              onToggleAdvanced={props.onToggleAdvanced}
+            />
+            <NewWorkspaceComposerAdvancedSection
+              {...props}
+              onSparseEditingChange={setSparseEditing}
+              sparseEditing={sparseEditing}
+              branchNameInputId={branchNameInputId}
+              showSetupAgentStartupPolicy={showSetupAgentStartupPolicy}
+              parentWorktreeId={parentWorktreeId}
+              onParentWorktreeIdChange={onParentWorktreeIdChange}
+              selectedRepoExecutionHostId={selectedRepoExecutionHostId}
+              selectedRepoProjectId={selectedRepoProjectId}
+              activeFolderWorkspaceId={activeFolderWorkspaceId}
+            />
+          </>
+        ) : null}
       </div>
       {!sparseEditing ? (
         <div className="shrink-0 space-y-1">

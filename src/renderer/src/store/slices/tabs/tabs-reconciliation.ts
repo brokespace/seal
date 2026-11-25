@@ -1,6 +1,7 @@
 import { structuredLaunchSlotIds } from '@/lib/agent-session/launch/structured-agent-session-launch-persistence'
 import type { AppState } from '../../types'
 import type { Tab } from '../../../../../shared/tab-types'
+import { isAgentSessionSurfaceTab } from '../../../../../shared/tab-types'
 import { dedupeTabOrder } from '../../../../../shared/workspace-layout/tab-groups/tab-order'
 import { ensureWorktreeGroup, updateGroup } from './tab-group-state'
 import { sanitizeRecentTabIds } from './tab-selection-history'
@@ -9,7 +10,7 @@ import {
   buildOrphanTerminalCleanupPatch,
   getOrphanTerminalIds,
   terminalTabHasReconnectablePty
-} from '../../terminals/terminal-orphan-cleanup'
+} from '../../terminals/retirement/terminal-orphan-cleanup'
 import {
   createReconciliationDrafts,
   finishReconciliationDrafts,
@@ -125,7 +126,7 @@ export function projectWorktreeTabModelReconciliation(
     if (tab.contentType === 'browser') {
       return liveBrowserIds.has(tab.entityId)
     }
-    if (tab.contentType === 'simulator' || tab.contentType === 'agent-session') {
+    if (tab.contentType === 'simulator' || isAgentSessionSurfaceTab(tab.contentType)) {
       return true
     }
     return liveEditorIds.has(tab.entityId)

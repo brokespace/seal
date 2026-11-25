@@ -1,0 +1,14 @@
+[
+  {
+    "key": "d2599253021fd08ba850dc3b77b195c7",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Why is the CI build so slow lately? Don't change anything, just tell me.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Why is the CI build so slow lately? Don't change anything, just tell me.\n\n[m2] AGENT: The build got slower because the e2e job stopped using the dependency cache on 3 November: the cache key includes the lockfile hash, and the lockfile now changes on every run. Install went from 40 seconds to about 6 minutes. I have not changed anything.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"CI build slow lately\",\n  \"goal\": \"Explain why the CI build is getting slower\",\n  \"standing\": \"Identified cause: e2e job losing dependency cache since Nov 3\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [{\n      \"text\": \"Investigated build slowness and identified cache issue\",\n      \"state\": \"done\",\n      \"ref\": \"m2\"\n    }],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": []\n}",
+    "neurons": 8.6129
+  }
+]

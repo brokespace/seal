@@ -1,0 +1,46 @@
+[
+  {
+    "key": "f3312a768e0314de9c5fae75c1e24602",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Rename the Account page to Profile everywhere.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Rename the Account page to Profile everywhere.\n\n[m2] AGENT: Renaming the page component and its route first.\n\n[m3] USER: also update the nav link and the sitemap while you're there\n</new_messages>\nThe agent is still working and its last message is unfinished: record what it is doing as \"in-progress\", never \"done\", and say in \"standing\" what it is doing now."
+      }
+    ],
+    "reply": "{\n  \"title\": null,\n  \"goal\": \"Rename the Account page to Profile everywhere.\",\n  \"standing\": \"Updating the nav link and sitemap as requested.\",\n  \"add\": {\n    \"asked\": [\n      {\n        \"text\": \"Update nav link and sitemap\",\n        \"ref\": \"m3\"\n      }\n    ],\n    \"did\": [\n      {\n        \"text\": \"Rename page component and route\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": []\n}"
+  },
+  {
+    "key": "fb57740204be1c73564675264ea1ad80",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":\"Rename the Account page to Profile everywhere.\",\"standing\":\"Updating the nav link and sitemap as requested.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Update nav link and sitemap\"}],\"did\":[{\"id\":\"w2\",\"text\":\"Rename page component and route\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] AGENT: The Account page is now Profile: the component, the route, the nav link and the sitemap all say Profile.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [\n    {\"id\": \"w2\", \"state\": \"done\"},\n    {\"id\": \"a1\", \"text\": \"Update nav link and sitemap\"}\n  ],\n  \"resolve\": [\"a1\"]\n}"
+  },
+  {
+    "key": "abe06b158c6daad776b3db08aa26a1dc",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Rename the Account page to Profile everywhere.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Rename the Account page to Profile everywhere.\n\n[m2] AGENT: Renaming the page component and its route first.\n</new_messages>\nThe agent is still working and its last message is unfinished: record what it is doing as \"in-progress\", never \"done\", and say in \"standing\" what it is doing now."
+      }
+    ],
+    "reply": "{\n  \"title\": null,\n  \"goal\": null,\n  \"standing\": \"Renaming the page component and its route.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [{\"text\": \"Rename Account page to Profile\", \"state\": \"in-progress\", \"ref\": \"m2\"}],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": []\n}"
+  },
+  {
+    "key": "12b54f39af3d8fdd27c6654dc0fc3673",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":\"Renaming the page component and its route.\",\"firstRequest\":\"Rename the Account page to Profile everywhere.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Rename Account page to Profile\",\"state\":\"in-progress\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: also update the nav link and the sitemap while you're there\n\n[m2] AGENT: The Account page is now Profile: the component, the route, the nav link and the sitemap all say Profile.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [\n    {\"id\": \"w1\", \"state\": \"done\", \"text\": \"Rename Account page to Profile\"}\n  ],\n  \"resolve\": [\n    \"w1\",\n    \"m1\"\n  ]\n}"
+  }
+]

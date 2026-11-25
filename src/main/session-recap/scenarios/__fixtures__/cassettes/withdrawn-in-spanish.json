@@ -1,0 +1,26 @@
+[
+  {
+    "key": "8f95dd59a66546f06f5e625bf9eb7125",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"añade un botón para exportar a PDF en la página de facturas\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: añade un botón para exportar a PDF en la página de facturas\n\n[m2] AGENT: Todavía no lo he añadido. Antes necesito saber qué librería de PDF queréis usar: pdfkit ya está en el proyecto, pero no soporta las fuentes de la plantilla.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Añadir botón de exportar a PDF\",\n  \"goal\": \"Añadir botón para exportar a PDF en la página de facturas\",\n  \"standing\": \"El agente pregunta por la librería de PDF a usar debido a que pdfkit no soporta la fuente de la plantilla\",\n  \"add\": {\n    \"asked\": [{\"text\": \"Qué librería de PDF usar\", \"ref\": \"m2\"}]\n  },\n  \"add\": {\n    \"decisions\": [{\"text\": \"Seleccionar librería de PDF compatible\", \"ref\": \"m2\"}]\n  }\n}",
+    "neurons": 8.8106
+  },
+  {
+    "key": "2f0cea333eca01bdc7ceabe112209146",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Añadir botón de exportar a PDF\",\"goal\":\"Añadir botón para exportar a PDF en la página de facturas\",\"standing\":\"El agente pregunta por la librería de PDF a usar debido a que pdfkit no soporta la fuente de la plantilla\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[{\"id\":\"d1\",\"text\":\"Seleccionar librería de PDF compatible\"}]}\n</recap>\n<new_messages>\n[m1] USER: déjalo, ya no hace falta el PDF. mejor arregla el total, que sale mal en la factura\n\n[m2] AGENT: Arreglado: el total sumaba el IVA dos veces. Ahora lo suma una sola vez y el test de facturas pasa.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": null,\n  \"goal\": null,\n  \"standing\": \"La librería de PDF se descartó, ahora se está arreglando el cálculo del total de la factura.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [{\"text\": \"Descartar librería PDF\", \"state\": \"done\", \"ref\": \"m1\"}, {\"text\": \"Corregir cálculo doble de IVA\", \"state\": \"done\", \"ref\": \"m2\"}],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": [{\"id\": \"d1\", \"text\": \"Descartar PDF y arreglar total de factura\"}]\n  },\n  \"update\": [],\n  \"resolve\": []\n}",
+    "neurons": 10.153500000000001
+  }
+]

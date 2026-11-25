@@ -1,0 +1,17 @@
+{
+  "id": "declined-with-a-reason",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Delete the old migrations folder"],
+      "at": {
+        "after the turn": {
+          "is": "declined",
+          "why": "step 3: the agent leaves db/migrations because the nightly staging rebuild replays them, and deletes nothing"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

@@ -1,6 +1,7 @@
 import { cancelActiveWorktreeRemoval } from '@/store/workspaces/selection/active-worktree-deselection-intent'
 import { projectWorktreeTabModelReconciliation } from '../../tabs/tabs-reconciliation'
 import { moveFocusToRendererBeforeFocusedWebviewHidden } from '../../../../components/browser-pane/host-guest/webview-registry'
+import { splitViewWorkspacesOnView } from '../../../../components/split-view/split-view-workspaces-on-view'
 import { tabHasLivePty } from '../../../../../../shared/tab-has-live-pty'
 import {
   markInputQuietSchedulerInput,
@@ -19,6 +20,8 @@ import {
 } from '../../../../../../shared/workspace-scope'
 import { findKnownWorktreeById } from '../listing/detected-worktree-meta'
 import { resolveActivatedWorktreeSurface } from './active-worktree-surface'
+import { selectActiveTabForWorktree } from '../../tabs/active-tab-selection'
+import { getActiveWorkspaceCopyHostOfTab } from '@/lib/workspace/ownership/unified-tab-host-ownership'
 import { clearWorktreeSleepIntent } from '@/lib/workspace/sleep/worktree-sleep-intent'
 import {
   pendingActivationTerminalPrepCancels,
@@ -50,7 +53,10 @@ export function createSetActiveWorktree(
       markInputQuietSchedulerInput()
     }
 
-    if (get().activeWorktreeId !== worktreeId) {
+    // A workspace already on screen in a split-view pane hides nothing: keep the page just clicked focused.
+    const staysOnScreen =
+      worktreeId !== null && splitViewWorkspacesOnView(get().activeView)?.has(worktreeId) === true
+    if (get().activeWorktreeId !== worktreeId && !staysOnScreen) {
       moveFocusToRendererBeforeFocusedWebviewHidden()
     }
     let shouldPrepareTerminalTabs = false
@@ -82,7 +88,6 @@ export function createSetActiveWorktree(
       const nextActiveWorkspaceKey = isWorkspaceKey(worktreeId)
         ? worktreeId
         : worktreeWorkspaceKey(worktreeId)
-      const worktree = findKnownWorktreeById(s, worktreeId, executionHostId)
       const {
         restoredRightSidebarExplorerView,
         activeFileId,
@@ -95,6 +100,20 @@ export function createSetActiveWorktree(
         stateTransition?.preferredActiveUnifiedTabId,
         reconciledActiveTabId
       )
+      // Unnamed, a same-id copy opens on the machine its shown tab runs on, so Files follows it.
+      const shownTab = executionHostId
+        ? null
+        : (selectActiveTabForWorktree(s, worktreeId) ??
+          (s.unifiedTabsByWorktree[worktreeId] ?? []).find((tab) => tab.id === activeTabId))
+      const hostId =
+        executionHostId ??
+        (shownTab
+          ? getActiveWorkspaceCopyHostOfTab(
+              { ...s, activeWorktreeId: worktreeId, activeWorkspaceExecutionHostId: null },
+              shownTab
+            )
+          : null)
+      const worktree = findKnownWorktreeById(s, worktreeId, hostId ?? undefined)
 
       // Defer prep until input quiet. First activation tags even rehydrated PTYs to suppress click activity; bump generation only for dead tabs or remount kills live shells.
       const tabs = s.tabsByWorktree[worktreeId ?? ''] ?? []
@@ -131,7 +150,7 @@ export function createSetActiveWorktree(
       const hasStateChange =
         s.activeWorktreeId !== worktreeId ||
         s.activeWorkspaceKey !== nextActiveWorkspaceKey ||
-        s.activeWorkspaceExecutionHostId !== (executionHostId ?? null) ||
+        s.activeWorkspaceExecutionHostId !== hostId ||
         // Why: a pending-creation panel can show over the prior worktree; a non-null activePendingCreationId counts as a change.
         s.activePendingCreationId !== null ||
         s.activeFileId !== activeFileId ||
@@ -156,7 +175,7 @@ export function createSetActiveWorktree(
         activeRepoId: nextActiveRepoId,
         activeWorktreeId: worktreeId,
         activeWorkspaceKey: nextActiveWorkspaceKey,
-        activeWorkspaceExecutionHostId: executionHostId ?? null,
+        activeWorkspaceExecutionHostId: hostId,
         activePendingCreationId: null,
         activeFileId,
         activeBrowserTabId,

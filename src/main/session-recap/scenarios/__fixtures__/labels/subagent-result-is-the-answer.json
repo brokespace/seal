@@ -1,0 +1,17 @@
+{
+  "id": "subagent-result-is-the-answer",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Find out why the nightly export job fails"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 2: the subagent reports the root cause, expired S3 credentials, and step 3 points to that finding"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

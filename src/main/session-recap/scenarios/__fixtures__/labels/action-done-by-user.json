@@ -1,0 +1,30 @@
+{
+  "id": "action-done-by-user",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Wire up Stripe webhooks for refunds"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 3: the agent says the refund webhook handler is written and verified; only the user's own step (adding the secret) is left"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 8: the agent says nothing else is needed now the secret is in place"
+        }
+      }
+    },
+    {
+      "quotes": ["what else?"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 8: the agent answers that nothing else is needed"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

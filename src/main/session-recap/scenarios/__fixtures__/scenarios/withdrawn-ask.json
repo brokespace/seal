@@ -1,0 +1,61 @@
+{
+  "id": "withdrawn-ask",
+  "title": "The user takes back an ask the agent had not started",
+  "categories": ["withdrawn-or-changed"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "Dark mode is listed as not addressed until the user drops it; after that it is no longer listed as unaddressed.",
+  "steps": [
+    {
+      "user": "Add dark mode to the settings page, and fix the avatar upload that fails on PNGs over 2MB."
+    },
+    {
+      "edit": "/srv/shop/src/upload/avatar.ts"
+    },
+    {
+      "agent": "Avatar upload is fixed: the size check used kilobytes where it meant bytes, so PNGs over 2MB now upload. Dark mode touches the theme tokens across the whole app, so I have not started it."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "dark",
+          "why": "dark mode is asked for and not started"
+        }
+      ]
+    },
+    {
+      "user": "never mind dark mode, we'll do it next quarter"
+    },
+    {
+      "agent": "Understood, leaving dark mode out."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "dark",
+          "why": "the user withdrew the request"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        }
+      ]
+    }
+  ]
+}

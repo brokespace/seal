@@ -29,6 +29,9 @@ import type { SettingsHostScope } from '../host-scope/settings-host-scope'
 import { SettingsGroup } from '../section-layout/SettingsGroup'
 import { useTranslate } from '@/i18n/use-translate'
 import { AgentWorkspaceTrustSetting } from './behavior/AgentWorkspaceTrustSetting'
+import { LiveSessionsShellIntegrationSetting } from '../../live-sessions/shell-integration/LiveSessionsShellIntegrationSetting'
+import { LiveSessionsIdleReapSetting } from '../../live-sessions/shell-integration/LiveSessionsIdleReapSetting'
+import { LiveSessionsNotifySetting } from '../../live-sessions/shell-integration/LiveSessionsNotifySetting'
 
 type AgentSettingProps = {
   settings: GlobalSettings
@@ -74,7 +77,9 @@ export function AgentsPane({
           settings={settings}
           updateSettings={updateSettings}
           refresh={() =>
-            useAppStore.getState().refreshDetectedAgents(undefined, { wakeWslDistro: true })
+            useAppStore
+              .getState()
+              .refreshDetectedAgents(undefined, { wakeWslDistro: true, userInitiated: true })
           }
           wslSupportedPlatform={wslSupportedPlatform}
           wslAvailable={wslAvailable}
@@ -104,7 +109,15 @@ export function AgentsPane({
         ) : null}
         <AgentGeneratedTabTitlesSetting settings={settings} updateSettings={updateSettings} />
         {!isPairedWebClientWindow() ? (
-          <AgentAwakeSetting settings={settings} updateSettings={updateSettings} />
+          <>
+            <AgentAwakeSetting settings={settings} updateSettings={updateSettings} />
+            <LiveSessionsShellIntegrationSetting
+              settings={settings}
+              updateSettings={updateSettings}
+            />
+            <LiveSessionsIdleReapSetting settings={settings} updateSettings={updateSettings} />
+            <LiveSessionsNotifySetting settings={settings} updateSettings={updateSettings} />
+          </>
         ) : null}
       </SettingsGroup>
       <AgentCacheTimerSection settings={settings} updateSettings={updateSettings} />

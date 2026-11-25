@@ -1,18 +1,14 @@
 import { useCallback } from 'react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
-import {
-  canMintMobilePairingOffer,
-  type MobilePairingConnectionMode
-} from '../../../../shared/remote-runtime/pairing/mobile-pairing-connection-mode'
+import type { MobilePairingConnectionMode } from '../../../../shared/remote-runtime/pairing/mobile-pairing-connection-mode'
 import type { MobileRelayMintFailure } from '../../../../shared/remote-runtime/relay/mobile-relay-mint-failure'
 
 type MutableRef<T> = { current: T }
 
-/** Mint through one guarded path: signed-out Relay cannot degrade to a mislabeled local-only QR; Relay failures clear the code. */
+/** Mint through one guarded path; Relay failures clear the code instead of degrading to a mislabeled local-only QR. */
 export function useMobilePairingGeneration(params: {
   connectionMode: MobilePairingConnectionMode
-  signedIn: boolean
   selectedAddress: string | undefined
   mountedRef: MutableRef<boolean>
   hasGeneratedRef: MutableRef<boolean>
@@ -24,8 +20,6 @@ export function useMobilePairingGeneration(params: {
   setPairingQrError: (value: boolean) => void
   setPairLoading: (value: boolean) => void
   setRelayMintFailure: (value: MobileRelayMintFailure | null) => void
-  /** Re-read on a Relay mint failure: a revoked session is the likeliest cause. */
-  refreshAuthStatus: () => void
 }): {
   generatePairing: (
     rotate: boolean,
@@ -35,7 +29,6 @@ export function useMobilePairingGeneration(params: {
 } {
   const {
     connectionMode,
-    signedIn,
     selectedAddress,
     mountedRef,
     hasGeneratedRef,
@@ -46,8 +39,7 @@ export function useMobilePairingGeneration(params: {
     setPairExpiresAt,
     setPairingQrError,
     setPairLoading,
-    setRelayMintFailure,
-    refreshAuthStatus
+    setRelayMintFailure
   } = params
 
   const generatePairing = useCallback(
@@ -57,9 +49,6 @@ export function useMobilePairingGeneration(params: {
       connectionModeOverride?: MobilePairingConnectionMode
     ) => {
       const preferredMode = connectionModeOverride ?? connectionMode
-      if (!canMintMobilePairingOffer({ connectionMode: preferredMode, signedIn })) {
-        return
-      }
       const requestId = ++pairingRequestIdRef.current
       hasGeneratedRef.current = true
       if (mountedRef.current) {
@@ -93,7 +82,6 @@ export function useMobilePairingGeneration(params: {
             setPairingQrError(false)
             if (result.reason === 'relay_mint_failed' && result.relayFailure) {
               setRelayMintFailure(result.relayFailure)
-              refreshAuthStatus()
             } else {
               setRelayMintFailure(null)
               // Prefer host reason/guidance across all unavailable states instead of assuming WebSocket failure.
@@ -133,7 +121,6 @@ export function useMobilePairingGeneration(params: {
       hasGeneratedRef,
       mountedRef,
       pairingRequestIdRef,
-      refreshAuthStatus,
       selectedAddress,
       setPairLoading,
       setPairQrDataUrl,
@@ -141,8 +128,7 @@ export function useMobilePairingGeneration(params: {
       setPairingUrl,
       setPairExpiresAt,
       setPairingQrError,
-      setRelayMintFailure,
-      signedIn
+      setRelayMintFailure
     ]
   )
 

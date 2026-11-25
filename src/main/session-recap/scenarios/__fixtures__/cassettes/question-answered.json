@@ -1,0 +1,26 @@
+[
+  {
+    "key": "5dbe3b7a6b7fccfb3bc8b5a93970f5fd",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add email notifications when an order ships.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add email notifications when an order ships.\n\n[m2] AGENT: I can send them through the existing SES setup or through Postmark, which the marketing emails use. Which one should order emails go through?\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [\n      {\"text\": \"SES or Postmark for order notifications?\", \"ref\": \"m2\"}\n    ]\n  }\n}",
+    "neurons": 4.9582
+  },
+  {
+    "key": "90d5bdd31ee8c5b8761cf25863845320",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add email notifications when an order ships.\",\"asked\":[{\"id\":\"a1\",\"text\":\"SES or Postmark for order notifications?\"}],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: SES\n\n[m2] AGENT: Order-shipped emails now go out through SES when an order's status changes to shipped.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"asked\": [{\"id\": \"a1\", \"text\": \"SES or Postmark for order notifications?\", \"ref\": \"a1\"}],\n  \"did\": [{\"id\": \"d1\", \"text\": \"Order-shipped emails sent through SES\", \"state\": \"done\", \"ref\": \"m2\"}],\n  \"resolve\": [\"a1\"],\n  \"update\": [{\"id\": \"firstRequest\", \"state\": \"done\", \"text\": \"Add email notifications when an order ships\", \"ref\": \"m2\"}]\n}",
+    "neurons": 7.8338
+  }
+]

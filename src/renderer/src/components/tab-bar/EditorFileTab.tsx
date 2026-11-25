@@ -1,12 +1,12 @@
 import { editorTabWorkspace } from '@/store/slices/editor/tabs/workspace-editor-files'
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { Eye, ShieldAlert, Pin } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { TabHoverCard } from './TabHoverCard'
 import { basename } from '@/lib/path'
-import { getEditorDisplayLabel } from '@/components/editor/editor-labels'
+import { getEditorDisplayLabel } from '@/components/editor/panel/header/editor-labels'
 import { renameFileOnDisk } from '@/lib/editor/file-operations/rename-file'
 import { isImeCompositionKeyDown } from '@/lib/text-input/ime/ime-composition-keyboard-event'
 import { detectLanguage } from '../../../../shared/editor-language/editor-language-detect'
@@ -17,11 +17,12 @@ import { resolveReviewRepository } from '@/lib/source-control/review/review-owne
 import { useAppStore } from '@/store/index'
 import { STATUS_COLORS } from '../../lib/source-control/paths/git-path-decoration'
 import { STATUS_LABELS } from '../../../../shared/git/status/git-status-labels'
-import { getUntitledFileRoot } from '@/components/editor/untitled-file-rename-path'
-import { preventMiddleButtonDefault } from './middle-button-default-guard'
+import { getUntitledFileRoot } from '@/components/editor/panel/untitled-rename/untitled-file-rename-path'
+import { closeTabOnMiddleClick, preventMiddleButtonDefault } from './middle-button-default-guard'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/overlay-interaction/close-all-context-menus'
 import {
   ACTIVE_TAB_INDICATOR_CLASSES,
+  TAB_ROOT_CLASSES,
   getDropIndicatorClasses,
   getTabRootStateClasses,
   getTabStripBorderClasses
@@ -34,7 +35,7 @@ import { TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
 import { useTabStripSlotProps } from './use-tab-strip-slot-props'
 import { EditorFileTabCloseButton } from './EditorFileTabCloseButton'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
-import { useTabContextMenuOpening } from './tab-context-menu-opening'
+import { useTabContextMenuDismissal, useTabContextMenuOpening } from './tab-context-menu-opening'
 import { editorTabDocumentFolderAccess } from '@/lib/files/access/local-file-access'
 import { useTabCustomEditor } from '@/store/plugins/file-editors/plugin-custom-editors'
 import { PluginContributionIcon } from '../plugins/PluginContributionIcon'
@@ -187,21 +188,7 @@ export default function EditorFileTab({
 
   const tabStatusColor = tabStatus ? STATUS_COLORS[tabStatus] : undefined
 
-  useEffect(() => {
-    const closeMenu = (): void => setMenuOpen(false)
-    window.addEventListener(CLOSE_ALL_CONTEXT_MENUS_EVENT, closeMenu)
-    return () => window.removeEventListener(CLOSE_ALL_CONTEXT_MENUS_EVENT, closeMenu)
-  }, [])
-
-  // Webview clicks bypass renderer pointerdown, so window blur dismisses menus Radix cannot detect as outside clicks.
-  useEffect(() => {
-    if (!menuOpen) {
-      return
-    }
-    const dismiss = (): void => setMenuOpen(false)
-    window.addEventListener('blur', dismiss)
-    return () => window.removeEventListener('blur', dismiss)
-  }, [menuOpen])
+  useTabContextMenuDismissal(menuOpen, setMenuOpen)
 
   const dragListeners = isRenaming ? undefined : listeners
   const { onPointerDown, retirePendingActivation } = useTabStripPointerActivation({
@@ -219,7 +206,7 @@ export default function EditorFileTab({
       data-pinned={isPinned ? 'true' : 'false'}
       {...attributes}
       {...dragListeners}
-      className={`w-full group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
+      className={`${TAB_ROOT_CLASSES} ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
       onPointerDown={(e) => {
         onPointerDown(
           e,
@@ -237,16 +224,7 @@ export default function EditorFileTab({
         }
       }}
       onMouseUp={preventMiddleButtonDefault}
-      onAuxClick={(e) => {
-        if (e.button === 1) {
-          e.preventDefault()
-          e.stopPropagation()
-          if (isPinned) {
-            return
-          }
-          onClose()
-        }
-      }}
+      onAuxClick={(e) => closeTabOnMiddleClick(e, isPinned ? null : onClose)}
     >
       {isActive && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
       {isConflictReview ? (

@@ -1,4 +1,5 @@
 import type { Tab, TabGroup } from '../../../../shared/tab-types'
+import { isAgentSessionSurfaceTab } from '../../../../shared/tab-types'
 import type { OpenFile } from '../../store/slices/editor/types/open-file'
 import type { WebSessionTabsBatchContext, WebSessionTabsSyncState } from './state'
 import { sameStringArray } from './state-equality-core'
@@ -128,7 +129,7 @@ export function sameGroups(
 }
 
 export function toVisibleTabType(tab: Tab): WebSessionTabsSyncState['activeTabType'] {
-  if (tab.contentType === 'agent-session') {
+  if (isAgentSessionSurfaceTab(tab.contentType)) {
     return 'agent-session'
   }
   if (tab.contentType === 'browser' || tab.contentType === 'terminal') {

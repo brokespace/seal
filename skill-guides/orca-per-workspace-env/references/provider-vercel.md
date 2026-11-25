@@ -145,7 +145,7 @@ vercel sandbox exec "$name" ${vercel_args[@]+"${vercel_args[@]}"} --timeout 20m 
 recipe_json="$(vercel sandbox exec "$name" ${vercel_args[@]+"${vercel_args[@]}"} --timeout 60s \
   --env "ORCA_PORT=$port" --env "ORCA_PROJECT_ROOT=$project_root" --env "ORCA_PAIRING_ADDRESS=$pairing_ws" \
   -- bash -lc 'set -euo pipefail; cd "$ORCA_PROJECT_ROOT"; rm -f /tmp/orca-recipe.json /tmp/orca-serve.log; \
-    nohup pnpm exec orca-dev serve --port "$ORCA_PORT" --project-root "$ORCA_PROJECT_ROOT" \
+    nohup pnpm exec orca-dev serve --bind 0.0.0.0 --port "$ORCA_PORT" --project-root "$ORCA_PROJECT_ROOT" \
       --pairing-address "$ORCA_PAIRING_ADDRESS" --recipe-json >/tmp/orca-recipe.json 2>/tmp/orca-serve.log </dev/null & \
     pid=$!; for _ in $(seq 1 80); do \
       node -e "JSON.parse(require(\"node:fs\").readFileSync(\"/tmp/orca-recipe.json\",\"utf8\"))" >/dev/null 2>&1 && { cat /tmp/orca-recipe.json; exit 0; }; \

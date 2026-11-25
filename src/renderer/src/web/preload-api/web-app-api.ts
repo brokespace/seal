@@ -4,6 +4,7 @@ import { sessionStorageKeyForHost } from './web-workspace-session-api'
 import { mergeWebUIState } from './web-preference-normalization'
 import { readLocalWebUIState } from './web-preferences-store'
 import { UI_STORAGE_KEY, writeJson } from './web-storage'
+import { APP_PRODUCT_NAME } from '../../../../shared/app-identity'
 
 export function createWebAppApi(): Partial<PreloadApi> {
   return {
@@ -17,7 +18,7 @@ export function createWebAppApi(): Partial<PreloadApi> {
         Promise.reject(new Error('Administrator restart requires the Windows desktop app.')),
       getIdentity: () =>
         Promise.resolve({
-          name: 'Orca',
+          name: APP_PRODUCT_NAME,
           isDev: false,
           devLabel: null,
           devBranch: null,

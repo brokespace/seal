@@ -1,5 +1,9 @@
 import type { AgentSessionModelOption } from '../../../../shared/agent-session/agent-session-wire'
 import type { CodexAppServerConnection } from '../../app-server/codex-app-server-connection-types'
+import {
+  codexAutoCompactSettingsOf,
+  type CodexAutoCompactSettings
+} from '../../../../shared/agent-session/agent-auto-compact-settings'
 
 // Bound config reads so a slow app-server cannot hold the model listing.
 const CONFIG_READ_TIMEOUT_MS = 3_000
@@ -9,6 +13,7 @@ type CodexConfiguredLaunchDefaults = {
   effort: string | null
   personality?: string
   serviceTier?: string
+  autoCompact?: CodexAutoCompactSettings
 }
 
 function configuredText(value: unknown): string | null {
@@ -17,12 +22,12 @@ function configuredText(value: unknown): string | null {
 
 export async function readCodexConfiguredLaunchDefaults(
   connection: Pick<CodexAppServerConnection, 'request'>,
-  timeoutMs = CONFIG_READ_TIMEOUT_MS,
+  timeoutMs: number | null = CONFIG_READ_TIMEOUT_MS,
   cwd?: string
 ): Promise<CodexConfiguredLaunchDefaults | null> {
   try {
     const response = await connection.request('config/read', cwd ? { cwd } : {}, {
-      timeoutMs: Math.min(timeoutMs, CONFIG_READ_TIMEOUT_MS)
+      timeoutMs: timeoutMs === null ? null : Math.min(timeoutMs, CONFIG_READ_TIMEOUT_MS)
     })
     const config =
       typeof response === 'object' && response !== null && 'config' in response
@@ -46,6 +51,7 @@ export async function readCodexConfiguredLaunchDefaults(
     return {
       ...(personality ? { personality } : {}),
       ...(serviceTier ? { serviceTier } : {}),
+      autoCompact: codexAutoCompactSettingsOf(config),
       model: 'model' in config ? configuredText(config.model) : null,
       effort:
         'model_reasoning_effort' in config ? configuredText(config.model_reasoning_effort) : null

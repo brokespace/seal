@@ -121,6 +121,14 @@ export class ProjectGroupPersistenceOperations {
     if (updates.color !== undefined) {
       group.color = typeof updates.color === 'string' ? updates.color : null
     }
+    if (updates.hookSettings !== undefined) {
+      group.hookSettings = updates.hookSettings
+    }
+    if (updates.hiddenAt === null) {
+      delete group.hiddenAt
+    } else if (updates.hiddenAt !== undefined && Number.isFinite(updates.hiddenAt)) {
+      group.hiddenAt = updates.hiddenAt
+    }
     group.updatedAt = Date.now()
   }
 

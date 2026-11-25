@@ -1,7 +1,12 @@
 import type { RuntimeMetadata } from '../../../../shared/runtime-bootstrap'
 import { writeRuntimeMetadata } from './runtime-metadata'
 import type { RpcMessageContext } from '../transport'
-import type { PairingOffersRpcContext, RpcRequest, RpcResponse } from '../core'
+import type {
+  PairedDevicesRpcContext,
+  PairingOffersRpcContext,
+  RpcRequest,
+  RpcResponse
+} from '../core'
 import { errorResponse } from '../responses/rpc-response'
 import { RuntimeRpcBinaryRouting } from './runtime-rpc-binary-routing'
 import { classifyRuntimeLongPoll, type RuntimeLongPollClass } from './runtime-rpc-long-poll'
@@ -54,7 +59,8 @@ export class RuntimeRpcRequestAdmission extends RuntimeRpcBinaryRouting {
         connectionSignal: context?.signal,
         caller: LOCAL_CLI_RPC_CALLER,
         callerScope,
-        pairingOffers: callerScope.kind === 'owner' ? this.ownerPairingOffers() : undefined
+        pairingOffers: callerScope.kind === 'owner' ? this.ownerPairingOffers() : undefined,
+        pairedDevices: callerScope.kind === 'owner' ? this.ownerPairedDevices() : undefined
       })
     } finally {
       this.releaseLongPoll(longPoll)
@@ -63,6 +69,11 @@ export class RuntimeRpcRequestAdmission extends RuntimeRpcBinaryRouting {
 
   // Pairing lives above this class in the server chain; RuntimeRpcMobilePairing provides it.
   protected ownerPairingOffers(): PairingOffersRpcContext | undefined {
+    return undefined
+  }
+
+  // Revocation lives above this class in the server chain; RuntimeRpcMobileDevices provides it.
+  protected ownerPairedDevices(): PairedDevicesRpcContext | undefined {
     return undefined
   }
 

@@ -211,6 +211,7 @@ async function topology() {
   const received: string[] = []
   const pool = new RelayOriginPool({
     directorUrl: 'https://director.example.test',
+    allowedCellOrigins: cells.map((cell) => cell.url),
     relayHostId: hostId,
     identity: { userId: identity.userId, profileId: 'profile-1', organizationId: 'org-1' },
     keypair: { ...keypair, publicKeyB64: Buffer.from(keypair.publicKey).toString('base64') },

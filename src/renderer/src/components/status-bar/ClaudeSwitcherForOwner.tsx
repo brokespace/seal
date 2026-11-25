@@ -34,15 +34,13 @@ import {
 } from './status-bar-claude-accounts'
 import { handleRunningClaudeSessionsAfterSwitch } from '@/lib/provider-accounts/claude-account-switch-sessions'
 import { AccountRuntimeToggle } from './StatusBarAccountControls'
-import {
-  InlineUsageBars,
-  InlineUsageSignInAction,
-  InlineUsageSkeleton
-} from './InlineProviderUsage'
+import { InlineUsageSignInAction } from './InlineProviderUsage'
 import { AccountSwitchSection, AccountSwitchSignedOutHeading } from './AccountSwitchList'
 import { AccountSwitchRowItem } from './AccountSwitchRowItem'
+import { accountUsage } from './AccountUsageReading'
 import { ProviderDetailsMenu } from './ProviderDetailsMenu'
 import { signInToClaudeAccount } from '@/lib/provider-accounts/claude-account-sign-in'
+import { useSealStatusSwitchView } from './seal-status-switch-view'
 
 // Retain account switch/reset drill-in even though the footer now opens UsageRosterPanel.
 export function ClaudeSwitcherForOwner({
@@ -94,6 +92,7 @@ export function ClaudeSwitcherForOwner({
       emptyClaudeAccountsState(),
       !!chatAction
     )
+  const sealView = useSealStatusSwitchView(runtimeTarget, 'claude')
   const accountState = resolveClaudeStatusAccountState(
     accountSettings,
     accounts,
@@ -219,7 +218,8 @@ export function ClaudeSwitcherForOwner({
       includeFallbackWsl:
         wslHostDistro !== null ||
         (!hasActiveRuntimeEnvironment && shouldIncludeSettingsWslRuntime(settings)),
-      hostLabel: providerAccountHostLabel
+      hostLabel: providerAccountHostLabel,
+      seal: sealView
     }
   )
   const selectedGroup = chatAction
@@ -278,11 +278,9 @@ export function ClaudeSwitcherForOwner({
         ) : undefined
       }
     >
-      {signInId ? null : inactiveUsage?.isFetching && !inactiveUsage.rateLimits ? (
-        <InlineUsageSkeleton />
-      ) : inactiveUsage?.rateLimits ? (
-        <InlineUsageBars limits={inactiveUsage.rateLimits} isFetching={inactiveUsage.isFetching} />
-      ) : null}
+      {signInId
+        ? null
+        : accountUsage(inactiveUsage?.rateLimits, inactiveUsage?.isFetching === true)}
     </AccountSwitchRowItem>
   )
 

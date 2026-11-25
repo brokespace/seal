@@ -1,18 +1,10 @@
 import { z } from 'zod'
+import { isCanonicalRelayOrigin } from './relay-cell-origin-pin'
 
 const OpaqueIdSchema = z.string().min(1).max(128)
 const Base64Url32ByteSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/)
 const EpochMsSchema = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)
 const RelayHostIdSchema = z.string().regex(/^[A-Za-z0-9_-]{16}$/)
-
-function isCanonicalHttpsOrigin(value: string): boolean {
-  try {
-    const parsed = new URL(value)
-    return parsed.protocol === 'https:' && value === parsed.origin
-  } catch {
-    return false
-  }
-}
 
 export const PairingProvisionRelayParamsSchema = z
   .object({
@@ -67,8 +59,8 @@ export const DeviceResumeConfirmedSchema = z
 export const MobileRelayEndpointSchema = z
   .object({
     v: z.literal(1),
-    directorUrl: z.string().refine(isCanonicalHttpsOrigin),
-    cellUrl: z.string().refine(isCanonicalHttpsOrigin),
+    directorUrl: z.string().refine((value) => isCanonicalRelayOrigin(value)),
+    cellUrl: z.string().refine((value) => isCanonicalRelayOrigin(value)),
     assignmentEpoch: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
     relayHostId: RelayHostIdSchema,
     e2eeFraming: z.literal(2)

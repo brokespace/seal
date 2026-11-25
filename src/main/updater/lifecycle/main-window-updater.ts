@@ -12,6 +12,7 @@ import { applyProxyToElectronUpdaterSession } from './electron-updater-proxy-ses
 import { updaterErrorMessage } from './updater-coded-error'
 import { updaterCodedMessage } from '../../../shared/updater-failure-copy'
 import { normalizeUpdateDelayDays } from '../../../shared/update-delay'
+import { isUpstreamUpdateFeedEnabled } from '../../upstream-service-policy'
 import {
   checkForUpdatesFromMenu,
   dismissAvailableUpdate,
@@ -21,6 +22,7 @@ import {
   getUpdateStatus,
   listAvailableReleaseBuilds,
   quitAndInstall,
+  reportNoUpdateFeed,
   setupAutoUpdater,
   showLinuxPackage
 } from '../updater-service'
@@ -34,6 +36,15 @@ let pendingAutoUpdaterSetup: (() => void) | null = null
 
 export function ensureAutoUpdaterConfigured(): void {
   pendingAutoUpdaterSetup?.()
+}
+
+/** Tells the person Seal has no update feed; true when a requested check should stop there. */
+export function stoppedForMissingUpdateFeed(): boolean {
+  if (isUpstreamUpdateFeedEnabled()) {
+    return false
+  }
+  reportNoUpdateFeed()
+  return true
 }
 
 type UpdaterSetupHooks = {
@@ -81,6 +92,9 @@ function setupAutoUpdaterWithAppProxy(
   store: Store,
   options?: UpdaterSetupHooks
 ): void {
+  if (!isUpstreamUpdateFeedEnabled()) {
+    return
+  }
   // Starts synchronously, so the session request guard holds the first update check until it settles.
   void applyProxyToElectronUpdaterSession(store.getSettings())
   setupAutoUpdater(mainWindow, buildUpdaterSetupOptions(store, options))
@@ -157,6 +171,9 @@ export function registerUpdaterHandlers(_store: Store): void {
   ipcMain.handle('updater:getStatus', () => getUpdateStatus())
   ipcMain.handle('updater:getVersion', () => app.getVersion())
   ipcMain.handle('updater:check', (_event, options?: UpdateCheckOptions) => {
+    if (stoppedForMissingUpdateFeed()) {
+      return
+    }
     ensureAutoUpdaterConfigured()
     return checkForUpdatesFromMenu(options)
   })
@@ -182,6 +199,9 @@ export function registerUpdaterHandlers(_store: Store): void {
     ): Promise<ReleaseBuildListResult> => {
       if (!RELEASE_CHANNELS.includes(channel)) {
         return { ok: false, channel, ...updaterCodedMessage('unknownReleaseChannel', { channel }) }
+      }
+      if (!isUpstreamUpdateFeedEnabled()) {
+        return { ok: true, channel, builds: [] }
       }
       try {
         return {

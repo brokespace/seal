@@ -1,0 +1,42 @@
+{
+  "id": "mid-turn-refresh",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Refactor the payment module into separate files"],
+      "at": {
+        "mid-turn": {
+          "is": "working",
+          "why": "steps 3-4: charge.ts and refund.ts are written but webhook.ts is not and the turn has not ended"
+        },
+        "right after the turn ends": {
+          "is": "done",
+          "why": "step 9: the agent says the payment module is split into charge.ts, refund.ts and webhook.ts"
+        },
+        "four minutes later": {
+          "is": "done",
+          "why": "step 9: the agent said the module is split into three files; nothing happened since"
+        }
+      }
+    },
+    {
+      "quotes": ["update the imports in the checkout pages"],
+      "at": {
+        "mid-turn": {
+          "is": "working",
+          "why": "step 2: the agent says it will update the checkout imports after the split; the turn is still running"
+        },
+        "right after the turn ends": {
+          "is": "done",
+          "why": "step 9: the agent says the three checkout pages import from the new files"
+        },
+        "four minutes later": {
+          "is": "done",
+          "why": "step 9: the agent said the checkout pages import from the new files; nothing happened since"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

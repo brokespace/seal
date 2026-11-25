@@ -11,5 +11,10 @@ export const SERVE_PAIRING_HANDLER_GROUPS: readonly HandlerGroup[] = [
     name: 'pair',
     keys: ['pair'],
     load: async () => (await import('./pair.js')).PAIR_HANDLERS
+  },
+  {
+    name: 'devices',
+    keys: ['devices list', 'devices revoke'],
+    load: async () => (await import('../devices/paired-devices.js')).PAIRED_DEVICES_HANDLERS
   }
 ]

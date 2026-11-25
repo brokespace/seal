@@ -1,0 +1,36 @@
+{
+  "auto": {
+    "web": {
+      "WebConnect": {
+        "27393856e4": "seal://pair?code=..."
+      },
+      "runtimeAuth": {
+        "hostOutdated": "Dieser Seal-Server unterstützt die Verschlüsselung nicht, die dieser Web-Client erfordert. Seal auf dem Server aktualisieren und diese Seite dann neu laden. Ist der Server bereits aktuell, hat sich sein Identitätsschlüssel geändert: diesen Browser erneut koppeln."
+      }
+    },
+    "components": {
+      "sidebar": {
+        "AddRemoteHostDialog": {
+          "pairingCodePlaceholder": "seal://pair?code=..."
+        }
+      },
+      "settings": {
+        "RuntimeHostAccessForm": {
+          "accessLinkPlaceholder": "seal://pair?code=..."
+        }
+      },
+      "mobile": {
+        "MobileHero": {
+          "installHeading": "Installiere Seal Mobile.",
+          "installLead": "Seal Mobile ist nicht im App Store oder bei Google Play erhältlich. Baue und installiere es aus dem Seal-Repository und fahre dann mit Schritt 2 für den Kopplungs-QR-Code fort.",
+          "installGuide": "Installationsanleitung öffnen"
+        }
+      }
+    }
+  },
+  "runtime": {
+    "remoteServerPairingErrors": {
+      "invalidPairingCode": "Ungültiger Kopplungscode. Eine URL im Format seal://pair?... oder reine Kopplungsdaten erwartet."
+    }
+  }
+}

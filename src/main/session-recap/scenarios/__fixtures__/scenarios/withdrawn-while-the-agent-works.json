@@ -1,0 +1,56 @@
+{
+  "id": "withdrawn-while-the-agent-works",
+  "title": "The user stops an ask in the middle of the agent's turn and the agent undoes what it began",
+  "categories": ["withdrawn-or-changed", "mid-turn"],
+  "surfaces": ["claude-cli", "codex-cli"],
+  "expected": "The Dockerfile ask was taken back mid-turn and the agent reverted its change: nothing is listed as not addressed and no work is left half done.",
+  "steps": [
+    {
+      "user": "Convert the Dockerfile to a multi-stage build."
+    },
+    {
+      "status": "working"
+    },
+    {
+      "agent": "Starting on the Dockerfile: splitting it into a build stage and a runtime stage."
+    },
+    {
+      "edit": "/srv/shop/Dockerfile"
+    },
+    {
+      "user": "stop, don't touch the Dockerfile, ops owns it"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "git checkout -- Dockerfile"
+        }
+      }
+    },
+    {
+      "agent": "Understood. I have reverted my change, so the Dockerfile is as it was."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "the user took the ask back; nothing is unaddressed"
+        },
+        {
+          "in": "did",
+          "lacks": "multi-stage",
+          "why": "the conversion was undone, so it is not work that was done"
+        }
+      ]
+    }
+  ]
+}

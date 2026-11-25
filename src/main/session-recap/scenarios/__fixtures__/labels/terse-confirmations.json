@@ -1,0 +1,34 @@
+{
+  "id": "terse-confirmations",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["login broken on safari. fix"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the agent found the cause, changed nothing and asked whether to go with SameSite=Lax"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 9: the agent switched the cookie to SameSite=Lax and says login works in Safari"
+        },
+        "after turn 3": {
+          "is": "done",
+          "why": "step 9: the agent switched the cookie to SameSite=Lax and says login works in Safari"
+        }
+      }
+    },
+    {
+      "quotes": ["ship it"],
+      "at": {
+        "after turn 3": {
+          "is": "done",
+          "why": "step 15: the agent pushed to main and says the deploy is running"
+        }
+      }
+    }
+  ],
+  "notRequests": ["y"],
+  "rules": []
+}

@@ -32,6 +32,9 @@ export type Env = {
   // has sent nothing within the window. 0 disables (default; it cut healthy readers in the spike).
   SPLICE_SILENT_BYTES_MAX?: string
   SPLICE_SILENT_WINDOW_MS?: string
+  // A splice with no frame in either direction for this long is closed (default: the contract's
+  // idleTimeoutMs). Tests shorten it.
+  SPLICE_IDLE_TIMEOUT_MS?: string
   // Spike backend only: comma-separated `<kind>:<relayDeviceId>:<sha256 b64url>` accepted tokens.
   SPIKE_RESUME_TOKEN_HASHES?: string
   // Spike/test only: /__spike/abort* reset routes.

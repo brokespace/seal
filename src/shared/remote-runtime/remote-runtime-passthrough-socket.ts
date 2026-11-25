@@ -1,11 +1,9 @@
 import WebSocket from 'ws'
 import type { PairedRuntimeConnection } from './pairing/paired-runtime-connection'
 import type { RuntimeCapability } from '../protocol-version'
-import {
-  formatRemoteRuntimeCloseMessage,
-  sendRemoteRuntimeTokenAuth
-} from './remote-runtime-client-handshake'
+import { sendRemoteRuntimeTokenAuth } from './remote-runtime-client-handshake'
 import { RemoteRuntimeClientError } from './remote-runtime-client-error'
+import { remoteRuntimeReadyError } from './requests/remote-runtime-request-frames'
 import { openRemoteRuntimeWebSocket } from './requests/remote-runtime-request-websocket'
 import { closeRemoteRuntimeSocket } from './remote-runtime-socket-close'
 import {
@@ -40,13 +38,8 @@ export function openRemoteRuntimePassthroughSocket(
       onFrame: (_ws, frame) =>
         typeof frame === 'string' ? onTextFrame(frame) : onBinaryFrame(frame),
       onError: (_ws, error) => end(error),
-      onClose: (_ws, code, reason) =>
-        end(
-          new RemoteRuntimeClientError(
-            'remote_runtime_unavailable',
-            formatRemoteRuntimeCloseMessage(code, reason)
-          )
-        ),
+      onClose: (_ws, _code, _reason, message) =>
+        end(new RemoteRuntimeClientError('remote_runtime_unavailable', message)),
       onPong: () => liveness.noteActivity(),
       onPing: () => liveness.noteActivity()
     })
@@ -121,8 +114,9 @@ export function openRemoteRuntimePassthroughSocket(
     function onTextFrame(frame: string): void {
       liveness.noteActivity()
       if (state === 'awaiting_ready') {
-        if (handshake.acceptReadyText(frame) !== 'accepted') {
-          end(protocolError('Remote Orca runtime returned an invalid E2EE handshake frame.'))
+        const readyError = remoteRuntimeReadyError(handshake.acceptReadyText(frame))
+        if (readyError) {
+          end(readyError)
           return
         }
         state = 'awaiting_authenticated'

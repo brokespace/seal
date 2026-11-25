@@ -141,7 +141,7 @@ export function createClaudeJournalTranslator(
     providerFallback,
     corrections,
     turn,
-    assistantFailures: new ClaudeAssistantFailures(deps.account, deps.model),
+    assistantFailures: new ClaudeAssistantFailures(deps.account, deps.model, deps.onLoginFailure),
     usageLimits: new ClaudeUsageLimits(),
     threadGoal: new ClaudeThreadGoal(() => deps.sink.journalLinkage?.()?.threadGoalSource())
   }

@@ -15,8 +15,10 @@ export type SettingsNavInstallStatus =
 
 const SETTINGS_NAV_TARGETS = [
   'general',
+  'workspace-cleanup',
   'integrations',
   'accounts',
+  'session-summaries',
   'browser',
   'git',
   'tasks',
@@ -36,9 +38,14 @@ const SETTINGS_NAV_TARGETS = [
   'shortcuts',
   'stats',
   'ssh',
+  'machines',
   'experimental',
   'plugins',
   'agents',
+  'agent-config',
+  'agent-plugins',
+  'connectors',
+  'skills',
   'orchestration',
   'artifacts',
   'session-history',
@@ -49,6 +56,7 @@ const SETTINGS_NAV_TARGETS = [
   'setup-guide',
   'servers',
   'mobile',
+  'mcp',
   'mobile-emulator',
   'repo'
 ] as const

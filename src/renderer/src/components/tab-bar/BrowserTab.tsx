@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { X, Pin, PinOff, Volume2, VolumeX } from 'lucide-react'
 import {
@@ -18,19 +18,20 @@ import { getLiveBrowserUrl } from '../browser-pane/describe-page/live-browser-ur
 import type { TabDragItemData } from '../tab-group/useTabDragSplit'
 import {
   ACTIVE_TAB_INDICATOR_CLASSES,
+  TAB_ROOT_CLASSES,
   getDropIndicatorClasses,
   getTabRootStateClasses,
   getTabStripBorderClasses,
   type DropIndicator
 } from './drop-indicator'
-import { preventMiddleButtonDefault } from './middle-button-default-guard'
+import { closeTabOnMiddleClick, preventMiddleButtonDefault } from './middle-button-default-guard'
 import { translate } from '@/i18n/i18n'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
 import { useTabStripSlotProps } from './use-tab-strip-slot-props'
 import { TabWorkspaceLayoutMenuSection } from './TabWorkspaceLayoutMenuSection'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
-import { useTabContextMenuOpening } from './tab-context-menu-opening'
+import { useTabContextMenuDismissal, useTabContextMenuOpening } from './tab-context-menu-opening'
 import { cn } from '@/lib/class-names'
 import { BrowserFavicon } from '@/components/browser-favicon'
 import { AgentCursorGlyph } from '../browser-pane/agent-cursor/agent-cursor-glyph'
@@ -139,21 +140,7 @@ export default function BrowserTab({
     ? t('browserTab.controlledByHost', 'Controlled by {{host}}', { host: controllerHost })
     : t('browserTab.agentDriving', 'An agent is using this page')
 
-  useEffect(() => {
-    const closeMenu = (): void => setMenuOpen(false)
-    window.addEventListener(CLOSE_ALL_CONTEXT_MENUS_EVENT, closeMenu)
-    return () => window.removeEventListener(CLOSE_ALL_CONTEXT_MENUS_EVENT, closeMenu)
-  }, [])
-
-  // Webview clicks bypass renderer pointerdown, so window blur dismisses menus Radix cannot detect as outside clicks.
-  useEffect(() => {
-    if (!menuOpen) {
-      return
-    }
-    const dismiss = (): void => setMenuOpen(false)
-    window.addEventListener('blur', dismiss)
-    return () => window.removeEventListener('blur', dismiss)
-  }, [menuOpen])
+  useTabContextMenuDismissal(menuOpen, setMenuOpen)
 
   // Activate on pointer-up so drag gestures cannot switch tabs mid-drag.
   const { onPointerDown: onTabPointerDown, retirePendingActivation } = useTabStripPointerActivation(
@@ -170,7 +157,7 @@ export default function BrowserTab({
       data-pinned={isPinned ? 'true' : 'false'}
       {...attributes}
       {...listeners}
-      className={`w-full group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
+      className={`${TAB_ROOT_CLASSES} ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
       onPointerDown={(e) => {
         onTabPointerDown(
           e,
@@ -183,16 +170,7 @@ export default function BrowserTab({
         }
       }}
       onMouseUp={preventMiddleButtonDefault}
-      onAuxClick={(e) => {
-        if (e.button === 1) {
-          e.preventDefault()
-          e.stopPropagation()
-          if (isPinned) {
-            return
-          }
-          onClose()
-        }
-      }}
+      onAuxClick={(e) => closeTabOnMiddleClick(e, isPinned ? null : onClose)}
     >
       {isActive && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
       {/* Keep browser identity distinct on inactive tabs too; muted icons look disabled. */}

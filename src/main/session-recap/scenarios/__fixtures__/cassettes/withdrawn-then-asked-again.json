@@ -1,0 +1,35 @@
+[
+  {
+    "key": "c0f6f4460d33677e517a691fd8dc055a",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add dark mode to the settings page.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add dark mode to the settings page.\n\n[m2] AGENT: Dark mode touches the theme tokens across the whole app. Should I do the whole app or only the settings page?\n</new_messages>"
+      }
+    ],
+    "reply": "{\"add\":{\"asked\":[{\"text\":\"whole app or just settings page\",\"ref\":\"m2\"}]}}"
+  },
+  {
+    "key": "cb1a4fa92fadab24964b15e00240f89d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add dark mode to the settings page.\",\"asked\":[{\"id\":\"a1\",\"text\":\"whole app or just settings page\"}],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: never mind dark mode for now\n\n[m2] AGENT: OK, leaving dark mode out.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [{\"id\": \"a1\", \"text\": \"whole app or just settings page\", \"state\": \"ignored\"}],\n  \"resolve\": [\"a1\"]\n}"
+  },
+  {
+    "key": "b263c39a5eee15b42e9b455a5d39428a",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add dark mode to the settings page.\",\"asked\":[{\"id\":\"a1\",\"text\":\"whole app or just settings page\"}],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: actually do add dark mode, only on settings\n\n[m2] AGENT: Dark mode is on the settings page and follows the system setting.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": null,\n  \"goal\": null,\n  \"standing\": null,\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\n        \"text\": \"Add dark mode to settings page\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [\n    {\n      \"id\": \"a1\",\n      \"text\": \"whole app or just settings page\",\n      \"state\": \"done\"\n    }\n  ],\n  \"resolve\": [\n    \"a1\"\n  ]\n}"
+  }
+]

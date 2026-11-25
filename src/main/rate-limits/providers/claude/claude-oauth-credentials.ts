@@ -2,7 +2,9 @@ import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import path from 'node:path'
 import { z } from 'zod'
+import type { ClaudeBillingSignals } from '../../../../shared/claude-account-billing'
 import { isDefinitiveAbsence } from '../../../../shared/definitive-filesystem-absence'
+import { claudeRefreshTokenFingerprint } from '../../../claude-accounts/runtime-auth/claude-refresh-rejections'
 import { readActiveClaudeKeychainCredentialsStrict } from '../../../claude-accounts/runtime-auth/keychain'
 import type { ClaudeRuntimeAuthPreparation } from '../../../claude-accounts/runtime-auth/runtime-auth-types'
 import { readUserClaudeConfigDir } from '../../../claude-accounts/profiles/claude-profile-paths'
@@ -18,6 +20,10 @@ export type ClaudeOAuthCredentialReadResult = {
   hasRefreshableCredentials: boolean
   /** Epoch ms; Claude Code 2.1.x records it beside the refresh token. */
   refreshTokenExpiresAt?: number
+  /** Fingerprint of the refresh token, so a refused one can be recognized without holding it. */
+  refreshTokenFingerprint?: string
+  /** The plan fields Claude Code saved beside the token at sign-in. */
+  billing?: ClaudeBillingSignals
   source: ClaudeOAuthCredentialSource
   keychainUnavailable?: boolean
   unavailable?: boolean
@@ -33,16 +39,36 @@ const schema = z.object({
     .object({
       accessToken: z.string().optional(),
       refreshToken: z.string().optional(),
-      refreshTokenExpiresAt: z.unknown().optional()
+      refreshTokenExpiresAt: z.unknown().optional(),
+      subscriptionType: z.unknown().optional(),
+      rateLimitTier: z.unknown().optional(),
+      scopes: z.unknown().optional()
     })
     .optional()
 })
+function textField(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined
+}
+function billingSignals(
+  oauth: NonNullable<z.infer<typeof schema>['claudeAiOauth']>
+): ClaudeBillingSignals | undefined {
+  const scopes = Array.isArray(oauth.scopes)
+    ? oauth.scopes.filter((scope): scope is string => typeof scope === 'string')
+    : []
+  const signals: ClaudeBillingSignals = {
+    subscriptionType: textField(oauth.subscriptionType),
+    rateLimitTier: textField(oauth.rateLimitTier),
+    ...(scopes.length > 0 ? { scopes } : {})
+  }
+  return signals.subscriptionType || signals.rateLimitTier || signals.scopes ? signals : undefined
+}
 export function parseClaudeOAuthCredentialsJson(
   raw: string,
   source: ClaudeOAuthCredentialSource
 ): ClaudeOAuthCredentialReadResult {
   try {
     const oauth = schema.parse(JSON.parse(raw)).claudeAiOauth
+    const billing = oauth ? billingSignals(oauth) : undefined
     // The usage server, not stored expiresAt, decides token validity.
     return {
       token: oauth?.accessToken || null,
@@ -50,6 +76,10 @@ export function parseClaudeOAuthCredentialsJson(
       ...(typeof oauth?.refreshTokenExpiresAt === 'number'
         ? { refreshTokenExpiresAt: oauth.refreshTokenExpiresAt }
         : {}),
+      ...(oauth?.refreshToken
+        ? { refreshTokenFingerprint: claudeRefreshTokenFingerprint(oauth.refreshToken) }
+        : {}),
+      ...(billing ? { billing } : {}),
       source
     }
   } catch {

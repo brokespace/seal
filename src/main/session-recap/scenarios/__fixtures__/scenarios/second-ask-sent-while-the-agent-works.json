@@ -1,0 +1,75 @@
+{
+  "id": "second-ask-sent-while-the-agent-works",
+  "title": "The user sends a second ask while the agent is still on the first",
+  "categories": ["multiple-asks", "mid-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "A recap opened right after the second message shows neither ask as not addressed: the agent is still working. After the turn both are recorded and done.",
+  "steps": [
+    {
+      "user": "Rename the Account page to Profile everywhere."
+    },
+    {
+      "edit": "/srv/shop/src/pages/profile.tsx"
+    },
+    {
+      "agent": "Renaming the page component and its route first."
+    },
+    {
+      "user": "also update the nav link and the sitemap while you're there"
+    },
+    {
+      "refresh": true
+    },
+    {
+      "label": "right after the second message",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "the agent is still working; a request it has only just been sent is not overlooked"
+        },
+        {
+          "in": "actions",
+          "max": 0,
+          "why": "nothing here is for the user to do"
+        }
+      ]
+    },
+    {
+      "edit": "/srv/shop/src/components/Nav.tsx"
+    },
+    {
+      "edit": "/srv/shop/public/sitemap.xml"
+    },
+    {
+      "agent": "The Account page is now Profile: the component, the route, the nav link and the sitemap all say Profile."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "asked",
+          "has": "nav|sitemap",
+          "why": "the request sent mid-turn is recorded"
+        },
+        {
+          "in": "did",
+          "has": "profile|renam",
+          "state": "done",
+          "why": "the rename is recorded as done"
+        }
+      ]
+    }
+  ]
+}

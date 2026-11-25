@@ -68,8 +68,7 @@ function seedFromLegacySnapshot(
     }
     const counts: HomeWorktreeCounts = {
       totalWorktrees: info.totalWorktrees,
-      activeCount: info.activeCount,
-      agents: []
+      activeCount: info.activeCount
     }
     // Built with the family's rules first: setQueryData alone makes a query the store never writes.
     queryClient

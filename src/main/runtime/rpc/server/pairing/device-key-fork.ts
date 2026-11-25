@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { DeviceEntry } from './device-entry'
+import { deviceTokenHashOf, type DeviceEntry } from './device-entry'
 import { devicePrincipalOf } from './device-principal'
 
 const MAX_FORKS_PER_TOKEN_ROW = 32
@@ -33,7 +33,7 @@ export function planDeviceKeyFork(
   if (!legacy) {
     throw new DeviceKeyForkError('device_not_found')
   }
-  if (legacy.credentialKind === 'device-key' || legacy.token === undefined) {
+  if (legacy.credentialKind === 'device-key' || deviceTokenHashOf(legacy) === undefined) {
     throw new DeviceKeyForkError('device_already_keyed')
   }
   // Parent desktops own relayed children's credentials.

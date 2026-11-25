@@ -17,7 +17,7 @@ vi.mock('../../store', () => ({
 }))
 vi.mock('./TabGroupPanel', () => ({ default: () => null }))
 
-import { ResizeHandle } from './TabGroupSplitNodeTree'
+import { ResizeHandle } from './SplitLayoutTree'
 
 function pointer(
   type: string,

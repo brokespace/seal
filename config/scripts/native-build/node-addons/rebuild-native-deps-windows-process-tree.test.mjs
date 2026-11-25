@@ -81,7 +81,7 @@ describe.runIf(process.platform === 'win32')('rebuild-native-deps stale addon un
         )
 
         expect(result.stderr).toContain(
-          'Close running Orca/Electron/dev processes for this worktree'
+          'Close running Seal/Electron/dev processes for this worktree'
         )
         // Non-strict postinstall soft-exits on a lock; the next dev/start re-checks.
         expect(result.status, result.stderr).toBe(0)

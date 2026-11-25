@@ -31,6 +31,8 @@ import {
   withNativeChatVisualsEnv
 } from '../../native-chat/conversation-files/native-chat-visuals-delivery'
 import type { AcpLaunchSpec } from './acp-launch-contract'
+import { resolveChatConnectors } from '../../seal-connectors/seal-connectors-session-plan'
+import type { SessionConnectorPlan } from '../../../shared/seal-connectors/session-connector-args'
 import { acpLaunchSpecForAccount, resolveAcpLaunchCommand } from './acp-launch-command'
 import { nothingExchangedOn } from '../session/acp-structured-resume-history'
 import { acpUnannouncedLosses } from '../session/start/acp-session-reopen-failure'
@@ -47,6 +49,8 @@ export type AcpStructuredLaunch = StructuredAgentCommand & {
   fullAccess: boolean
   /** The saved model the launch line carries. */
   launchModel?: string
+  /** Seal's central connectors for this chat; the session key in its env goes only to the agent's handshake. */
+  connectors?: SessionConnectorPlan
   resume: {
     sessionId: string
     key: string
@@ -192,9 +196,11 @@ export function acpStructuredLaunchPart(
     // before it opens; resumed chats apply their model through the session instead.
     const model = spec.launchesWithModel && !head ? record.options?.model : undefined
     const args = spec.args({ fullAccess, pluginDir: skill?.pluginDir ?? null, model })
+    const connectors = await resolveChatConnectors(record, spec.agent)
     return {
       launch: {
         spec,
+        ...(connectors ? { connectors } : {}),
         ...(antigravityChatAuth ? { antigravityChatAuth } : {}),
         command,
         prefixArgs,

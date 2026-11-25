@@ -2,25 +2,15 @@ import { expect } from 'vitest'
 import WebSocket from 'ws'
 import { parsePairingCode } from '../../../../shared/remote-runtime/pairing/pairing'
 import {
-  decrypt,
-  deriveSharedKey,
-  encrypt,
-  generateKeyPair
-} from '../../../../shared/remote-runtime/e2ee/node/e2ee-crypto'
+  authenticatePairedE2EEV2TestClient,
+  type PairedE2EEV2TestClient
+} from '../mobile/e2ee/paired-e2ee-v2-test-client'
 
 export function connectWs(endpoint: string): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(endpoint)
     ws.once('open', () => resolve(ws))
     ws.once('error', reject)
-  })
-}
-
-export function nextWsMessage(ws: WebSocket): Promise<string> {
-  return new Promise((resolve) => {
-    ws.once('message', (data) => {
-      resolve(typeof data === 'string' ? data : data.toString('utf-8'))
-    })
   })
 }
 
@@ -34,10 +24,7 @@ export function waitForWsClose(ws: WebSocket): Promise<void> {
   })
 }
 
-export type AuthenticatedMobileWs = {
-  ws: WebSocket
-  sharedKey: Uint8Array
-}
+export type AuthenticatedMobileWs = PairedE2EEV2TestClient
 
 export async function authenticateMobileWsSession(
   pairingUrl: string
@@ -45,26 +32,10 @@ export async function authenticateMobileWsSession(
   const parsed = parsePairingCode(pairingUrl)
   expect(parsed).toBeTruthy()
   const ws = await connectWs(parsed!.endpoint)
-  const mobileKeys = generateKeyPair()
-  const serverPublicKey = Uint8Array.from(Buffer.from(parsed!.publicKeyB64, 'base64'))
-  const sharedKey = deriveSharedKey(mobileKeys.secretKey, serverPublicKey)
-
-  ws.send(
-    JSON.stringify({
-      type: 'e2ee_hello',
-      publicKeyB64: Buffer.from(mobileKeys.publicKey).toString('base64')
-    })
-  )
-  expect(JSON.parse(await nextWsMessage(ws))).toEqual({ type: 'e2ee_ready' })
-
-  ws.send(
-    encrypt(JSON.stringify({ type: 'e2ee_auth', deviceToken: parsed!.deviceToken }), sharedKey)
-  )
-  expect(JSON.parse(decrypt(await nextWsMessage(ws), sharedKey)!)).toEqual({
-    type: 'e2ee_authenticated'
+  return authenticatePairedE2EEV2TestClient(ws, {
+    hostPublicKeyB64: parsed!.publicKeyB64,
+    deviceToken: parsed!.deviceToken
   })
-
-  return { ws, sharedKey }
 }
 
 export async function authenticateMobileWs(pairingUrl: string): Promise<WebSocket> {
@@ -75,7 +46,7 @@ export function sendEncryptedWsRequest(
   session: AuthenticatedMobileWs,
   request: Record<string, unknown>
 ): void {
-  session.ws.send(encrypt(JSON.stringify(request), session.sharedKey))
+  session.sendText(JSON.stringify(request))
 }
 
 export function createEncryptedWsResponseReader(session: AuthenticatedMobileWs): {
@@ -105,13 +76,8 @@ export function createEncryptedWsResponseReader(session: AuthenticatedMobileWs):
     return response ?? null
   }
 
-  const onMessage = (data: WebSocket.RawData): void => {
-    const decrypted = decrypt(
-      typeof data === 'string' ? data : data.toString('utf-8'),
-      session.sharedKey
-    )
-    expect(decrypted).toBeTruthy()
-    const response = JSON.parse(decrypted!) as Record<string, unknown>
+  const onMessage = (plaintext: string): void => {
+    const response = JSON.parse(plaintext) as Record<string, unknown>
     const waiterIndex = waiters.findIndex(
       (waiter) => response.id === waiter.id && waiter.predicate(response)
     )
@@ -123,7 +89,7 @@ export function createEncryptedWsResponseReader(session: AuthenticatedMobileWs):
     waiter?.resolve(response)
   }
 
-  session.ws.on('message', onMessage)
+  const unsubscribe = session.onText(onMessage)
 
   return {
     next: (id: string, predicate: (response: Record<string, unknown>) => boolean = () => true) => {
@@ -136,7 +102,7 @@ export function createEncryptedWsResponseReader(session: AuthenticatedMobileWs):
       })
     },
     dispose: () => {
-      session.ws.off('message', onMessage)
+      unsubscribe()
       waiters.length = 0
       queue.length = 0
     }

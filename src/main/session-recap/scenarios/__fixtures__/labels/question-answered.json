@@ -1,0 +1,21 @@
+{
+  "id": "question-answered",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Add email notifications when an order ships"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 2: the agent asks whether to use SES or Postmark and waits for the answer"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 8: the agent says order-shipped emails now go out through SES"
+        }
+      }
+    }
+  ],
+  "notRequests": ["SES"],
+  "rules": []
+}

@@ -2,6 +2,7 @@
 // Ship self-contained builtins-only CommonJS WSL hook/network/profile/SQLite/OpenCode text-task programs via out/relay/wsl extraResources.
 import { build } from 'esbuild'
 import { JSONC_PARSER_ESM_ALIAS } from '../../../build-plugins/jsonc-parser-esm.ts'
+import { sealBrandCopyEsbuild } from '../../../seal/brand-copy/seal-brand-esbuild-plugin.mjs'
 import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -33,6 +34,7 @@ const bundle = (entry, outfile, extra = {}) =>
     sourcemap: false,
     minify: true,
     define: { 'process.env.NODE_ENV': '"production"' },
+    plugins: [sealBrandCopyEsbuild()],
     ...extra
   })
 

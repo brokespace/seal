@@ -285,7 +285,7 @@ export async function superviseServeService(options: SupervisedServeOptions): Pr
       } else {
         const error: unknown = attempt.settled.reason
         failure = (error instanceof Error ? error.message : String(error))
-          .replace(/^Orca serve /, '')
+          .replace(/^(?:Seal|Orca) serve /, '')
           .replace(/\.$/, '')
       }
       standbyAttempt = 0

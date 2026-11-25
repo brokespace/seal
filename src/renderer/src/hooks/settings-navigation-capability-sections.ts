@@ -1,27 +1,41 @@
 import { LinearIcon } from '@/components/icons/LinearIcon'
 import { getAccountsPaneSearchEntries } from '@/components/settings/accounts/accounts-search'
+import { getAgentConfigSearchEntries } from '@/components/settings/agent-config/agent-config-search'
+import { getAgentPluginsSearchEntries } from '@/components/settings/agent-plugins/agent-plugins-search'
+import {
+  getSealConnectorsSearchEntries,
+  getSealSkillsSearchEntries
+} from '@/components/settings/seal-connectors/seal-connectors-search'
 import { getAgentsPaneSearchEntries } from '@/components/settings/agents/agents-search'
 import { getComputerUsePaneSearchEntries } from '@/components/settings/computer-use/computer-use-search'
 import { getGeneralPaneSearchEntries } from '@/components/settings/general/general-search'
 import { getIntegrationsPaneSearchEntries } from '@/components/settings/integrations/integrations-search'
 import { getLinearAgentSkillPaneSearchEntries } from '@/components/settings/skills/linear/linear-agent-skill-search'
 import { getMobileSettingsPaneSearchEntries } from '@/components/settings/mobile/mobile-settings-search'
+import { getMcpSettingsSearchEntries } from '@/components/settings/mcp/mcp-settings-search'
 import { getOrcaAccountSettingsSearchEntries } from '@/components/settings/accounts/orca/orca-account-settings-search'
 import { OrcaLogoSettingsIcon } from '@/components/settings/page/orca-logo-settings-icon'
+import { getSessionSummariesSettingsSearchEntries } from '@/components/settings/session-summaries/session-summaries-settings-search'
 import { getOrchestrationPaneSearchEntries } from '@/components/settings/orchestration/orchestration-search'
 import { getVoicePaneSearchEntries } from '@/components/settings/voice/voice-pane-search'
+import { getWorkspaceCleanupSettingsSearchEntries } from '@/components/settings/workspace-cleanup/workspace-cleanup-settings-search'
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import type { SettingsNavSection } from '@/components/settings/navigation/settings-navigation-types'
 import {
   Blocks,
   Bot,
+  BrushCleaning,
   CircleUserRound,
+  FileCog,
   Mic,
   MousePointerClick,
   Network,
+  Plug,
+  Puzzle,
   SlidersHorizontal,
   Smartphone,
+  Sparkles,
   UserCog
 } from 'lucide-react'
 import type { SettingsNavigationBuildOptions } from './settings-navigation-build-options'
@@ -49,17 +63,76 @@ export function buildCapabilitySettingsSections(
       }),
       group: 'capabilities'
     },
+    // The files live on machines Seal reaches from the desktop; a browser client has no way to them.
+    ...(showDesktopOnlySettings
+      ? [
+          {
+            id: 'agent-config',
+            title: t('auto.components.agentConfig.search.title', 'Agent configuration'),
+            description: t(
+              'seal.agentConfig.search.description',
+              'Instructions, skills and settings for Claude Code, Codex and other agents, machine by machine.'
+            ),
+            icon: FileCog,
+            searchEntries: getAgentConfigSearchEntries(undefined, t),
+            group: 'capabilities'
+          },
+          {
+            id: 'connectors',
+            title: t('seal.connectors.title', 'Connectors'),
+            description: t(
+              'seal.connectors.description',
+              'MCP servers every agent session gets, with one sign-in per service shared across machines and accounts.'
+            ),
+            icon: Plug,
+            searchEntries: getSealConnectorsSearchEntries(t),
+            group: 'capabilities'
+          },
+          {
+            id: 'agent-plugins',
+            title: t('seal.plugins.title', 'Plugins'),
+            description: t(
+              'seal.plugins.description',
+              'Install a plugin from Claude Code’s or Codex’s marketplaces once for every agent, account and machine.'
+            ),
+            icon: Puzzle,
+            searchEntries: getAgentPluginsSearchEntries(t),
+            group: 'capabilities'
+          },
+          {
+            id: 'skills',
+            title: t('seal.skills.title', 'Skills'),
+            description: t(
+              'seal.skills.navDescription',
+              'Skills from plugins and the Seal library, and which agents get each.'
+            ),
+            icon: Sparkles,
+            searchEntries: getSealSkillsSearchEntries(t),
+            group: 'capabilities'
+          }
+        ]
+      : []),
     {
       id: 'accounts',
-      title: t('auto.hooks.useSettingsNavigationMetadata.f70ac54d38', 'AI Provider Accounts'),
+      title: t('seal.accounts.section.title', 'Accounts'),
       description: t(
-        'auto.hooks.useSettingsNavigationMetadata.b1c2f8b0ac',
-        'Optional account switching and usage setup for Claude, Codex, Gemini, OpenCode Go, MiniMax, and Grok.'
+        'seal.accounts.section.navDescription',
+        'Claude, Codex and API-key accounts, auto-swap, rules and machines, plus usage setup for other providers.'
       ),
       icon: UserCog,
       searchEntries: getAccountsPaneSearchEntries(),
-      group: 'capabilities',
-      badge: t('auto.hooks.useSettingsNavigationMetadata.7c79d3b7bf', 'Optional')
+      group: 'capabilities'
+    },
+    {
+      id: 'session-summaries',
+      title: t('seal.summaryModels.section.title', 'Session summaries & recaps'),
+      description: t(
+        'seal.summaryModels.section.navDescription',
+        'Turn summaries and recaps on, and choose the provider and model that write them.'
+      ),
+      icon: Sparkles,
+      searchEntries: getSessionSummariesSettingsSearchEntries(),
+      group: 'capabilities'
     },
     {
       id: 'orchestration',
@@ -175,6 +248,21 @@ export function buildSetupSettingsSections(
       searchEntries: getGeneralPaneSearchEntries({ includeProjectRuntime: isLocalWindowsHost }),
       group: 'setup'
     },
+    ...(showDesktopOnlySettings
+      ? [
+          {
+            id: 'workspace-cleanup',
+            title: t('components.settings.workspaceCleanup.title', 'Workspace Cleanup'),
+            description: t(
+              'components.settings.workspaceCleanup.description',
+              "Remove workspaces you're done with. Before removing anything, Orca checks again for unsaved work."
+            ),
+            icon: BrushCleaning,
+            searchEntries: getWorkspaceCleanupSettingsSearchEntries(),
+            group: 'setup'
+          }
+        ]
+      : []),
     {
       id: 'integrations',
       title: t('auto.hooks.useSettingsNavigationMetadata.2b043783ef', 'Integrations'),
@@ -197,6 +285,17 @@ export function buildSetupSettingsSections(
             ),
             icon: Smartphone,
             searchEntries: getMobileSettingsPaneSearchEntries(),
+            group: 'setup'
+          },
+          {
+            id: 'mcp',
+            title: t('seal.mcp.title', 'MCP'),
+            description: t(
+              'seal.mcp.description',
+              'Let MCP clients such as Claude Code, Codex and Cursor drive this Seal server.'
+            ),
+            icon: Plug,
+            searchEntries: getMcpSettingsSearchEntries(),
             group: 'setup'
           }
         ]

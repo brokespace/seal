@@ -1,9 +1,10 @@
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { MobileNotificationEvent } from './notifications/runtime-mobile-notification-controller'
 import { DeviceRegistry } from '../rpc/server/pairing/device-registry'
+import { DEVICE_REGISTRY_FILENAME } from '../rpc/server/pairing/mobile-pairing-files'
 import { DesktopPushService } from './desktop-push-service'
 import { PushUnregisterOutbox } from './push-unregister-outbox'
 import { createPushHostKeypair } from './push-host-challenge-fixtures'
@@ -23,6 +24,7 @@ function createService(
   } = {}
 ): {
   service: DesktopPushService
+  userDataPath: string
   registry: DeviceRegistry
   outbox: PushUnregisterOutbox
   deviceId: string
@@ -81,6 +83,7 @@ function createService(
   service.start()
   return {
     service,
+    userDataPath,
     registry,
     outbox,
     deviceId: device.deviceId,
@@ -153,6 +156,32 @@ describe('DesktopPushService', () => {
 
     expect(harness.deletes).toEqual(['reg-first', 'reg-late'])
     expect(harness.outbox.pending()).toEqual([])
+  })
+
+  it('stops pushing to a device the moment its row leaves the registry file', async () => {
+    const harness = createService()
+    harness.registry.updateLastSeen(harness.deviceId)
+    await harness.service.register({ deviceId: harness.deviceId, ...REGISTER_INPUT })
+    const notify = async (notificationSeq: number): Promise<void> => {
+      harness.dispatch({
+        type: 'notification',
+        source: 'terminal-bell',
+        title: 'Bell',
+        body: 'Context',
+        notificationSeq,
+        notificationEpoch: 'epoch'
+      })
+      await new Promise((resolve) => setImmediate(resolve))
+    }
+    await notify(1)
+    expect(harness.send).toHaveBeenCalledTimes(1)
+
+    // An admin deleting the row on the host; no sweep has run yet.
+    writeFileSync(join(harness.userDataPath, DEVICE_REGISTRY_FILENAME), '[]')
+    await notify(2)
+
+    expect(harness.send).toHaveBeenCalledTimes(1)
+    harness.service.stop()
   })
 
   it('stops re-arming the retry once the service is stopped', async () => {

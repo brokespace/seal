@@ -1,0 +1,62 @@
+{
+  "id": "multiple-asks-one-deferred",
+  "title": "Four asks in one message; three done, one held back with a reason",
+  "categories": ["multiple-asks"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "All four requests are recorded. Only the slow-search logging is open, and it is the only item listed as not addressed.",
+  "steps": [
+    {
+      "user": "A few things: 1) make the search box debounce 300ms, 2) show a spinner while results load, 3) add an empty state when nothing matches, 4) and log slow searches over 2s to the server."
+    },
+    {
+      "edit": "/srv/shop/src/components/SearchBox.tsx"
+    },
+    {
+      "edit": "/srv/shop/src/components/SearchResults.tsx"
+    },
+    {
+      "agent": "Done with the first three: the search box debounces by 300ms, a spinner shows while results load, and an empty state appears when nothing matches. I did not add the slow-search logging: there is no logging endpoint on the server yet, so that needs a decision from you first."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "asked",
+          "has": "debounce",
+          "why": "request 1 is recorded"
+        },
+        {
+          "in": "asked",
+          "has": "spinner",
+          "why": "request 2 is recorded"
+        },
+        {
+          "in": "asked",
+          "has": "empty",
+          "why": "request 3 is recorded"
+        },
+        {
+          "in": "asked",
+          "has": "log",
+          "why": "request 4 is recorded"
+        },
+        {
+          "in": "ignored",
+          "has": "log",
+          "why": "the logging is the open one"
+        },
+        {
+          "in": "ignored",
+          "max": 1,
+          "why": "only the logging is open"
+        }
+      ]
+    }
+  ]
+}

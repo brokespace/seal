@@ -67,7 +67,7 @@ it('does no discovery on ordinary reads and drops preparation superseded by a se
   prepare.mockRestore()
 })
 
-it('recovers an unpinned OMP native file using the owning host directory and floating pin policy', async () => {
+it('recovers an unpinned OMP native file using the owning host directory, a founded subfolder and floating pin policy', async () => {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'usage-limit-actions-omp-')))
   try {
     const cwd = join(root, 'workspace')
@@ -140,8 +140,15 @@ it('recovers an unpinned OMP native file using the owning host directory and flo
       workspaceKind: 'folder'
     }
     expect(await read()).toEqual(expected)
+    // A chat founded in a workspace subfolder saved its conversation there, not at the workspace root.
+    record.launchDirectory = cwd
+    record.launchDirectoryInWorkspace = true
+    resolveWorkspacePath.mockResolvedValue(join(root, 'workspace-root'))
+    expect(await read()).toEqual(expected)
     // Ordinary workspaces follow the host directory even when an old pin remains.
+    delete record.launchDirectoryInWorkspace
     record.launchDirectory = join(root, 'old-directory')
+    resolveWorkspacePath.mockResolvedValue(cwd)
     expect(await read()).toEqual(expected)
     record.location.workspaceId = FLOATING_TERMINAL_WORKTREE_ID
     record.launchDirectory = cwd

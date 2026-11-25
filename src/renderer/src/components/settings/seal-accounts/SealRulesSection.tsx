@@ -1,0 +1,235 @@
+import { useState } from 'react'
+import { Pencil, Plus, Send, Trash2 } from 'lucide-react'
+import { useIntlLocale, useTranslate } from '@/i18n/use-translate'
+import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
+import type {
+  SealFleetAccount,
+  SealFleetMachine
+} from '../../../../../shared/seal-accounts/seal-fleet-overview'
+import { sealAccountKeysMatch } from '../../../../../shared/seal-accounts/seal-account-key'
+import { Badge } from '../../ui/badge'
+import { Button } from '../../ui/button'
+import { SettingsGroup } from '../section-layout/SettingsGroup'
+import { SealRuleDialog } from './SealRuleDialog'
+import {
+  sealMachineForRuleKey,
+  sealRuleInScope,
+  sealRuleRowKey,
+  sealRuleRows,
+  type SealRuleDraft,
+  type SealRuleRef,
+  type SealRuleRow,
+  type SealRuleScope
+} from './seal-rule-rows'
+
+type SealRulesSectionProps = {
+  status: SealAccountsStatus
+  accounts: readonly SealFleetAccount[]
+  machines: readonly SealFleetMachine[]
+  onSave: (draft: SealRuleDraft) => Promise<boolean>
+  onRemove: (rule: SealRuleRef) => void
+  /** Pushes rules and auto-swap settings to every other machine; resolves with a summary. */
+  onSync?: () => Promise<string>
+  /** Only one machine's or one project's rules; new rules start there. */
+  scope?: SealRuleScope
+  id?: string
+  title?: string
+  description?: string
+}
+
+/** Which accounts a project or a machine may use, in plain sentences. */
+export function SealRulesSection({
+  status,
+  accounts,
+  machines,
+  onSave,
+  onRemove,
+  onSync,
+  scope,
+  id = 'seal-accounts-rules',
+  title,
+  description
+}: SealRulesSectionProps): React.JSX.Element {
+  const t = useTranslate()
+  const intlLocale = useIntlLocale()
+  const [editing, setEditing] = useState<SealRuleRow | 'new' | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<string | null>(null)
+  const rows = sealRuleRows(status.config).filter((row) => !scope || sealRuleInScope(row, scope))
+  const remotes = machines.filter((machine) => !machine.home)
+  const labelOf = (key: string): string =>
+    accounts.find((account) => sealAccountKeysMatch(account.key, key))?.candidate.label ?? key
+  const machineLabel = (key: string): string => sealMachineForRuleKey(machines, key)?.label ?? key
+  const listOr = (labels: string[]): string =>
+    new Intl.ListFormat(intlLocale, { type: 'disjunction' }).format(labels)
+  const rowName = (row: SealRuleRow): string => {
+    if (row.scope === 'machine') {
+      return row.label ?? machineLabel(row.target)
+    }
+    const name =
+      row.label ??
+      (row.target.trim() === '*'
+        ? t('seal.accounts.rules.allProjects', 'All projects')
+        : row.target)
+    if (!row.machine) {
+      return name
+    }
+    const machine = machineLabel(row.machine)
+    // A name that already says where it applies is not told twice.
+    return name.endsWith(machine)
+      ? name
+      : t('seal.accounts.rules.projectOnMachine', '{{value0}} on {{value1}}', {
+          value0: name,
+          value1: machine
+        })
+  }
+  /** Which account(s) the rule's sessions use and how one is picked, in one sentence. */
+  const rowSummary = (row: SealRuleRow): string => {
+    const allowed = row.policy.allow?.length ? row.policy.allow.map(labelOf) : null
+    const preferred = row.policy.default ? labelOf(row.policy.default) : null
+    if (allowed?.length === 1) {
+      return t('seal.accounts.rules.usesOnly', 'Uses {{value0}}.', { value0: allowed[0] })
+    }
+    if (preferred && allowed) {
+      return t(
+        'seal.accounts.rules.usesPreferredAmong',
+        'Uses {{value0}}; when it runs low, whichever of {{value1}} has the most left.',
+        { value0: preferred, value1: listOr(allowed.filter((entry) => entry !== preferred)) }
+      )
+    }
+    if (preferred) {
+      return t(
+        'seal.accounts.rules.usesPreferred',
+        'Uses {{value0}}; when it runs low, whichever other account has the most left.',
+        { value0: preferred }
+      )
+    }
+    if (allowed) {
+      return t('seal.accounts.rules.usesAmong', 'Uses whichever of {{value0}} has the most left.', {
+        value0: listOr(allowed)
+      })
+    }
+    return t('seal.accounts.rules.usesAny', 'Uses whichever account has the most left.')
+  }
+
+  const sync = async (): Promise<void> => {
+    if (!onSync) {
+      return
+    }
+    setSyncing(true)
+    setSyncResult(await onSync())
+    setSyncing(false)
+  }
+
+  return (
+    <SettingsGroup
+      id={id}
+      title={title ?? t('seal.accounts.rules.title', 'Rules')}
+      description={
+        description ??
+        t(
+          'seal.accounts.rules.description',
+          'Which account new sessions use. A project’s rule wins over its machine’s, and a project rule for one machine wins over that project’s rule for every machine. Without a rule, any account may be used.'
+        )
+      }
+      action={
+        <div className="flex gap-2">
+          {onSync && remotes.length > 0 ? (
+            <Button variant="ghost" size="xs" disabled={syncing} onClick={() => void sync()}>
+              <Send />
+              {t('seal.accounts.rules.sync', 'Sync to machines')}
+            </Button>
+          ) : null}
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => setEditing('new')}
+            data-slot="seal-add-rule"
+          >
+            <Plus />
+            {t('seal.accounts.rules.add', 'Add rule')}
+          </Button>
+        </div>
+      }
+    >
+      {syncResult ? (
+        <p role="status" className="py-2 text-xs text-muted-foreground" data-settings-row="">
+          {syncResult}
+        </p>
+      ) : null}
+      {rows.length === 0 ? (
+        <p className="py-3 text-xs text-muted-foreground" data-settings-row="">
+          {t(
+            'seal.accounts.rules.empty',
+            'No rules yet. Add one to keep a client’s repos on a work account, or a shared machine on a single login.'
+          )}
+        </p>
+      ) : (
+        rows.map((row) => {
+          const name = rowName(row)
+          return (
+            <div
+              key={sealRuleRowKey(row)}
+              className="flex items-start gap-3 py-3"
+              data-settings-row=""
+              data-slot="seal-rule-row"
+            >
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="truncate text-sm font-medium">{name}</span>
+                  <Badge variant="outline">
+                    {row.scope === 'project'
+                      ? t('seal.accounts.rules.project', 'Project')
+                      : t('seal.accounts.rules.machine', 'Machine')}
+                  </Badge>
+                  <Badge variant="secondary">
+                    {row.provider === 'claude'
+                      ? t('seal.accounts.group.claude', 'Claude')
+                      : t('seal.accounts.group.codex', 'Codex')}
+                  </Badge>
+                </div>
+                {row.scope === 'project' && row.label ? (
+                  <p className="truncate font-mono text-2xs text-muted-foreground">{row.target}</p>
+                ) : null}
+                <p className="text-xs text-muted-foreground" data-slot="seal-rule-summary">
+                  {rowSummary(row)}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label={t('seal.accounts.rules.edit', 'Edit rule for {{value0}}', {
+                  value0: name
+                })}
+                onClick={() => setEditing(row)}
+              >
+                <Pencil />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label={t('seal.accounts.rules.remove', 'Remove rule for {{value0}}', {
+                  value0: name
+                })}
+                onClick={() => onRemove(row)}
+              >
+                <Trash2 />
+              </Button>
+            </div>
+          )
+        })
+      )}
+      {editing ? (
+        <SealRuleDialog
+          key={editing === 'new' ? 'new' : sealRuleRowKey(editing)}
+          rule={editing === 'new' ? null : editing}
+          scope={scope}
+          accounts={accounts}
+          machines={machines}
+          onOpenChange={(open) => (open ? undefined : setEditing(null))}
+          onSave={onSave}
+        />
+      ) : null}
+    </SettingsGroup>
+  )
+}

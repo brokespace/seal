@@ -1,0 +1,50 @@
+[
+  {
+    "key": "80b52bde933c30d834cf190c62d077fd",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Rename the Customer model to Account everywhere. And update the README to match \",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Rename the Customer model to Account everywhere. And update the README to match when you're done.\n\n[m2] AGENT: Renamed Customer to Account across src/ (41 files) and the tests pass. I have not touched the README yet.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"standing\": \"Renamed Customer to Account in code and tests with one message remaining.\",\n  \"add\": {\n    \"did\": [\n      {\"text\": \"Rename Customer to Account in source\", \"state\": \"done\", \"ref\": \"m2\"},\n      {\"text\": \"Run tests to verify change\", \"state\": \"done\", \"ref\": \"m2\"}\n    ],\n    \"actions\": [\n      {\"text\": \"Update README before finishing\", \"state\": \"in-progress\", \"ref\": \"m2\"}\n    ],\n    \"decisions\": [\n      {\"text\": \"Limit change to code first and defer README\", \"state\": \"m2\"}\n    ]\n  }\n}",
+    "neurons": 8.935500000000001
+  },
+  {
+    "key": "a1cf084e9ad3b349634210d021e8d74a",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":\"Renamed Customer to Account in code and tests with one message remaining.\",\"firstRequest\":\"Rename the Customer model to Account everywhere. And update the README to match \",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Rename Customer to Account in source\",\"state\":\"done\"},{\"id\":\"w2\",\"text\":\"Run tests to verify change\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[{\"id\":\"t3\",\"text\":\"Update README before finishing\"}],\"decisions\":[{\"id\":\"d4\",\"text\":\"Limit change to code first and defer README\"}]}\n</recap>\n<new_messages>\n[m1] USER: The orders page still says 'Customer' in the table header.\n\n[m2] AGENT: Fixed the header in src/pages/orders.tsx; it now reads Account.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [\n    { \"id\": \"t3\", \"text\": \"Update README with missing changes\", \"state\": \"in-progress\" }\n  ],\n  \"resolve\": [\n    \"w3\"\n  ]\n}",
+    "neurons": 5.7600999999999996
+  },
+  {
+    "key": "009497d23d51fdbff610fb13993d8eca",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":\"Renamed Customer to Account in code and tests with one message remaining.\",\"firstRequest\":\"Rename the Customer model to Account everywhere. And update the README to match \",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Rename Customer to Account in source\",\"state\":\"done\"},{\"id\":\"w2\",\"text\":\"Run tests to verify change\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[{\"id\":\"t3\",\"text\":\"Update README with missing changes\"}],\"decisions\":[{\"id\":\"d4\",\"text\":\"Limit change to code first and defer README\"}]}\n</recap>\n<new_messages>\n[m1] USER: Also the CSV export column.\n\n[m2] AGENT: The CSV export column is now account_name; I updated the export test too.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [{\"text\": \"Update README with missing changes\", \"ref\": \"t3\"}],\n    \"did\": [{\"text\": \"Rename Customer to Account in source\", \"state\": \"done\", \"ref\": \"w1\"}, {\"text\": \"Run tests to verify change\", \"state\": \"done\", \"ref\": \"w2\"}, {\"text\": \"Update CSV export column\", \"state\": \"done\", \"ref\": \"w3\"}]\n  },\n  \"update\": [{\"id\": \"w3\", \"text\": \"Update CSV export column\", \"state\": \"done\"}],\n  \"resolve\": [\"t3\", \"t3\"]\n}",
+    "neurons": 9.2634
+  },
+  {
+    "key": "a3438ab15576cfa6b5131f62a9e8f05d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":\"Renamed Customer to Account in code and tests with one message remaining.\",\"firstRequest\":\"Rename the Customer model to Account everywhere. And update the README to match \",\"asked\":[{\"id\":\"a5\",\"text\":\"Update README with missing changes\"}],\"did\":[{\"id\":\"w1\",\"text\":\"Rename Customer to Account in source\",\"state\":\"done\"},{\"id\":\"w2\",\"text\":\"Run tests to verify change\",\"state\":\"done\"},{\"id\":\"w6\",\"text\":\"Update CSV export column\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[{\"id\":\"d4\",\"text\":\"Limit change to code first and defer README\"}]}\n</recap>\n<new_messages>\n[m1] USER: ok go on\n\n[m2] AGENT: Updated the README: every mention of Customer is now Account, including the API examples and the schema diagram caption. That was the last open item.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"resolve\": [\"a5\"],\n  \"did\": [{\"id\": \"w1\", \"text\": \"Rename Customer to Account in code\", \"state\": \"done\"}, {\"id\": \"w2\", \"text\": \"Run tests to verify change\", \"state\": \"done\"}, {\"id\": \"w6\", \"text\": \"Update CSV export column\", \"state\": \"done\"}],\n  \"add\": {\n    \"did\": [{\"text\": \"Update README with missing changes\", \"ref\": \"m2\"}]\n  }\n}",
+    "neurons": 8.2471
+  }
+]

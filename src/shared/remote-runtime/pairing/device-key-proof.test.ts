@@ -1,6 +1,10 @@
 import nacl from 'tweetnacl'
 import { describe, expect, it } from 'vitest'
-import { encodeDeviceProofMessage, verifyDeviceProof } from './device-key-proof'
+import {
+  encodeDeviceProofMessage,
+  isDevicePublicKeyB64,
+  verifyDeviceProof
+} from './device-key-proof'
 
 const hash = new Uint8Array(32).fill(7)
 const hashB64 = Buffer.from(hash).toString('base64')
@@ -50,5 +54,25 @@ describe('device key proof', () => {
         transcriptHashB64: hashB64
       })
     ).toBe(false)
+  })
+
+  it('refuses a low-order key, under which a proof needs no secret', () => {
+    // The identity point, and the signature (R = identity, S = 0) that verifies under it for any message.
+    const identityKeyB64 = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+    const forgedProofB64 =
+      'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=='
+
+    expect(
+      verifyDeviceProof({
+        devicePublicKeyB64: identityKeyB64,
+        deviceProofB64: forgedProofB64,
+        purpose: 'auth',
+        transcriptHashB64: 'BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc='
+      })
+    ).toBe(false)
+    expect(isDevicePublicKeyB64(identityKeyB64)).toBe(false)
+    // An order-8 point.
+    expect(isDevicePublicKeyB64('JuiVj8KyJ7BFw/SJ8u+Y8NXfrAXTxjM5sTgCiG1T/AU=')).toBe(false)
+    expect(isDevicePublicKeyB64(devicePublicKeyB64)).toBe(true)
   })
 })

@@ -1,22 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { connect } from './direct-rpc-connect'
 
-vi.mock(
-  '../encryption/direct-e2ee-framing-policy',
-  () => import('./legacy-direct-framing-test-policy')
-)
+vi.mock('./direct-socket-framing', () => import('./direct-socket-framing-test-double'))
 
 vi.mock('../encryption/e2ee', () => ({
-  generateKeyPair: () => ({
-    publicKey: new Uint8Array(32),
-    secretKey: new Uint8Array(32)
-  }),
-  deriveSharedKey: () => new Uint8Array(32),
-  publicKeyFromBase64: () => new Uint8Array(32),
-  publicKeyToBase64: () => 'client-public-key',
-  encrypt: (plaintext: string) => `encrypted:${plaintext}`,
-  decrypt: (raw: string) => raw.replace(/^encrypted:/, ''),
-  decryptBytes: (bytes: Uint8Array) => bytes
+  publicKeyFromBase64: () => new Uint8Array(32)
 }))
 
 vi.mock('../connection/mobile-runtime-capability-negotiation', () => ({
@@ -36,8 +24,6 @@ class MockWebSocket {
   onclose: (() => void) | null = null
   onmessage: ((event: { data: unknown }) => void) | null = null
   onerror: (() => void) | null = null
-  throwOnSend = false
-  throwForMethod: string | null = null
   readonly sent: string[] = []
   close = vi.fn(() => {
     this.readyState = MockWebSocket.CLOSED
@@ -49,12 +35,6 @@ class MockWebSocket {
   }
 
   send(payload: string): void {
-    if (
-      this.throwOnSend ||
-      (this.throwForMethod && payload.includes(`"method":"${this.throwForMethod}"`))
-    ) {
-      throw new Error('socket send failed')
-    }
     this.sent.push(payload)
   }
 

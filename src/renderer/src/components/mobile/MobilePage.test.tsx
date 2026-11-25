@@ -9,7 +9,6 @@ import type { MobilePairingConnectionMode } from '../../../../shared/remote-runt
 
 type StoreState = {
   closeMobilePage: () => void
-  orcaProfileAuthStatus: { state: 'connected' | 'local' }
   settings: {
     showMobileButton: boolean
     mobilePairingConnectionMode?: MobilePairingConnectionMode
@@ -17,7 +16,6 @@ type StoreState = {
     mobilePairingCustomAddresses?: string[]
   }
   updateSettings: () => Promise<void>
-  fetchOrcaProfileAuthStatus: () => Promise<unknown>
 }
 
 const mocks = vi.hoisted(() => ({
@@ -36,7 +34,6 @@ vi.mock('sonner', () => ({
   toast: { error: vi.fn(), message: vi.fn(), success: vi.fn() }
 }))
 
-vi.mock('./use-mobile-install-qr', () => ({ useMobileInstallQr: () => null }))
 vi.mock('./use-mobile-page-escape', () => ({ useMobilePageEscape: vi.fn() }))
 vi.mock('./pairing/mobile-pairing-device-polling', () => ({
   useMobilePairingDevicePolling: vi.fn()
@@ -90,10 +87,8 @@ describe('MobilePage pairing connection mode', () => {
     listNetworkInterfaces.mockReset().mockResolvedValue({ interfaces: [] })
     mocks.storeState = {
       closeMobilePage: vi.fn(),
-      orcaProfileAuthStatus: { state: 'connected' },
       settings: { showMobileButton: true },
-      updateSettings: vi.fn().mockResolvedValue(undefined),
-      fetchOrcaProfileAuthStatus: vi.fn().mockResolvedValue(null)
+      updateSettings: vi.fn().mockResolvedValue(undefined)
     }
     Object.defineProperty(window, 'api', {
       configurable: true,

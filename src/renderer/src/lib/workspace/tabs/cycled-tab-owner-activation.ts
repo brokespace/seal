@@ -21,7 +21,7 @@ export function activateCycledTabOnOwner(worktreeId: string | null, next: TypeCy
     activateBrowserTabOnOwner(worktreeId, next.tabId, next.id)
   } else if (next.type === 'agent-session') {
     const tab = (state.unifiedTabsByWorktree?.[worktreeId] ?? []).find(
-      (candidate) => candidate.id === next.tabId
+      (candidate) => candidate.id === next.tabId && candidate.contentType === 'agent-session'
     )
     // A chat names its own host; local chats stay local so paired phones don't follow every stop.
     const target = tab ? structuredAgentSessionTargetForTab(state, tab) : null

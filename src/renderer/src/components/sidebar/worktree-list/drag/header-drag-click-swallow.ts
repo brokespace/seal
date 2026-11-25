@@ -1,5 +1,5 @@
 /** Prevent the post-drag click from toggling the reordered section; time out if no click arrives. */
-export function swallowNextClickOnDragHandle(handleEl: HTMLElement): ReturnType<typeof setTimeout> {
+export function swallowNextClickOnDragHandle(handleEl: HTMLElement): void {
   const swallow = (event: MouseEvent): void => {
     const target = event.target as Node | null
     if (target && handleEl.contains(target)) {
@@ -9,5 +9,14 @@ export function swallowNextClickOnDragHandle(handleEl: HTMLElement): ReturnType<
     window.removeEventListener('click', swallow, true)
   }
   window.addEventListener('click', swallow, true)
-  return setTimeout(() => window.removeEventListener('click', swallow, true), 0)
+  // Why: never cancelled, so a drop that yields no click cannot leave this eating the next real one.
+  setTimeout(() => window.removeEventListener('click', swallow, true), 0)
+}
+
+/** A drag cancelled by key still ends with a release; that release is not a click on its handle. */
+export function swallowClickAfterNextRelease(handleEl: HTMLElement): void {
+  window.addEventListener('pointerup', () => swallowNextClickOnDragHandle(handleEl), {
+    once: true,
+    capture: true
+  })
 }

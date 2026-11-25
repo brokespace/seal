@@ -90,7 +90,7 @@ export function RuntimeHostAccessForm({
           }}
           placeholder={t(
             'auto.components.settings.RuntimeHostAccessForm.accessLinkPlaceholder',
-            'orca://pair?code=...'
+            'seal://pair?code=...'
           )}
           className="min-w-0 font-mono"
           autoFocus

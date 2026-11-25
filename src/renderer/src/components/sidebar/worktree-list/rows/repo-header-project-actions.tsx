@@ -8,11 +8,13 @@ import {
   EyeOff,
   FolderInput,
   FolderTree,
+  LayoutDashboard,
   Plus,
   // `Shapes` is lucide-react's own export name; exempted in config/oxlint-anti-slop.json.
   Shapes,
   SlidersHorizontal,
-  Trash2
+  Trash2,
+  UserRound
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -28,16 +30,26 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { translate } from '@/i18n/i18n'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
-import { getRepositoryIconSectionId } from '@/components/settings/repository/repository-settings-targets'
+import {
+  getRepositoryAccountsSectionId,
+  getRepositoryIconSectionId
+} from '@/components/settings/repository/repository-settings-targets'
+import { MakePermanentMenuItem, makeReposPermanent } from './make-project-permanent'
+import {
+  closeRepoHeaderContextMenu,
+  useRepoHeaderContextMenuRequested
+} from './repo-header-context-menu'
 import { WslMoveProjectMenuItem } from '@/components/wsl-move/WslMoveProjectMenuItem'
+import { ProjectMergeMenuItem } from '@/components/project-merge/ProjectMergeMenuItem'
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { Repo } from '../../../../../../shared/repo-types'
 import type { WorktreeVisibilityDefaults } from '../../../../../../shared/global-settings-types'
 import { isGitRepoKind } from '../../../../../../shared/repo-kind'
+import '../../../../../../shared/worktree/visibility/ownership'
 import {
   effectiveExternalWorktreeVisibility,
   isLegacyRepoForExternalWorktreeVisibility
-} from '../../../../../../shared/worktree/ownership'
+} from '../../../../../../shared/external-worktree-visibility'
 import { REPO_HEADER_ACTION_BUTTON_CLASS } from './repo-header-action-button-class'
 import { setProjectHidden } from '../../hidden-projects/set-project-hidden'
 import { getRepoHeaderCreateState } from './repo-header-create-state'
@@ -46,6 +58,9 @@ import {
   stopRepoHeaderKeyboardToggle,
   stopRepoHeaderMenuEvent
 } from './header-event-guards'
+import { openItemsInSplitView } from '@/components/split-view/split-view-commands'
+import { SplitViewPlacementMenu } from '@/components/split-view/SplitViewPlacementMenu'
+import { projectOverviewTargetFor } from '@/store/slices/ui/project-overview-target'
 
 function getWorktreeVisibilityMenuLabel(
   repo: Repo,
@@ -70,7 +85,8 @@ function getWorktreeVisibilityMenuLabel(
 
 export type RepoHeaderProjectActions = {
   getWorktreeVisibilityDefaults: (repo: Repo) => WorktreeVisibilityDefaults | undefined
-  onOpenRepoSettings: (projectId: string, sectionId?: string) => void
+  onOpenRepoSettings: (repo: Repo, sectionId?: string) => void
+  onOpenProjectOverview: (repo: Repo) => void
   onOpenWorktreeVisibility: (repo: Repo) => void
   onCreateGroupFromRepo: (repo: Repo) => void
   onMoveProjectToGroup: (repo: Repo, groupId: string) => void
@@ -86,7 +102,8 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
   hostRepos,
   label,
   projectGroups,
-  actions
+  actions,
+  headerKey
 }: {
   repo: Repo
   /** A header spanning hosts: every copy it shows, which Hide hides together. */
@@ -94,12 +111,23 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
   label: string
   projectGroups: readonly ProjectGroup[]
   actions: RepoHeaderProjectActions
+  /** The header row's key; a right-click there opens this menu. */
+  headerKey?: string
 }): React.JSX.Element {
   const t = useTranslate()
   // Memoized: subscribe so a language change still repaints its labels.
   useTranslation()
+  const [opened, setOpened] = React.useState(false)
+  const copies = hostRepos ? [...hostRepos.values()] : [repo]
+  const contextRequested = useRepoHeaderContextMenuRequested(headerKey)
+  const onOpenChange = (open: boolean): void => {
+    setOpened(open)
+    if (!open && headerKey) {
+      closeRepoHeaderContextMenu(headerKey)
+    }
+  }
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu modal={false} open={opened || contextRequested} onOpenChange={onOpenChange}>
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
@@ -138,12 +166,29 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
         onClick={stopRepoHeaderMenuEvent}
         onKeyDown={stopRepoHeaderMenuEvent}
       >
-        <DropdownMenuItem onSelect={() => actions.onOpenRepoSettings(repo.id)}>
+        <DropdownMenuItem onSelect={() => actions.onOpenProjectOverview(repo)}>
+          <LayoutDashboard className="size-3.5" />
+          {t('seal.projectOverview.sidebar.open', 'Project Overview')}
+        </DropdownMenuItem>
+        <SplitViewPlacementMenu
+          menuKind="dropdown"
+          intent="open"
+          onPlace={(zone) =>
+            openItemsInSplitView([{ kind: 'project', ...projectOverviewTargetFor(repo) }], zone)
+          }
+        />
+        <DropdownMenuItem onSelect={() => actions.onOpenRepoSettings(repo)}>
           <SlidersHorizontal className="size-3.5" />
           {t('auto.components.sidebar.WorktreeList.2cdffbc728', 'Project Settings')}
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() => actions.onOpenRepoSettings(repo.id, getRepositoryIconSectionId(repo.id))}
+          onSelect={() => actions.onOpenRepoSettings(repo, getRepositoryAccountsSectionId(repo.id))}
+        >
+          <UserRound className="size-3.5" />
+          {t('seal.accounts.project.menu', 'Account Settings')}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => actions.onOpenRepoSettings(repo, getRepositoryIconSectionId(repo.id))}
         >
           <Shapes className="size-3.5" />
           {t('auto.components.sidebar.WorktreeList.e82d3589a1', 'Change Project Icon')}
@@ -185,12 +230,12 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
           </DropdownMenuItem>
         ) : null}
         <WslMoveProjectMenuItem repo={repo} />
+        <ProjectMergeMenuItem repo={repo} label={label} />
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onSelect={() =>
-            void setProjectHidden(hostRepos ? [...hostRepos.values()] : [repo], true, label)
-          }
-        >
+        {copies.some((copy) => copy.autoCreated) ? (
+          <MakePermanentMenuItem onSelect={() => void makeReposPermanent(copies, label)} />
+        ) : null}
+        <DropdownMenuItem onSelect={() => void setProjectHidden(copies, true, label)}>
           <EyeOff className="size-3.5" />
           {t('sidebar.hiddenProjects.hideFromSidebar', 'Hide from Sidebar')}
         </DropdownMenuItem>

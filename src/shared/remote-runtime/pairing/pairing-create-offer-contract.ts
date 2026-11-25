@@ -33,5 +33,7 @@ export type PairingCreateOfferResult =
       connectionMode: MobilePairingConnectionMode | null
       /** Terminal QR text for mobile offers; runtime clients paste the URL. */
       qr: string | null
+      /** When an unused offer stops pairing (epoch ms); absent from hosts that predate offer expiry. */
+      offerExpiresAt?: number | null
     }
   | { available: false; reason: string; guidance: string }

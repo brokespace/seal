@@ -9,7 +9,7 @@ import { OrcaRuntimeRpcServer } from '../../runtime/rpc/server/runtime-rpc'
 import { resolveServePinnedBindHost } from '../serve-launch/serve-pinned-bind-host'
 import { isOrcadSidecarLaunch } from '../../window/activation/foreground-activation-policy'
 import { registerMobileHandlers } from '../../ipc/mobile'
-import { createRuntimeEnvironmentMobileRelayHosts } from '../../ipc/runtime-environments/runtime-environment-mobile-relay-hosts'
+import { createRuntimeEnvironmentMobileRelayHosts } from '../../ipc/runtime-environments/mobile-relay/runtime-environment-mobile-relay-hosts'
 import { getLocalPtyProvider } from '../../ipc/pty/provider/registry'
 import { registerHeadlessPtyRuntime } from '../../ipc/pty/register-headless-runtime'
 import { LocalPtyProvider } from '../../providers/local-pty/local-pty-provider'
@@ -107,8 +107,8 @@ function installRuntimeRpc(
     // Pairing must use pre-setName canonical userData or restarts can lose devices.
     userDataPath: getCanonicalUserDataPath(),
     enableWebSocket: true,
-    // STA-2370: desktop stays loopback until pairing; serve explicitly opts into remote access and E2E needs harness-wide bind.
-    exposeNetworkByDefault: Boolean(serveOptions) || isE2E,
+    // STA-2370: desktop stays loopback until pairing and serve until --bind; only E2E needs a harness-wide bind.
+    exposeNetworkByDefault: isE2E,
     ...(pinnedBindHost !== undefined ? { pinnedBindHost } : {}),
     ...(serveOptions
       ? {

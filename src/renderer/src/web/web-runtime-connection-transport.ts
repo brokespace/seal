@@ -10,6 +10,7 @@ import {
   handleRejectedWebRuntimeAuth,
   type WebRuntimeConnectionLifecycle
 } from './web-runtime-connection-auth'
+import type { WebRuntimeClientError } from './web-runtime-client-error'
 import type { WebRuntimeAuthPlan } from './web-runtime-credential-source'
 import { WebRuntimeConnectionTimers } from './web-runtime-connection-timers'
 import type { PairedE2EEClientHandshake } from '../../../shared/remote-runtime/e2ee/paired-e2ee-client-handshake'
@@ -113,6 +114,11 @@ export class WebRuntimeConnectionTransport {
       subscriptions: this.subscriptions,
       sendAuth: (handshake) => this.sendAuth(handshake),
       setConnected: () => this.handleAuthenticated(),
+      hostOutdated: () => {
+        const socket = this.ws
+        this.failAuth(this.auth.hostOutdated())
+        socket?.close()
+      },
       authRejected: (reply) => void this.handleAuthRejected(reply)
     })
   }
@@ -123,24 +129,18 @@ export class WebRuntimeConnectionTransport {
     const begin = (): void => this.setState('migrating')
     const call: WebRuntimeRequestRegistry['callNow'] = (method, params) =>
       this.requestRegistry.callNow(method, params)
-    // Why reconnect either way: the next socket authenticates with the key, the token, or v2 again.
-    const reconnect = (resetBackoff: boolean) => (): void => {
+    // Why reconnect either way: the next socket authenticates with the key or the token again.
+    const reconnect = (): void => {
       if (socket && this.ws === socket) {
-        this.reconnectAttempt = resetBackoff ? 0 : this.reconnectAttempt
+        this.reconnectAttempt = 0
         socket.close()
         this.handleSocketClosed(socket)
       }
     }
     if (
       socket &&
-      (this.auth.checkLatchedHostIfPlanned({ begin, call, reconnect: reconnect(false) }) ||
-        (handshake &&
-          this.auth.migrateIfPlanned({
-            handshake,
-            beginMigration: begin,
-            call,
-            reconnect: reconnect(true)
-          })))
+      handshake &&
+      this.auth.migrateIfPlanned({ handshake, beginMigration: begin, call, reconnect })
     ) {
       return
     }
@@ -158,24 +158,29 @@ export class WebRuntimeConnectionTransport {
       getSocket: () => this.ws,
       isClosed: () => this.intentionallyClosed,
       failSetup: (error) => this.failSetup(error),
-      failAuth: (error) => {
-        if (this.lifecycle.crewAttempt) {
-          this.setupFailure = { error, fact: { kind: 'remote', code: 'unauthorized' } }
-        }
-        this.intentionallyClosed = true
-        this.setState('auth-failed')
-        this.requestRegistry.rejectAll(error)
-        this.subscriptionRegistry.notifyError('unauthorized', error.message)
-      },
+      failAuth: (error) => this.failAuth(error),
       close: () => this.close({ notifySubscriptions: false })
     })
+  }
+
+  private failAuth(error: WebRuntimeClientError): void {
+    if (this.lifecycle.crewAttempt) {
+      this.setupFailure = { error, fact: { kind: 'remote', code: 'unauthorized' } }
+    }
+    this.intentionallyClosed = true
+    this.setState('auth-failed')
+    this.requestRegistry.rejectAll(error)
+    this.subscriptionRegistry.notifyError('unauthorized', error.message)
   }
 
   handleSocketClosed(closedWs: WebSocket, closeCode?: number): void {
     if (this.ws !== closedWs) {
       return
     }
-    this.auth.socketClosed(closeCode)
+    const helloRefused = this.intentionallyClosed ? null : this.auth.socketClosed(closeCode)
+    if (helloRefused) {
+      this.failAuth(helloRefused)
+    }
     this.ws = null
     this.handshake = null
     this.timers.clear('connect')

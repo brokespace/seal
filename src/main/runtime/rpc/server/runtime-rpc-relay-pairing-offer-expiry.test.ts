@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { OrcaRuntimeService } from '../../orca-runtime'
 import { OrcaRuntimeRpcServer } from './runtime-rpc'
+import { deriveRelayHostIdFromPublicKeyB64 } from '../../../../shared/remote-runtime/relay/relay-host-id'
 
 vi.mock('../../../git/worktrees/catalog/worktree-scan-cache', async (importOriginal) => ({
   ...(await importOriginal<typeof WorktreeScanCacheModule>()),
@@ -40,7 +41,7 @@ async function startRelayServer(): Promise<{
         directorUrl: 'https://relay.example.com',
         cellUrl: 'https://cell.example.com',
         assignmentEpoch: 1,
-        relayHostId: 'AbCdEf0123_-xyZ9',
+        relayHostId: deriveRelayHostIdFromPublicKeyB64(server.getE2EEPublicKey() ?? '') ?? '',
         inviteToken: 'A'.repeat(43),
         inviteExpiresAt: Date.now() + TTL,
         e2eeFraming: 2

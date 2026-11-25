@@ -5,10 +5,13 @@ import { useTranslate } from '@/i18n/use-translate'
 
 export function CloseSplitPaneMenuItem({
   onCloseSplitPane,
-  menuKind = 'dropdown'
+  menuKind = 'dropdown',
+  label
 }: {
   menuKind?: 'dropdown' | 'context'
   onCloseSplitPane: (() => void) | undefined
+  /** Defaults to the wording for a workspace's own split. */
+  label?: string
 }): React.JSX.Element | null {
   const t = useTranslate()
   const Item = menuKind === 'context' ? ContextMenuItem : DropdownMenuItem
@@ -21,7 +24,7 @@ export function CloseSplitPaneMenuItem({
       <Separator />
       <Item variant="destructive" onSelect={() => onCloseSplitPane()}>
         <X className="size-3.5" />
-        {t('auto.components.tab.group.TabGroupPanel.closePaneColumn', 'Close split pane')}
+        {label ?? t('auto.components.tab.group.TabGroupPanel.closePaneColumn', 'Close split pane')}
       </Item>
     </>
   )

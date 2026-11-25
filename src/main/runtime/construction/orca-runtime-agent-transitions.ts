@@ -115,6 +115,11 @@ export abstract class OrcaRuntimeWithAgentTransitions extends OrcaRuntimeWithWin
     this.worktreeRowsChanges?.changed()
   }
 
+  /** A pane agent's status summary changed; it rides the agent rows phones re-read. */
+  notifyAgentStatusSummaryChanged(): void {
+    this.worktreeRowsChanges?.changed()
+  }
+
   /** The connector seam while `experimentalConnectors` is on; null refuses every connector call. */
   getExternalConversationSeam(): ExternalConversationSeam | null {
     return this.externalConversations.current()

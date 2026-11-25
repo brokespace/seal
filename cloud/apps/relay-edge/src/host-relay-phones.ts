@@ -10,6 +10,8 @@ import { b64url } from './bytes'
 import { HostRelayControl } from './host-relay-control'
 import { GENERIC_REJECT_REASON, type Conn, type Session, type AuthorizeResult, type ConfirmResult } from './host-relay-base'
 
+export const MAX_CONNECTIONS_PER_DEVICE = RELAY_PROTOCOL_LIMITS.maxConnectionsPerHost / 2
+
 export abstract class HostRelayPhones extends HostRelayControl {
   // ---------------- RPC from the Worker ----------------
 
@@ -75,9 +77,14 @@ export abstract class HostRelayPhones extends HostRelayControl {
       return this.missedSeat(reservation)
     }
     const conns = await this.conns()
-    if (Object.keys(conns).length >= RELAY_PROTOCOL_LIMITS.maxConnectionsPerHost) {
+    const { relayDeviceId } = reservation
+    // One device's credential may not take every seat: the host's other devices keep headroom.
+    const full = (): boolean =>
+      Object.keys(conns).length >= RELAY_PROTOCOL_LIMITS.maxConnectionsPerHost ||
+      Object.values(conns).filter((c) => c.reservation.relayDeviceId === relayDeviceId).length >= MAX_CONNECTIONS_PER_DEVICE
+    if (full()) {
       await this.pruneDeadConns(conns)
-      if (Object.keys(conns).length >= RELAY_PROTOCOL_LIMITS.maxConnectionsPerHost) {
+      if (full()) {
         await this.backend.failReservation(reservation).catch(() => {})
         return { ok: false, code: RELAY_CLOSE_CODE.LIMIT_EXCEEDED }
       }

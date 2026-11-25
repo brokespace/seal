@@ -50,10 +50,30 @@ describe('orca serve service', () => {
     const unitPath = String(result.unitPath)
     expect(await readFile(unitPath, 'utf8')).toContain(`<string>${join(bin, 'orca')}</string>`)
     expect(calls).toEqual([
-      expect.stringMatching(/^launchctl bootout gui\/501\/com\.stablyai\.orca\.serve\./),
+      expect.stringMatching(/^launchctl bootout gui\/501\/com\.brokespace\.seal\.serve\./),
       `launchctl bootstrap gui/501 ${unitPath}`
     ])
     expect(existsSync(serveSupervisorBrakePath(join(home, 'profile')))).toBe(false)
+  })
+
+  it('enables lingering without sudo and reports what logind says afterwards', async () => {
+    const lingerReads = ['no', 'yes']
+    const d: ServeServiceDeps = {
+      ...deps('linux'),
+      run: async (program, args) => {
+        calls.push([program, ...args].join(' '))
+        return program === 'loginctl' && args[0] === 'show-user'
+          ? { code: 0, out: `${lingerReads.shift()}\n` }
+          : { code: 0, out: '' }
+      }
+    }
+    const result = await installServeService({ command: null, dryRun: false }, d)
+    expect(result.linger).toBe('yes')
+    expect(calls.filter((call) => call.startsWith('loginctl'))).toEqual([
+      'loginctl show-user 501 --property=Linger --value',
+      'loginctl enable-linger',
+      'loginctl show-user 501 --property=Linger --value'
+    ])
   })
 
   it('uninstalls by stopping the service and removing the unit', async () => {

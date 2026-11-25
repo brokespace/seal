@@ -1,6 +1,6 @@
 import { defaultRangeExtractor } from '@tanstack/react-virtual'
 import type { Range, VirtualItem } from '@tanstack/react-virtual'
-import { PINNED_GROUP_KEY } from '../../../../../../shared/sidebar-list/group-keys'
+import { PINNED_GROUP_KEY } from '../../../../../../shared/sidebar-list/sections/group-keys'
 import type { RenderRow } from '../listing/render-row'
 
 export const GROUP_HEADER_ROW_HEIGHT = 28
@@ -11,6 +11,7 @@ const SECONDARY_GROUP_HEADER_TOP_MARGIN = 4
 const IMPORTED_WORKTREES_LINE_ROW_HEIGHT = 36
 const PENDING_CREATION_ROW_HEIGHT = 56
 const FOLDER_WORKSPACE_ROW_HEIGHT = 64
+const PROJECT_SESSIONS_ROW_HEIGHT = 32
 
 export function shouldUseHeaderTopSpacing(args: {
   rows: readonly RenderRow[]
@@ -65,7 +66,17 @@ export function estimateRenderRowSize(
   if (row?.type === 'folder-workspace') {
     return FOLDER_WORKSPACE_ROW_HEIGHT
   }
+  if (row?.type === 'project-sessions') {
+    return PROJECT_SESSIONS_ROW_HEIGHT
+  }
   return 116
+}
+
+/** Virtual items are in scroll coordinates; rows are placed in their own box, which starts below the sections sharing the scroll container. */
+export function toRowBoxVirtualItem(item: VirtualItem, scrollMargin: number): VirtualItem {
+  return scrollMargin === 0
+    ? item
+    : { ...item, start: item.start - scrollMargin, end: item.end - scrollMargin }
 }
 
 export function getVirtualRowTransform(start: number): string {

@@ -34,7 +34,8 @@ export async function createOAuthUsageError(res: Response): Promise<OAuthUsageEr
 
 async function describeOAuthUsageError(res: Response): Promise<string> {
   if (res.status === 429) {
-    return 'Claude usage is rate limited right now.'
+    // The usage endpoint refusing a check says nothing about the account's own quota.
+    return 'Claude is throttling usage checks right now. This is not the account’s own limit; figures update when checks resume.'
   }
   try {
     const data = (await res.json()) as { error?: { message?: string } }

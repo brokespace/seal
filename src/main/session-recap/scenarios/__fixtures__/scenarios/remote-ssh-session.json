@@ -1,0 +1,69 @@
+{
+  "id": "remote-ssh-session",
+  "title": "A Claude session on an SSH host, read through the host's shell",
+  "categories": ["remote", "addressed-later-turn"],
+  "surfaces": ["claude-ssh"],
+  "expected": "The same as on this machine: the documentation is not addressed after turn 1 and leaves the list after turn 2.",
+  "steps": [
+    {
+      "user": "Add a --dry-run flag to the import script and document it in docs/import.md."
+    },
+    {
+      "edit": "/srv/shop/scripts/import.ts"
+    },
+    {
+      "agent": "Added --dry-run to scripts/import.ts: it parses and validates every row and writes nothing. I haven't documented it yet."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "view": "exists",
+          "is": true,
+          "why": "a remote transcript is recapped"
+        },
+        {
+          "in": "ignored",
+          "has": "doc",
+          "why": "the documentation is asked for and not written yet"
+        }
+      ]
+    },
+    {
+      "user": "document it please"
+    },
+    {
+      "edit": "/srv/shop/docs/import.md"
+    },
+    {
+      "agent": "Documented --dry-run in docs/import.md with an example."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "doc",
+          "why": "the documentation was written"
+        },
+        {
+          "in": "did",
+          "has": "doc",
+          "why": "the documentation is recorded as done"
+        }
+      ]
+    }
+  ]
+}

@@ -35,10 +35,8 @@ export function webRuntimeCredentialFor(
   }
   const support = readWebDeviceKeySupport()
   if (!support || support === 'token-insecure-origin') {
-    // Why: plain http never holds a device key, so the token is its only way onto v2.
-    return tokenOnlyCredentialSource(endpoint.deviceToken, {
-      tryV2Token: support === 'token-insecure-origin'
-    })
+    // Why: plain http never holds a device key, so the token is its only credential.
+    return tokenOnlyCredentialSource(endpoint.deviceToken)
   }
   keyStore ??=
     typeof indexedDB === 'undefined'

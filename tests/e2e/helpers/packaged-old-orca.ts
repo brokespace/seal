@@ -134,7 +134,7 @@ export async function launchPackagedPairedClient(args: {
     ])
     // A capability check against a missing list would pass vacuously.
     if (!status.capabilities) {
-      throw new Error(`packaged Orca ${version} reported no runtime capabilities`)
+      throw new Error(`packaged Seal ${version} reported no runtime capabilities`)
     }
     const launched = app
     return {

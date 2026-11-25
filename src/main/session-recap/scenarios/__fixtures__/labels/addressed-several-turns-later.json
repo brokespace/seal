@@ -1,0 +1,46 @@
+{
+  "id": "addressed-several-turns-later",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": [
+        "Rename the Customer model to Account everywhere",
+        "The orders page still says 'Customer' in the table header",
+        "Also the CSV export column"
+      ],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 3: the agent says Customer is renamed to Account across src and the tests pass"
+        },
+        "after turn 3": {
+          "is": "done",
+          "why": "steps 9 and 14: the two leftover places the user pointed out are both renamed"
+        },
+        "after turn 4": {
+          "is": "done",
+          "why": "steps 9 and 14: the two leftover places the user pointed out are both renamed"
+        }
+      }
+    },
+    {
+      "quotes": ["update the README to match"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the agent says it has not touched the README yet"
+        },
+        "after turn 3": {
+          "is": "open",
+          "why": "steps 9 and 14: the turns fix the header and the CSV column, the README is still untouched"
+        },
+        "after turn 4": {
+          "is": "done",
+          "why": "step 20: the agent says the README is updated"
+        }
+      }
+    }
+  ],
+  "notRequests": ["ok go on"],
+  "rules": []
+}

@@ -1,0 +1,35 @@
+{
+  "id": "addressed-by-commit-and-pr",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Fix the flaky date test in test/invoice.test.ts"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says the test now uses a fixed clock and passed 50 runs"
+        }
+      }
+    },
+    {
+      "quotes": ["commit and push"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "steps 7-8: git commit makes 91be2d0 and git push sets up the remote branch"
+        }
+      }
+    },
+    {
+      "quotes": ["open a PR"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 9: gh pr create returns pull/212, which the agent posts in step 10"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

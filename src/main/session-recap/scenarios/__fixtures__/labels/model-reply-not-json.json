@@ -1,0 +1,43 @@
+{
+  "id": "model-reply-not-json",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Add a CSV export to the orders page"],
+      "at": {
+        "after the degraded pass": {
+          "is": "done",
+          "why": "step 4: the agent says an Export CSV button is on the orders page"
+        },
+        "after the next pass": {
+          "is": "done",
+          "why": "step 4: the agent said an Export CSV button is on the orders page"
+        }
+      }
+    },
+    {
+      "quotes": ["a date filter above the table"],
+      "at": {
+        "after the degraded pass": {
+          "is": "done",
+          "why": "step 4: the agent says a date filter is above the table"
+        },
+        "after the next pass": {
+          "is": "done",
+          "why": "step 4: the agent said a date filter is above the table"
+        }
+      }
+    },
+    {
+      "quotes": ["make the date filter default to the last 30 days"],
+      "at": {
+        "after the next pass": {
+          "is": "done",
+          "why": "step 10: the agent says the date filter defaults to the last 30 days now"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

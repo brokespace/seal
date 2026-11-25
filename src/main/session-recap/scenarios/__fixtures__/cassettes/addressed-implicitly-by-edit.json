@@ -1,0 +1,14 @@
+[
+  {
+    "key": "fa76b478f75c18c94b29a9e58a968c93",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Bump the version to 2.4.0 in package.json and add a CHANGELOG entry for the new \",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Bump the version to 2.4.0 in package.json and add a CHANGELOG entry for the new export feature.\n\n[m2] AGENT: CHANGELOG has the entry under 2.4.0.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Bump version and changelog\",\n  \"goal\": \"Update version and changelog for export feature.\",\n  \"standing\": \"Changelog entry added for version 2.4.0.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\n        \"text\": \"Added CHANGELOG entry for version 2.4.0\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": []\n}",
+    "neurons": 8.5935
+  }
+]

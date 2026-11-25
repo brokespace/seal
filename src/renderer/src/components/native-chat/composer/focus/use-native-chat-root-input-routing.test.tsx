@@ -62,6 +62,9 @@ function Chat({ revealed }: { revealed: boolean }): React.JSX.Element {
       {createPortal(
         <div role="dialog">
           <button type="button">Close preview</button>
+          <div role="menuitemradio" aria-checked="false" tabIndex={-1}>
+            Other account
+          </div>
         </div>,
         document.body
       )}
@@ -147,5 +150,14 @@ describe('useNativeChatRootInputRouting', () => {
 
     button.focus()
     expect(captureInsertionTarget()).toBeNull()
+  })
+
+  it('keeps focus in a menu the chat portals out when one of its items is pressed', () => {
+    const view = render(<Chat revealed />)
+    const item = view.getByRole('menuitemradio', { name: 'Other account' })
+    item.focus()
+    fireEvent.pointerDown(item)
+
+    expect(document.activeElement).toBe(item)
   })
 })

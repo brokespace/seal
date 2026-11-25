@@ -233,7 +233,7 @@ export async function subscribeRemoteRuntimeTransport<TResult>(
       requestChannel.rejectAll(
         new RemoteRuntimeClientError(
           'remote_runtime_unavailable',
-          formatRemoteRuntimeCloseMessage(code, reason)
+          formatRemoteRuntimeCloseMessage(code, reason, handshake)
         )
       )
       if (!settled) {
@@ -241,7 +241,7 @@ export async function subscribeRemoteRuntimeTransport<TResult>(
         reject(
           new RemoteRuntimeClientError(
             'remote_runtime_unavailable',
-            formatRemoteRuntimeCloseMessage(code, reason)
+            formatRemoteRuntimeCloseMessage(code, reason, handshake)
           )
         )
         return

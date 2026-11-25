@@ -15,6 +15,8 @@ export const PAIRING_LOCAL_UI_FIELDS = [
   'activityBarPosition',
   // Sidebar model badges are a client display choice; older hosts reject the new key.
   'showAgentModels',
+  // Whether projects list sessions or workspaces is each client's own view; older hosts reject the new key.
+  'hideSidebarWorkspaces',
   // Agent View filters and presentation belong to each client's host catalog and viewport.
   'agentsVisibleHostIds',
   'agentsFilterRepoIds',

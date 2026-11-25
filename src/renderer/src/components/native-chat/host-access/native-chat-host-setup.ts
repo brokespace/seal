@@ -3,6 +3,9 @@ import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store/index'
+import { requestSealRelogin } from '@/components/settings/seal-accounts/seal-accounts-navigation'
+import { sessionForChat } from '@/components/seal-session/seal-session-account-view'
+import { useSealHostSnapshot } from '@/components/seal-session/use-seal-host-snapshot'
 import { signInToClaudeAccount } from '@/lib/provider-accounts/claude-account-sign-in'
 import { getRendererAppPlatform } from '@/app-shell/platform/renderer-app-platform'
 import { readAgentInventoryForTarget } from '@/lib/agent-session/launch/inventory/agent-detection-target-inventory'
@@ -138,6 +141,8 @@ function useManagedClaudeSignIn(
 
 type NativeChatHostSetupInput = {
   agent: string
+  /** The chat's session id, to find the Seal account it runs on. */
+  sessionId?: string
   target: RuntimeClientTarget
   worktreeId: string | null
   groupId?: string
@@ -159,6 +164,19 @@ function useNativeChatSignIn(
         s.settings?.activeClaudeManagedAccountId ??
         null)
       : null
+  )
+  const sealSnapshot = useSealHostSnapshot(input.agent === 'claude' ? input.target : null)
+  const sealAccountKey =
+    input.account !== 'system' && input.sessionId && sealSnapshot
+      ? (sessionForChat(sealSnapshot.status.sessions, input.sessionId)?.accountKey ?? null)
+      : null
+  // Seal pinned this chat to an account, so signing that one in again is the fix.
+  const sealed = useMemo(
+    () =>
+      sealAccountKey
+        ? { signingIn: false, signIn: () => requestSealRelogin(sealAccountKey) }
+        : null,
+    [sealAccountKey]
   )
   const managed = useManagedClaudeSignIn(
     accountId,
@@ -202,7 +220,7 @@ function useNativeChatSignIn(
     [command, terminal]
   )
   // A managed account owns sign-in: a terminal login after it succeeds would sign in another account.
-  return accountId ? managed : viaTerminal
+  return sealed ?? (accountId ? managed : viaTerminal)
 }
 
 function useNativeChatInstall(
@@ -231,8 +249,8 @@ function useNativeChatInstall(
     setRechecking(true)
     void (
       environmentId
-        ? state.refreshRuntimeDetectedAgents(environmentId, worktreeId)
-        : state.refreshDetectedAgents(worktreeId, { wakeWslDistro: true })
+        ? state.refreshRuntimeDetectedAgents(environmentId, worktreeId, { userInitiated: true })
+        : state.refreshDetectedAgents(worktreeId, { wakeWslDistro: true, userInitiated: true })
     )
       .then(() => {
         // Refreshes can resolve with cached agents after failure; check their explicit outcome.

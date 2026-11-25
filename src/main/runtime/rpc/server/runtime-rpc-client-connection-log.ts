@@ -1,6 +1,6 @@
 import type { AuthenticatedMobileSocket } from '../mobile/mobile-socket-wiring'
 
-/** Who connected, without credentials: a phone's clientId can be its bearer token, so it is never logged. */
+/** Who connected, by device id; no credential is ever part of a client's identity. */
 export function describeClientConnection(
   socket: Pick<AuthenticatedMobileSocket, 'connectionId' | 'device' | 'transport'>
 ): Record<string, string> {

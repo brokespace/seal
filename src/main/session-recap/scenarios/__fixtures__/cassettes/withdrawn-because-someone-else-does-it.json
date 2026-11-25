@@ -1,0 +1,24 @@
+[
+  {
+    "key": "c1e2329a1abc73b4a9297c56f966284a",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Write a changelog entry for 3.2 and tweet-length release notes.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Write a changelog entry for 3.2 and tweet-length release notes.\n\n[m2] AGENT: The 3.2 entry is in CHANGELOG.md. I have not written the release notes yet.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [\n      {\n        \"text\": \"Write 3.2 changelog and tweet-length release notes\",\n        \"ref\": \"m1\"\n      }\n    ],\n    \"did\": [\n      {\n        \"text\": \"Checked 3.2 entry in CHANGELOG.md\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"decisions\": [\n      {\n        \"text\": \"3.2 entry already exists\",\n        \"ref\": \"m2\"\n      }\n    ]\n  }\n}"
+  },
+  {
+    "key": "c5a30d355c21cbb0c2471673811b6fe9",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Write a changelog entry for 3.2 and tweet-length release notes.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Write 3.2 changelog and tweet-length release notes\"}],\"did\":[{\"id\":\"w2\",\"text\":\"Checked 3.2 entry in CHANGELOG.md\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[{\"id\":\"d3\",\"text\":\"3.2 entry already exists\"}]}\n</recap>\n<new_messages>\n[m1] USER: marketing will do the notes. can you tag the release?\n\n[m2] AGENT: Tagged v3.2.0 and pushed the tag.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"did\": [\n      {\n        \"ref\": \"m1\",\n        \"text\": \"Tagged v3.2.0 and pushed\",\n        \"state\": \"done\"\n      }\n    ]\n  },\n  \"resolve\": [\n    \"a1\"\n  ]\n}"
+  }
+]

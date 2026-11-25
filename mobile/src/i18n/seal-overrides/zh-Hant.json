@@ -1,0 +1,18 @@
+{
+  "app": {
+    "pairScan": {
+      "pasteCodePlaceholder": "seal://pair?code=... 或貼上配對碼"
+    }
+  },
+  "seal": {
+    "pairConfirm": {
+      "computerLabel": "電腦",
+      "newComputer": "尚未與此手機配對",
+      "fingerprintLabel": "金鑰指紋",
+      "relayLabel": "中繼",
+      "directLabel": "直連位址",
+      "replaceNotice": "這會取代與 {{name}} 的現有配對。",
+      "otherRelayNotice": "此配對碼使用 {{origin}}，而非此應用程式內建的中繼。僅在信任其營運者時配對。"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "dismissed-entry-stays-dismissed",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Delete the old migrations folder"],
+      "at": {
+        "after the user dismisses it": {
+          "is": "declined",
+          "why": "step 3: the agent leaves db/migrations because the nightly staging rebuild replays them, and deletes nothing"
+        },
+        "after Refresh": {
+          "is": "declined",
+          "why": "step 3: the agent leaves db/migrations because the nightly staging rebuild replays them, and deletes nothing"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

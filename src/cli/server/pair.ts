@@ -30,6 +30,11 @@ export function formatPairingOffer(offer: PairingCreateOfferResult): string {
   if (offer.endpoint) {
     lines.push('', `The client will connect to ${offer.endpoint}.`)
   }
+  if (typeof offer.offerExpiresAt === 'number') {
+    lines.push(
+      `Unused, the link stops working at ${new Date(offer.offerExpiresAt).toISOString()}. Run this command again for a new one.`
+    )
+  }
   lines.push('Treat the link like a password: it grants access to this Orca.')
   return lines.join('\n')
 }

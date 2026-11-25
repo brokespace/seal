@@ -9,6 +9,7 @@ import { useMobileColorScheme } from '../theme/use-mobile-color-scheme'
 import {
   agentDisplayLabel,
   agentDotState,
+  type AgentDotState,
   agentRowTimeAt,
   formatTimeAgo
 } from '../worktree/agent-row-display'
@@ -64,35 +65,74 @@ function WorktreeAgentRowComponent({
         ? agentNoUpdateLabel(agent, now)
         : formatTimeAgo(timeAt, now)
 
+  return (
+    <AgentActivityLine
+      dotState={dotState}
+      agentId={childRow ? undefined : agent.agentType}
+      depth={depth}
+      unvisited={unvisited}
+      time={ts}
+      trailing={trailing}
+      disabled={isReadOnly}
+      onPress={onPress ? () => onPress(agent.paneKey) : undefined}
+      onLongPress={onLongPress}
+    >
+      {childText ? (
+        <>
+          {childText.lead}
+          {childText.trail ? ` · ${childText.trail}` : ''}
+        </>
+      ) : (
+        label
+      )}
+    </AgentActivityLine>
+  )
+}
+
+/** One agent's line on a workspace row: state, identity, what it is doing, age. */
+export function AgentActivityLine({
+  dotState,
+  agentId,
+  depth = 0,
+  unvisited = false,
+  time,
+  trailing,
+  disabled,
+  onPress,
+  onLongPress,
+  children
+}: {
+  dotState: AgentDotState
+  agentId?: string | null
+  depth?: number
+  unvisited?: boolean
+  time: string
+  trailing?: ReactNode
+  disabled?: boolean
+  onPress?: () => void
+  onLongPress?: () => void
+  children: ReactNode
+}) {
   const content = (
     <View style={[styles.row, { paddingLeft: depth * AGENT_ROW_INDENT_PER_DEPTH }]}>
       <AgentStateDot state={dotState} />
       {/* Use desktop-style agent identity logo instead of two-letter code. */}
-      {!childRow && agent.agentType ? (
-        <MobileAgentIcon agentId={agent.agentType} size={13} />
-      ) : null}
+      {agentId ? <MobileAgentIcon agentId={agentId} size={13} /> : null}
       <Text style={[styles.label, unvisited && styles.labelUnvisited]} numberOfLines={1}>
-        {childText ? (
-          <>
-            {childText.lead}
-            {childText.trail ? ` · ${childText.trail}` : ''}
-          </>
-        ) : (
-          label
-        )}
+        {children}
       </Text>
       {trailing}
-      <Text style={styles.time}>{ts}</Text>
+      <Text style={styles.time}>{time}</Text>
     </View>
   )
   return onPress ? (
     <Pressable
       style={({ pressed }) => pressed && pressedStyle}
-      disabled={isReadOnly}
+      disabled={disabled}
       accessibilityRole="button"
       onPress={(event) => {
         event.stopPropagation()
-        onPress(agent.paneKey)
+        onPress()
       }}
       onLongPress={onLongPress}
       delayLongPress={400}

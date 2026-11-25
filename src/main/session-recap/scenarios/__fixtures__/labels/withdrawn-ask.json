@@ -1,0 +1,34 @@
+{
+  "id": "withdrawn-ask",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Add dark mode to the settings page"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the agent says it has not started dark mode"
+        },
+        "after turn 2": {
+          "is": "withdrawn",
+          "why": "step 7: the user says never mind dark mode"
+        }
+      }
+    },
+    {
+      "quotes": ["fix the avatar upload that fails on PNGs over 2MB"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 3: the agent says the avatar upload is fixed and PNGs over 2MB now upload"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says the avatar upload is fixed and PNGs over 2MB now upload"
+        }
+      }
+    }
+  ],
+  "notRequests": ["never mind dark mode, we'll do it next quarter"],
+  "rules": []
+}

@@ -1,0 +1,85 @@
+{
+  "id": "subagent-still-running-when-the-agent-stops",
+  "title": "The agent stops writing while a subagent it started is still doing one of the asks",
+  "categories": ["subagent", "mid-turn"],
+  "surfaces": ["claude-cli"],
+  "expected": "While the subagent runs, the audit is work under way, not a request the agent overlooked and not a to-do for the user. Once the agent reports the result, the audit is done and nothing is listed as not addressed.",
+  "steps": [
+    {
+      "user": "Two things: bump the Node version in CI to 22, and audit our npm dependencies for known vulnerabilities."
+    },
+    {
+      "edit": "/srv/shop/.github/workflows/ci.yml"
+    },
+    {
+      "tool": {
+        "name": "Task",
+        "input": {
+          "description": "Audit npm dependencies",
+          "prompt": "Run npm audit in /srv/shop and list every package with a high or critical advisory, with the fixed version.",
+          "subagent_type": "general-purpose",
+          "run_in_background": true
+        },
+        "output": "Async agent launched successfully. It runs in the background; you will be notified when it completes."
+      }
+    },
+    {
+      "agent": "CI runs Node 22 now. I started a subagent on the dependency audit; it is still running and I will report what it finds."
+    },
+    {
+      "status": "waiting-subagent"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "while the subagent runs",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "the audit is under way in a subagent; the agent has not overlooked it"
+        },
+        {
+          "in": "actions",
+          "lacks": "audit|advisor|vulnerab",
+          "why": "the audit is the agent's job, not a to-do for the user"
+        },
+        {
+          "in": "did",
+          "has": "node|ci",
+          "state": "done",
+          "why": "the Node bump is recorded as done"
+        }
+      ]
+    },
+    {
+      "status": "working"
+    },
+    {
+      "agent": "The audit is back: 3 high-severity advisories and no critical ones. lodash needs 4.17.21, axios 1.7.4 and minimist 1.2.8."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after the subagent reports",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "both things were done; nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "audit|advisor|vulnerab",
+          "state": "done",
+          "why": "the audit is recorded as done"
+        }
+      ]
+    }
+  ]
+}

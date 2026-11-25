@@ -1,7 +1,7 @@
 // One English table for Remote Orca Server pairing save failures: main builds the wire `message`, the renderer translates by code.
 export const REMOTE_SERVER_PAIRING_FAILURE_COPY = {
   invalidPairingCode:
-    'Invalid pairing code. Expected an orca://pair?... URL or bare pairing payload.',
+    'Invalid pairing code. Expected an seal://pair?... URL or bare pairing payload.',
   selfPairingCode:
     'This pairing code is for this Orca itself. Generate the code on the other computer instead.',
   managedDeployment:

@@ -34,6 +34,10 @@ import {
   type WorkspaceViewSection
 } from '../../../../../../shared/workspace-view/workspace-view-options'
 import { useTranslate } from '@/i18n/use-translate'
+import { EyeOff } from 'lucide-react'
+import { windowListsLiveSessions } from '@/components/live-sessions/workspace-rows/SidebarSessions'
+import { SessionsOptionsMenuItems } from '@/components/live-sessions/workspace-rows/SessionsOptionsMenuItems'
+import { FilterToggleRow } from './FilterToggleRow'
 import { SidebarGroupByToggle } from './SidebarGroupByToggle'
 import { withoutHiddenRepos } from '../../../../../../shared/hidden-projects'
 
@@ -63,6 +67,48 @@ type OptionItemProps = {
   hostOptions: SidebarHostOption[]
 }
 
+function CardStyleOption({ preserveWorkspaceBoardOpen }: OptionItemProps): JSX.Element {
+  const t = useTranslate()
+  const experimental = useAppStore((s) => s.settings?.experimentalNewWorktreeCardStyle === true)
+  const updateSettings = useAppStore((s) => s.updateSettings)
+  const classicLabel = t(
+    'auto.components.settings.ExperimentalPane.worktreeCardStyle.classic',
+    'Classic'
+  )
+  const experimentalLabel = t(
+    'auto.components.settings.ExperimentalPane.worktreeCardStyle.experimental',
+    'Experimental'
+  )
+  return (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger>
+        <span className="flex flex-1 items-center justify-between gap-3">
+          <span>
+            {t('auto.components.settings.ExperimentalPane.worktreeCardStyle.title', 'Card style')}
+          </span>
+          <span className="text-2xs font-medium text-muted-foreground">
+            {experimental ? experimentalLabel : classicLabel}
+          </span>
+        </span>
+      </DropdownMenuSubTrigger>
+      <DropdownMenuSubContent
+        className="w-44"
+        data-workspace-board-preserve-open={preserveWorkspaceBoardOpen ? '' : undefined}
+      >
+        <DropdownMenuRadioGroup
+          value={experimental ? 'experimental' : 'classic'}
+          onValueChange={(value) =>
+            void updateSettings({ experimentalNewWorktreeCardStyle: value === 'experimental' })
+          }
+        >
+          <DropdownMenuRadioItem value="classic">{classicLabel}</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="experimental">{experimentalLabel}</DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
+  )
+}
+
 function HostsOptionItem({
   preserveWorkspaceBoardOpen,
   hostOptions
@@ -84,12 +130,30 @@ function HostsOptionItem({
 }
 
 function GroupByOptionItem(): JSX.Element {
+  const t = useTranslate()
   const groupBy = useAppStore((s) => s.groupBy)
   const setGroupBy = useAppStore((s) => s.setGroupBy)
+  const hideWorkspaces = useAppStore((s) => s.hideSidebarWorkspaces)
+  const setHideWorkspaces = useAppStore((s) => s.setHideSidebarWorkspaces)
   return (
-    <div className="px-2 pt-0.5 pb-1">
-      <SidebarGroupByToggle groupBy={groupBy} setGroupBy={setGroupBy} />
-    </div>
+    <>
+      <div className="px-2 pt-0.5 pb-1">
+        <SidebarGroupByToggle groupBy={groupBy} setGroupBy={setGroupBy} />
+      </div>
+      {/* Only projects have sessions of their own to list in their workspaces' place. */}
+      {groupBy === 'repo' && windowListsLiveSessions() ? (
+        <FilterToggleRow
+          icon={<EyeOff className="size-3.5" />}
+          label={t('auto.components.live-sessions.sidebar.hideWorkspaces', 'Hide workspaces')}
+          ariaLabel={t(
+            'auto.components.live-sessions.sidebar.hideWorkspacesAria',
+            'List each project’s agent sessions in place of its workspaces'
+          )}
+          checked={hideWorkspaces}
+          onChange={setHideWorkspaces}
+        />
+      ) : null}
+    </>
   )
 }
 
@@ -297,15 +361,28 @@ export function WorkspaceOptionsMenuItems({
           {options.map((option) => {
             const OptionItem = OPTION_ITEMS[option.key]
             return (
-              <OptionItem
-                key={option.key}
-                preserveWorkspaceBoardOpen={preserveWorkspaceBoardOpen}
-                hostOptions={hostOptions}
-              />
+              <Fragment key={option.key}>
+                {(option.key === 'cardLayout' || option.key === 'cardDisplay') && (
+                  <CardStyleOption
+                    preserveWorkspaceBoardOpen={preserveWorkspaceBoardOpen}
+                    hostOptions={hostOptions}
+                  />
+                )}
+                <OptionItem
+                  preserveWorkspaceBoardOpen={preserveWorkspaceBoardOpen}
+                  hostOptions={hostOptions}
+                />
+              </Fragment>
             )
           })}
         </Fragment>
       ))}
+      {windowListsLiveSessions() ? (
+        <>
+          <DropdownMenuSeparator />
+          <SessionsOptionsMenuItems />
+        </>
+      ) : null}
     </>
   )
 }

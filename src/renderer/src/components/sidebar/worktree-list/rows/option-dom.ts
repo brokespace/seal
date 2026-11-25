@@ -42,9 +42,11 @@ export function getMountedWorktreeOptionsById(
   return result
 }
 
+/** `marksCard` is false for a workspace that comes into view showing a session: that row is marked instead. */
 export function markSidebarWorktreeActiveImmediately(
   worktreeId: string,
-  primaryRowKey?: string
+  primaryRowKey?: string,
+  marksCard = true
 ): void {
   const sidebar = document.querySelector<HTMLElement>('[data-worktree-sidebar]')
   const matchingIdOptions = getMountedWorktreeOptions(worktreeId, sidebar)
@@ -72,10 +74,13 @@ export function markSidebarWorktreeActiveImmediately(
   sidebar
     ?.querySelectorAll<HTMLElement>('[data-worktree-card-surface][data-worktree-card-active]')
     .forEach((surface) => {
-      if (!nextOptions.some((option) => option.contains(surface))) {
+      if (!marksCard || !nextOptions.some((option) => option.contains(surface))) {
         surface.removeAttribute('data-worktree-card-active')
       }
     })
+  if (!marksCard) {
+    return
+  }
   for (const option of nextOptions) {
     const activeSurfaceVariant =
       primaryRowKey !== undefined

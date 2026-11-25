@@ -101,6 +101,9 @@ export type UISlicePreferences = {
   setWorktreeCardProperties: (properties: readonly WorktreeCardProperty[]) => void
   showAgentModels: boolean
   setShowAgentModels: (show: boolean) => void
+  /** Projects list their agent sessions in place of their workspaces. */
+  hideSidebarWorkspaces: boolean
+  setHideSidebarWorkspaces: (hide: boolean) => void
   agentActivityDisplayMode: AgentActivityDisplayMode
   setAgentActivityDisplayMode: (mode: AgentActivityDisplayMode) => void
   workspaceStatuses: WorkspaceStatusDefinition[]

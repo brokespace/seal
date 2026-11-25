@@ -2,11 +2,13 @@ import { NativeChatSessionGate } from './host-access/NativeChatSessionGate'
 import { NativeChatStructuredSession } from './NativeChatStructuredSession'
 import { NativeChatResolvedView } from './NativeChatResolvedView'
 import { useNativeChatStatusEntry } from './session/status/use-native-chat-status-entry'
-import type { NativeChatViewProps } from './native-chat-view-types'
+import type { NativeChatBridgeViewProps, NativeChatViewProps } from './native-chat-view-types'
 import { NativeChatPaneFileDropSurface } from './attachments/intake/NativeChatPaneFileDropSurface'
 import { NativeChatVisualOwnerProvider } from './media/visuals/native-chat-visual-owner'
 import { NativeChatFileLinkExistenceProvider } from './links/actions/use-native-chat-file-link-existence'
 import { NativeChatMarkdownImageOwnerProvider } from './media/images/native-chat-markdown-image-owner'
+import { AgentSessionChatFrameSlot } from '../live-sessions/chat/AgentSessionChatFrameSlot'
+import { ExternalAgentSessionChat } from '../live-sessions/chat/ExternalAgentSessionChat'
 
 export default function NativeChatView(props: NativeChatViewProps): React.JSX.Element {
   return (
@@ -24,10 +26,22 @@ export default function NativeChatView(props: NativeChatViewProps): React.JSX.El
               isVisible={props.isVisible}
               sessionId={props.sessionId}
             >
-              <NativeChatStructuredSession {...props} />
+              <AgentSessionChatFrameSlot
+                lookup={{ kind: 'chat', sessionId: props.sessionId }}
+                isVisible={props.isVisible}
+              >
+                <NativeChatStructuredSession {...props} />
+              </AgentSessionChatFrameSlot>
             </NativeChatMarkdownImageOwnerProvider>
           </NativeChatFileLinkExistenceProvider>
         </NativeChatVisualOwnerProvider>
+      ) : props.mode === 'external' ? (
+        <AgentSessionChatFrameSlot
+          lookup={{ kind: 'record', sessionId: props.sessionId }}
+          isVisible={props.isVisible}
+        >
+          <ExternalAgentSessionChat {...props} />
+        </AgentSessionChatFrameSlot>
       ) : (
         <NativeChatBridgeView {...props} />
       )}
@@ -48,7 +62,7 @@ function NativeChatBridgeView({
   readTerminalScreen,
   readTerminalDraft,
   contextMenuActions
-}: Exclude<NativeChatViewProps, { mode: 'structured' }>): React.JSX.Element {
+}: NativeChatBridgeViewProps): React.JSX.Element {
   const { entry: agentStatusEntry, paneKey } = useNativeChatStatusEntry(
     terminalTabId,
     preferredPaneKey
@@ -68,21 +82,26 @@ function NativeChatBridgeView({
             tabId={terminalTabId}
             isVisible={isVisible}
           >
-            <NativeChatResolvedView
-              paneKey={resolution.paneKey}
-              agent={resolution.agent}
-              sessionId={resolution.sessionId}
-              transcriptPath={resolution.transcriptPath}
+            <AgentSessionChatFrameSlot
+              lookup={{ kind: 'pane', paneKey: resolution.paneKey }}
               isVisible={isVisible}
-              isFocusedGroup={isFocusedGroup}
-              targetPtyId={targetPtyId}
-              terminalTabId={terminalTabId}
-              ownsTabWideLaunchDraft={ownsTabWideLaunchDraft}
-              onSwitchToTerminal={onSwitchToTerminal}
-              readTerminalScreen={readTerminalScreen}
-              readTerminalDraft={readTerminalDraft}
-              contextMenuActions={contextMenuActions}
-            />
+            >
+              <NativeChatResolvedView
+                paneKey={resolution.paneKey}
+                agent={resolution.agent}
+                sessionId={resolution.sessionId}
+                transcriptPath={resolution.transcriptPath}
+                isVisible={isVisible}
+                isFocusedGroup={isFocusedGroup}
+                targetPtyId={targetPtyId}
+                terminalTabId={terminalTabId}
+                ownsTabWideLaunchDraft={ownsTabWideLaunchDraft}
+                onSwitchToTerminal={onSwitchToTerminal}
+                readTerminalScreen={readTerminalScreen}
+                readTerminalDraft={readTerminalDraft}
+                contextMenuActions={contextMenuActions}
+              />
+            </AgentSessionChatFrameSlot>
           </NativeChatMarkdownImageOwnerProvider>
         </NativeChatFileLinkExistenceProvider>
       )}

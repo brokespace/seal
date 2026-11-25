@@ -1,4 +1,5 @@
-import { useCallback, useImperativeHandle, useMemo, useRef } from 'react'
+import { createContext, useCallback, useContext, useImperativeHandle, useMemo, useRef } from 'react'
+import type { RefObject } from 'react'
 import { useAppStore } from '@/store'
 import { hasAskAnswer } from '../../../../../../shared/native-chat/input/native-chat-ask-answer'
 import { nativeChatScrollsToLatestOnSend } from '../../../../../../shared/native-chat/native-chat-appearance-settings'
@@ -60,9 +61,15 @@ export type NativeChatMessageListHandle = {
   revealFindMatch: (match: Range, bar: DOMRectReadOnly | null) => void
   /** What the row drawing this message copies from its Copy button; null when none draws it. */
   messageCopyText: (messageId: string) => string | null
-  /** Open a subagent's activity where it sits in the conversation and bring it into view. */
-  revealSubagent: (agentId: string) => void
+  /** Bring a message to the top of the view, reading older history until it is loaded. */
+  revealMessage: (messageId: string) => void
 }
+
+/** How the frame around a chat brings one of the pane's messages into view. */
+export const NativeChatMessageRevealContext = createContext<RefObject<Pick<
+  NativeChatMessageListHandle,
+  'revealMessage'
+> | null> | null>(null)
 
 /** This pane's own transcript; an unmounted pane's reveal reaches nothing. */
 export function useNativeChatRevealLatest(): {
@@ -71,6 +78,11 @@ export function useNativeChatRevealLatest(): {
   captureRevealLatest: () => () => void
 } {
   const messageListRef = useRef<NativeChatMessageListHandle>(null)
+  useImperativeHandle(
+    useContext(NativeChatMessageRevealContext),
+    () => ({ revealMessage: (messageId) => messageListRef.current?.revealMessage(messageId) }),
+    []
+  )
   const reveal = useCallback((readerWasAtEnd?: boolean) => {
     try {
       messageListRef.current?.revealLatest(readerWasAtEnd)
@@ -98,8 +110,8 @@ export function useNativeChatMessageListHandle(
     onSent,
     revealFindMatch,
     slots,
-    revealSubagent
-  }: Pick<NativeChatMessageListHandle, 'readerAtEnd' | 'revealFindMatch' | 'revealSubagent'> & {
+    revealMessage
+  }: Pick<NativeChatMessageListHandle, 'readerAtEnd' | 'revealFindMatch' | 'revealMessage'> & {
     beginNavigation: () => void
     scrollToBottom: (reason: 'send') => void
     /** The reader answered, whether or not the view moves. */
@@ -125,8 +137,8 @@ export function useNativeChatMessageListHandle(
       readerAtEnd,
       revealFindMatch,
       messageCopyText: (messageId) => nativeChatSlotCopyText(slots, messageId),
-      revealSubagent
+      revealMessage
     }),
-    [readerAtEnd, revealLatest, revealFindMatch, revealSubagent, slots]
+    [readerAtEnd, revealLatest, revealFindMatch, revealMessage, slots]
   )
 }

@@ -672,7 +672,7 @@ function evaluateOrcaTree(component, editsSeen = /* @__PURE__ */ new Map()) {
   function hostNode(type, props, key, parentPath, depth) {
     if (!/^[A-Z]/.test(type)) {
       throw new TypeError(
-        `<${type.slice(0, 64)}> is not an Orca component; panels never render DOM`
+        `<${type.slice(0, 64)}> is not a Seal component; panels never render DOM`
       );
     }
     const path = `${parentPath}/${key}`;
@@ -1312,7 +1312,7 @@ function hostError(code, message) {
   return Object.assign(new Error(message), { code, retryable: code === "timeout" });
 }
 function unavailable(what) {
-  return Promise.reject(hostError("unavailable", `${what} is not available in this Orca`));
+  return Promise.reject(hostError("unavailable", `${what} is not available in this Seal`));
 }
 function isComponentTag(name) {
   return Object.hasOwn(PLUGIN_DECLARATIVE_COMPONENT_PROPS, name);
@@ -1405,7 +1405,7 @@ function createOrcaSdk(source) {
 // src/shared/plugins/declarative/runtime/declarative-data-sdk.ts
 function unavailable2(what) {
   return Promise.reject(
-    Object.assign(new Error(`${what} is not available in this Orca`), {
+    Object.assign(new Error(`${what} is not available in this Seal`), {
       code: "unavailable",
       retryable: false
     })

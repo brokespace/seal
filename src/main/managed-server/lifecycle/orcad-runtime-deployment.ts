@@ -9,7 +9,7 @@ import {
   redactRuntimeEnvironment
 } from '../../../shared/remote-runtime/host-catalog/runtime-environments'
 import {
-  ORCAD_MANAGED_REMOTE_PORT,
+  SEAL_MANAGED_SSH_PORT,
   type OrcadManagedDeferral,
   type OrcadManagedDeployResult
 } from '../../../shared/orcad-managed-runtime'
@@ -98,7 +98,10 @@ export async function createManagedOrcadEnvironment(
     try {
       const connection = await connectionManager.connect(claimed)
       let context = await resolveOrcadRemoteContext(claimed, connection, args.signal)
-      const slot = managedOrcadSlot(context, ORCAD_MANAGED_REMOTE_PORT, args.signal)
+      // A deployment keeps the port it was recorded with; a new one stays off a user's own `seal serve`.
+      const remotePort =
+        (registered && getOrcadSshDeployment(registered)?.remotePort) ?? SEAL_MANAGED_SSH_PORT
+      const slot = managedOrcadSlot(context, remotePort, args.signal)
       const recovery = await recoverInterruptedOrcadActivation(slot)
       if (recovery.outcome === 'pending' || recovery.outcome === 'refused') {
         throw new Error(recovery.reason)
@@ -145,7 +148,7 @@ export async function createManagedOrcadEnvironment(
         claimed,
         connection,
         tunnel.remotePort,
-        { ...tunnel, preferredPort: ORCAD_MANAGED_REMOTE_PORT }
+        { ...tunnel, preferredPort: remotePort }
       )
       const environment = addManagedOrcadEnvironment(userDataPath, {
         id: environmentId,
@@ -155,7 +158,7 @@ export async function createManagedOrcadEnvironment(
           sshTargetId: claimed.id,
           sshTargetGeneration: targetGeneration,
           localPort,
-          remotePort: ORCAD_MANAGED_REMOTE_PORT
+          remotePort
         }
       })
       environmentRegistered = true

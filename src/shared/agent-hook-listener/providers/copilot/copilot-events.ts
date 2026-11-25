@@ -69,6 +69,10 @@ export function normalizeCopilotEvent(
     toolInput: snapshot.toolInput,
     interactivePrompt: snapshot.interactivePrompt,
     lastAssistantMessage: snapshot.lastAssistantMessage,
-    lastAssistantMessageIsToolOutput: snapshot.lastAssistantMessageIsToolOutput
+    lastAssistantMessageIsToolOutput: snapshot.lastAssistantMessageIsToolOutput,
+    mainAgent:
+      normalizedEventName === 'ErrorOccurred' && stateName === 'done'
+        ? { state: 'done', outcome: 'failure', stateStartedAt: Date.now() }
+        : undefined
   })
 }

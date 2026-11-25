@@ -18,8 +18,8 @@ class FakeSocket {
 
 const relay = {
   v: 1 as const,
-  directorUrl: 'https://relay.onorca.dev',
-  cellUrl: 'https://relay-c1.onorca.dev',
+  directorUrl: 'https://relay.example',
+  cellUrl: 'https://relay.example',
   assignmentEpoch: 7,
   relayHostId: 'AbCdEf0123_-xyZ9',
   inviteToken: 'abcdefghijklmnopqrstuvwxyzABCDEFGH012345678',
@@ -39,8 +39,7 @@ describe('pairing invite director resolution', () => {
       }
     })
     socket.onopen?.()
-    expect(url).toBe('wss://relay.onorca.dev/v1/connect/AbCdEf0123_-xyZ9')
-    expect(url).not.toContain('?')
+    expect(url).toBe('wss://relay.example/v1/connect/AbCdEf0123_-xyZ9')
     expect(JSON.parse(socket.sent[0]!)).toEqual({
       type: 'relay-auth',
       v: 1,
@@ -51,16 +50,32 @@ describe('pairing invite director resolution', () => {
       data: JSON.stringify({
         type: 'relay-moved',
         v: 1,
-        cellUrl: 'https://relay-c2.onorca.dev',
+        cellUrl: 'https://relay.seal.wotarmelon.com',
         assignmentEpoch: 8
       })
     })
 
     await expect(resolving).resolves.toMatchObject({
-      cellUrl: 'https://relay-c2.onorca.dev',
+      cellUrl: 'https://relay.seal.wotarmelon.com',
       assignmentEpoch: 8
     })
   })
+
+  it.each(['https://cell.attacker.example', 'https://relay.example.attacker.example'])(
+    'fails a move to %s without following it',
+    async (cellUrl) => {
+      const socket = new FakeSocket()
+      const resolving = resolvePairingInviteThroughDirector({
+        relay,
+        createSocket: () => socket as unknown as WebSocket
+      })
+      socket.onmessage?.({
+        data: JSON.stringify({ type: 'relay-moved', v: 1, cellUrl, assignmentEpoch: 8 })
+      })
+
+      await expect(resolving).rejects.toThrow('relay cell is outside the origins this host may use')
+    }
+  )
 
   it('rejects malformed moves with untrusted extra fields', async () => {
     const socket = new FakeSocket()
@@ -72,7 +87,7 @@ describe('pairing invite director resolution', () => {
       data: JSON.stringify({
         type: 'relay-moved',
         v: 1,
-        cellUrl: 'https://relay-c2.onorca.dev',
+        cellUrl: 'https://relay.seal.wotarmelon.com',
         assignmentEpoch: 8,
         targetFromCell: true
       })

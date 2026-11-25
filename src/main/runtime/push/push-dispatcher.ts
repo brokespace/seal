@@ -6,13 +6,15 @@ import type { MobileNotificationEvent } from './notifications/runtime-mobile-not
 import type { PushGatewayClient, PushSendNotification } from './push-gateway-client'
 import { PushOutcomeCounters } from './push-outcome-counters'
 import type { MobilePushDeliveryMode } from './mobile-push-delivery-policy'
+import { APP_PRODUCT_NAME } from '../../../shared/app-identity'
 
 const PUSH_RETRY_DELAY_MS = 2_000
 // Split requests at the gateway's per-send limit so extra paired phones still receive notifications.
 const MAX_REGISTRATIONS_PER_SEND = 20
 
 export type PushDispatcherRegistry = {
-  listDevices(): readonly { deviceId: string; pushRegistration?: MobilePushRegistration }[]
+  /** Read fresh per notification: a device revoked on disk gets nothing from then on. */
+  listCurrentDevices(): readonly { deviceId: string; pushRegistration?: MobilePushRegistration }[]
   setPushRegistration(deviceId: string, registration: MobilePushRegistration | null): boolean
 }
 
@@ -91,7 +93,7 @@ export class PushDispatcher {
         return null
       }
       const targets = this.registry
-        .listDevices()
+        .listCurrentDevices()
         .flatMap(({ deviceId, pushRegistration: registration }) =>
           registration && registration.expiresAt > Date.now() ? [{ deviceId, registration }] : []
         )
@@ -105,7 +107,7 @@ export class PushDispatcher {
           notificationEpoch: target.notificationEpoch,
           source: 'agent-task-complete',
           agentState: null,
-          title: 'Orca',
+          title: APP_PRODUCT_NAME,
           body: '',
           sound: false
         }
@@ -115,7 +117,7 @@ export class PushDispatcher {
     if (!content) {
       return null
     }
-    const targets = this.registry.listDevices().flatMap((device) => {
+    const targets = this.registry.listCurrentDevices().flatMap((device) => {
       const registration = device.pushRegistration
       if (
         !registration ||
@@ -163,7 +165,7 @@ export class PushDispatcher {
     }
     const currentTargets = targets.filter((target) =>
       this.registry
-        .listDevices()
+        .listCurrentDevices()
         .some(
           (device) =>
             device.deviceId === target.deviceId &&
@@ -216,7 +218,7 @@ export class PushDispatcher {
       )
       if (
         !target ||
-        this.registry.listDevices().find((device) => device.deviceId === target.deviceId)
+        this.registry.listCurrentDevices().find((device) => device.deviceId === target.deviceId)
           ?.pushRegistration !== target.registration
       ) {
         continue

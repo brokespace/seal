@@ -1,0 +1,26 @@
+[
+  {
+    "key": "bd5f9940072d4f16c3ac4b6ceba6bdf3",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Fix the flaky date test in test/invoice.test.ts\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Fix the flaky date test in test/invoice.test.ts\n\n[m2] AGENT: The test compared against new Date() at midnight boundaries; it now uses a fixed clock. It passed 50 runs in a row.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Fix flaky date test in test/invoice.test.ts\",\n  \"goal\": \"Fix flaky date test causing test failures\",\n  \"standing\": \"Replaced dynamic date comparisons with a fixed clock to stabilize the test, which now passes consistently\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\n        \"text\": \"Replaced dynamic date comparison with fixed clock\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": []\n}",
+    "neurons": 8.7933
+  },
+  {
+    "key": "90964420905c990473d4307227581fc3",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Fix flaky date test in test/invoice.test.ts\",\"goal\":\"Fix flaky date test causing test failures\",\"standing\":\"Replaced dynamic date comparisons with a fixed clock to stabilize the test, which now passes consistently\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Replaced dynamic date comparison with fixed clock\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: great, commit and push, then open a PR\n\n[m2] AGENT: https://github.com/acme/shop/pull/212\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [\n    {\"id\": \"w1\", \"state\": \"done\"}\n  ],\n  \"resolve\": [\"w1\"],\n  \"standing\": \"PR #212 for the date test fix is now open on GitHub\"\n}",
+    "neurons": 5.5964
+  }
+]

@@ -5,6 +5,7 @@ import type {
 } from '../../../../shared/remote-runtime/relay/mobile-relay-credential-contract'
 import { callerScopeOf, devicePrincipalOf } from './pairing/device-principal'
 import { registerSocketDeviceKey } from './runtime-rpc-device-key-registration'
+import { withoutBearerClientId } from './bearer-client-id'
 import { exchangeSocketPairingTicket } from './runtime-rpc-pairing-ticket-exchange'
 import type { AuthenticatedMobileSocket } from '../mobile/mobile-socket-wiring'
 import type { RpcRequest, RpcResponse } from '../core'
@@ -17,7 +18,7 @@ import { limitRuntimeRpcReplySize } from './runtime-rpc-reply-size-limit'
 import { MOBILE_RPC_METHOD_ALLOWLIST } from './runtime-rpc-mobile-method-allowlist'
 import { MOBILE_RPC_METHOD_ROUTES } from './runtime-rpc-mobile-method-routing'
 import { parseExecutionHostId } from '../../../../shared/execution-host'
-import { WorktreeRemove } from '../../../../shared/rpc-contract/worktree-params'
+import { WorktreeRemove } from '../../../../shared/rpc-contract/workspaces/worktree-params'
 
 // Stamp proven scope at transport boundary; status.get has no connection context.
 function injectDeviceScope(response: string, scope: DeviceScope): string {
@@ -110,7 +111,8 @@ export class RuntimeRpcWebSocketDispatch extends RuntimeRpcMobileDevices {
         {
           connectionId: socket.connectionId,
           deviceId: socket.device.deviceId,
-          deviceToken: socket.device.clientId,
+          // What the phone's frames carry, which the relay swaps for its credential on the server.
+          deviceToken: socket.device.deviceToken ?? socket.device.clientId,
           clientCapabilities: () => socket.clientCapabilities,
           reply,
           sendBinary: (bytes) => {
@@ -202,6 +204,9 @@ export class RuntimeRpcWebSocketDispatch extends RuntimeRpcMobileDevices {
         return
       }
       request = localRequest
+    }
+    if (token) {
+      request = withoutBearerClientId(request, rawMessage, token, principal.clientId)
     }
 
     // Why: bind the device to this socket so ws.on('close') knows which client disconnected.

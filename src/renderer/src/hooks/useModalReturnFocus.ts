@@ -9,6 +9,7 @@ import {
 } from '../components/browser-pane/host-guest/browser-focus'
 import {
   resolveModalReturnFocusAction,
+  WORKSPACE_FOCUS_SELECTORS,
   type ModalReturnFocusSurface
 } from './modal-return-focus-action'
 
@@ -51,7 +52,7 @@ export function useModalReturnFocus(visible: boolean): {
   }, [])
 
   const focusFirstMatchingSurface = useCallback(
-    (selectors: string[]): void => {
+    (selectors: readonly string[]): void => {
       cancelFrames()
       outerFrameRef.current = requestAnimationFrame(() => {
         outerFrameRef.current = null
@@ -78,22 +79,18 @@ export function useModalReturnFocus(visible: boolean): {
     if (focusCapturedElement()) {
       return
     }
-    focusFirstMatchingSurface([
-      '.monaco-editor textarea',
-      '.rich-markdown-editor[contenteditable="true"]',
-      '.markdown-preview'
-    ])
+    focusFirstMatchingSurface(WORKSPACE_FOCUS_SELECTORS.editor)
   }, [focusCapturedElement, focusFirstMatchingSurface])
 
   const focusSimulatorSurface = useCallback((): void => {
     if (focusCapturedElement()) {
       return
     }
-    focusFirstMatchingSurface(['[data-orca-emulator-frame="true"] [tabindex]'])
+    focusFirstMatchingSurface(WORKSPACE_FOCUS_SELECTORS.simulator)
   }, [focusCapturedElement, focusFirstMatchingSurface])
 
   const focusFallbackSurface = useCallback((): void => {
-    focusFirstMatchingSurface(['.xterm-helper-textarea', '.monaco-editor textarea'])
+    focusFirstMatchingSurface(WORKSPACE_FOCUS_SELECTORS.surface)
   }, [focusFirstMatchingSurface])
 
   const requestBrowserFocus = useCallback((detail: BrowserFocusRequestDetail): void => {

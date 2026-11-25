@@ -5,9 +5,10 @@ import {
 } from '../../runtime-rpc-envelope'
 import { RemoteRuntimeClientError } from '../remote-runtime-client-error'
 import { assertJsonTextStructureWithinLimits } from '../../json-stream/json-text-structure-limit'
-import type {
-  PairedE2EEAuthReply,
-  PairedE2EEReadyVerdict
+import {
+  PAIRED_E2EE_HOST_UPDATE_REQUIRED_MESSAGE,
+  type PairedE2EEAuthReply,
+  type PairedE2EEReadyVerdict
 } from '../e2ee/paired-e2ee-client-handshake'
 
 export const REMOTE_RUNTIME_JSON_STRUCTURE_LIMITS = {
@@ -48,11 +49,18 @@ export function remoteRuntimeReadyError(
   if (verdict === 'accepted') {
     return null
   }
-  return invalidRemoteRuntimeResponseError(
-    verdict === 'invalid'
-      ? 'Remote Orca runtime returned an invalid E2EE handshake frame.'
-      : 'Remote Orca runtime returned an unexpected E2EE handshake frame.'
-  )
+  return invalidRemoteRuntimeResponseError(remoteRuntimeReadyFailureMessage(verdict))
+}
+
+export function remoteRuntimeReadyFailureMessage(
+  verdict: Exclude<PairedE2EEReadyVerdict, 'accepted'>
+): string {
+  if (verdict === 'host_outdated') {
+    return PAIRED_E2EE_HOST_UPDATE_REQUIRED_MESSAGE
+  }
+  return verdict === 'invalid'
+    ? 'Remote Orca runtime returned an invalid E2EE handshake frame.'
+    : 'Remote Orca runtime returned an unexpected E2EE handshake frame.'
 }
 
 export function remoteRuntimeAuthReplyError(

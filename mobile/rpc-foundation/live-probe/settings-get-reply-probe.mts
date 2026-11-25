@@ -2,7 +2,7 @@
 import WebSocket from 'ws'
 import nacl from 'tweetnacl'
 import { readFileSync } from 'node:fs'
-import { deriveSharedKey, e2eeDecrypt, e2eeEncrypt } from '../../scripts/mock-server-encryption.ts'
+import { authenticatePairedE2EEV2TestClient } from '../../../src/main/runtime/rpc/mobile/e2ee/paired-e2ee-v2-test-client.ts'
 import { botOverridesRead } from '../../src/source-control/review/mobile-pr-bot-settings-operations.ts'
 import { newTabSettingsRead } from '../../src/session/agent-launch/mobile-new-tab-settings-operations.ts'
 import {
@@ -17,8 +17,6 @@ const serverPublic = nacl.box.keyPair.fromSecretKey(
 ).publicKey
 
 function rawReply(): Promise<unknown> {
-  const kp = nacl.box.keyPair()
-  const key = deriveSharedKey(kp.secretKey, serverPublic)
   const ws = new WebSocket(`ws://127.0.0.1:${PORT}`)
   return new Promise((resolve, reject) => {
     let settled = false
@@ -32,14 +30,30 @@ function rawReply(): Promise<unknown> {
       }
     }
     const timer = setTimeout(() => finish({ __outcome: 'no-reply-timeout' }), 5000)
-    ws.on('open', () =>
-      ws.send(
-        JSON.stringify({
-          type: 'e2ee_hello',
-          publicKeyB64: Buffer.from(kp.publicKey).toString('base64')
-        })
+    ws.on('open', () => {
+      void authenticatePairedE2EEV2TestClient(ws, {
+        hostPublicKeyB64: Buffer.from(serverPublic).toString('base64'),
+        deviceToken: 'mock-device-token'
+      }).then(
+        (channel) => {
+          channel.onText((plain) => {
+            // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the probe prints whatever the host sent, so the frame is read as a bag of fields.
+            const frame = JSON.parse(plain) as { id?: string }
+            if (frame.id === 'probe-1') {
+              clearTimeout(timer)
+              finish(frame)
+            }
+          })
+          channel.sendText(
+            JSON.stringify({ id: 'probe-1', method: 'settings.get', token: 'mock-device-token' })
+          )
+        },
+        () => {
+          clearTimeout(timer)
+          finish({ __outcome: 'socket-closed-before-reply' })
+        }
       )
-    )
+    })
     ws.on('close', () => {
       clearTimeout(timer)
       finish({ __outcome: 'socket-closed-before-reply' })
@@ -49,34 +63,6 @@ function rawReply(): Promise<unknown> {
       if (!settled) {
         settled = true
         reject(e)
-      }
-    })
-    ws.on('message', (data) => {
-      const text = data.toString('utf-8')
-      if (text.startsWith('{"type":"e2ee_ready"')) {
-        ws.send(
-          e2eeEncrypt(JSON.stringify({ type: 'e2ee_auth', deviceToken: 'mock-device-token' }), key)
-        )
-        return
-      }
-      const plain = e2eeDecrypt(text, key)
-      if (plain === null) {
-        return
-      }
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the probe prints whatever the host sent, so the frame is read as a bag of fields.
-      const frame = JSON.parse(plain) as { type?: string; id?: string }
-      if (frame.type === 'e2ee_authenticated') {
-        ws.send(
-          e2eeEncrypt(
-            JSON.stringify({ id: 'probe-1', method: 'settings.get', token: 'mock-device-token' }),
-            key
-          )
-        )
-        return
-      }
-      if (frame.id === 'probe-1') {
-        clearTimeout(timer)
-        finish(frame)
       }
     })
   })

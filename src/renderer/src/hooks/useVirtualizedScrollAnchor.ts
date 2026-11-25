@@ -50,6 +50,8 @@ type UseVirtualizedScrollAnchorOptions<
   scrollElementRef: RefObject<TScrollElement | null>
   scrollOffsetRef: MutableRefObject<number>
   shouldSkipRestore?: () => boolean
+  // Height of a header pinned over the rows inside the scroll element; the top visible row starts below it.
+  topInset?: number
   totalSize: number
   virtualizer: Virtualizer<TScrollElement, TItemElement>
 }
@@ -75,6 +77,7 @@ export function useVirtualizedScrollAnchor<
   scrollElementRef,
   scrollOffsetRef,
   shouldSkipRestore,
+  topInset = 0,
   totalSize,
   virtualizer
 }: UseVirtualizedScrollAnchorOptions<TRow, TScrollElement, TItemElement>): void {
@@ -97,10 +100,11 @@ export function useVirtualizedScrollAnchor<
         getRowKey,
         rows,
         scrollTop,
+        topInset,
         virtualItems: virtualizer.getVirtualItems()
       })
     },
-    [anchorRef, getRowKey, rows, virtualizer]
+    [anchorRef, getRowKey, rows, topInset, virtualizer]
   )
 
   const recordScrollAnchor = useCallback(
@@ -114,7 +118,8 @@ export function useVirtualizedScrollAnchor<
           getItemElementKey,
           itemElementSelector,
           rowIndexByKey,
-          scrollElement
+          scrollElement,
+          topInset
         })
         if (domAnchor) {
           anchorRef.current = domAnchor
@@ -126,6 +131,7 @@ export function useVirtualizedScrollAnchor<
         getRowKey,
         rows,
         scrollTop,
+        topInset,
         virtualItems: virtualizer.getVirtualItems()
       })
     },
@@ -137,6 +143,7 @@ export function useVirtualizedScrollAnchor<
       rowIndexByKey,
       rows,
       scrollElementRef,
+      topInset,
       virtualizer
     ]
   )
@@ -301,6 +308,7 @@ export function useVirtualizedScrollAnchor<
       rekeyedRowKeys,
       rowIndexByKey,
       scrollOffsetRef,
+      topInset,
       virtualizer
     })
   }, [
@@ -314,6 +322,7 @@ export function useVirtualizedScrollAnchor<
     scrollElementRef,
     scrollOffsetRef,
     shouldSkipRestore,
+    topInset,
     totalSize,
     virtualizer,
     virtualizer.isScrolling

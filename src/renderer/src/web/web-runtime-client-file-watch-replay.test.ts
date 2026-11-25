@@ -2,9 +2,8 @@ import { pairedRuntimeConnectionFromOffer } from '../../../shared/remote-runtime
 // Replayed watches miss reconnect-gap changes; ready must trigger conservative overflow so consumers rescan.
 import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest'
 import type { PairedE2EEClientHandshake } from '../../../shared/remote-runtime/e2ee/paired-e2ee-client-handshake'
-import { createFixedKeyLegacyHandshakeForTest } from '../../../shared/remote-runtime/e2ee/paired-e2ee-fixed-key-test-fixture'
+import { createPairedE2EEV2SessionPairForTest } from '../../../main/runtime/rpc/mobile/e2ee/paired-e2ee-v2-session-pair-test-fixture'
 import { WebRuntimeClient } from './web-runtime-client'
-import { encrypt } from '../../../shared/remote-runtime/e2ee/node/e2ee-crypto'
 
 const fakeSockets: FakeWebSocket[] = []
 
@@ -23,6 +22,12 @@ class FakeWebSocket {
   constructor(readonly _url: string) {
     fakeSockets.push(this)
   }
+}
+
+function keyedHandshake(): PairedE2EEClientHandshake {
+  const pair = createPairedE2EEV2SessionPairForTest()
+  pair.handshake.acceptReadyText(pair.readyText)
+  return pair.handshake
 }
 
 describe('WebRuntimeClient file-watch replay resync', () => {
@@ -49,7 +54,7 @@ describe('WebRuntimeClient file-watch replay resync', () => {
         v: 2,
         endpoint: 'ws://127.0.0.1:6768',
         deviceToken: 'token',
-        publicKeyB64: Buffer.alloc(32).toString('base64')
+        publicKeyB64: Buffer.alloc(32, 9).toString('base64')
       })
     )
     const initialSocket = fakeSockets[0]!
@@ -69,7 +74,7 @@ describe('WebRuntimeClient file-watch replay resync', () => {
       >
       setState(next: string): void
     }
-    internals.handshake = createFixedKeyLegacyHandshakeForTest(new Uint8Array(32))
+    internals.handshake = keyedHandshake()
     internals.state = 'connected'
 
     await client.subscribe('files.watch', { worktree: 'wt-1' }, { onResponse })
@@ -88,7 +93,7 @@ describe('WebRuntimeClient file-watch replay resync', () => {
     const replacementSocket = new FakeWebSocket('ws://127.0.0.1:6768')
     replacementSocket.readyState = FakeWebSocket.OPEN
     internals.ws = replacementSocket
-    internals.handshake = createFixedKeyLegacyHandshakeForTest(new Uint8Array(32))
+    internals.handshake = keyedHandshake()
     internals.setState('connected')
 
     const [replacementId, replacement] = Array.from(internals.subscriptions.entries())[0]!
@@ -120,7 +125,7 @@ describe('WebRuntimeClient file-watch replay resync', () => {
         v: 2,
         endpoint: 'ws://127.0.0.1:6768',
         deviceToken: 'token',
-        publicKeyB64: Buffer.alloc(32).toString('base64')
+        publicKeyB64: Buffer.alloc(32, 9).toString('base64')
       })
     )
     const initialSocket = fakeSockets[0]!
@@ -142,7 +147,7 @@ describe('WebRuntimeClient file-watch replay resync', () => {
       setState(next: string): void
       handleSocketClosed(socket: FakeWebSocket): void
     }
-    internals.handshake = createFixedKeyLegacyHandshakeForTest(new Uint8Array(32))
+    internals.handshake = keyedHandshake()
     internals.state = 'connected'
 
     const handle = await client.subscribe(
@@ -161,7 +166,7 @@ describe('WebRuntimeClient file-watch replay resync', () => {
     const replacementSocket = new FakeWebSocket('ws://127.0.0.1:6768')
     replacementSocket.readyState = FakeWebSocket.OPEN
     internals.ws = replacementSocket
-    internals.handshake = createFixedKeyLegacyHandshakeForTest(new Uint8Array(32))
+    internals.handshake = keyedHandshake()
     internals.setState('connected')
 
     const [replacementId, replacement] = Array.from(internals.subscriptions.entries())[0]!
@@ -182,7 +187,7 @@ describe('WebRuntimeClient file-watch replay resync', () => {
     const secondReplacementSocket = new FakeWebSocket('ws://127.0.0.1:6768')
     secondReplacementSocket.readyState = FakeWebSocket.OPEN
     internals.ws = secondReplacementSocket
-    internals.handshake = createFixedKeyLegacyHandshakeForTest(new Uint8Array(32))
+    internals.handshake = keyedHandshake()
     internals.setState('connected')
     expect(secondReplacementSocket.send).not.toHaveBeenCalled()
     client.close()
@@ -195,12 +200,13 @@ describe('WebRuntimeClient file-watch replay resync', () => {
         v: 2,
         endpoint: 'ws://127.0.0.1:6768',
         deviceToken: 'token',
-        publicKeyB64: Buffer.alloc(32).toString('base64')
+        publicKeyB64: Buffer.alloc(32, 9).toString('base64')
       })
     )
     const initialSocket = fakeSockets[0]!
     initialSocket.readyState = FakeWebSocket.OPEN
-    const sharedKey = new Uint8Array(32)
+    const pair = createPairedE2EEV2SessionPairForTest()
+    pair.handshake.acceptReadyText(pair.readyText)
     const onResponse = vi.fn()
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the test reaches the client's private transport state; a renamed field fails the test.
     const internals = client as unknown as {
@@ -211,19 +217,18 @@ describe('WebRuntimeClient file-watch replay resync', () => {
       handleSocketMessage(rawData: unknown): Promise<void>
       setState(next: string): void
     }
-    internals.handshake = createFixedKeyLegacyHandshakeForTest(sharedKey)
+    internals.handshake = pair.handshake
     internals.state = 'connected'
     await client.subscribe('files.watch', { worktree: 'wt-1' }, { onResponse })
     const subscriptionId = Array.from(internals.subscriptions.keys())[0]!
 
     await internals.handleSocketMessage(
-      encrypt(
+      pair.host.sealText(
         JSON.stringify({
           id: subscriptionId,
           ok: false,
           error: { code: 'watch_failed', message: 'root unavailable' }
-        }),
-        sharedKey
+        })
       )
     )
 
@@ -233,7 +238,7 @@ describe('WebRuntimeClient file-watch replay resync', () => {
     const replacementSocket = new FakeWebSocket('ws://127.0.0.1:6768')
     replacementSocket.readyState = FakeWebSocket.OPEN
     internals.ws = replacementSocket
-    internals.handshake = createFixedKeyLegacyHandshakeForTest(sharedKey)
+    internals.handshake = pair.handshake
     internals.setState('connected')
     expect(replacementSocket.send).not.toHaveBeenCalled()
     client.close()

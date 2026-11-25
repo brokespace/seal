@@ -101,13 +101,13 @@ const KNOWN_CLI_DETAILS: {
     })
   },
   {
-    test: /(.+) exists but is not an Orca launcher script\.?$/,
+    test: /(.+) exists but is not an (?:Seal|Orca) launcher script\.?$/,
     key: 'auto.lib.cli.detail.notOrcaLauncherScript',
     fallback: '{{path}} exists but is not an Orca launcher script.',
     vars: (match) => ({ path: match?.[1] ?? '' })
   },
   {
-    test: /(.+) exists but is not an Orca symlink\.?$/,
+    test: /(.+) exists but is not an (?:Seal|Orca) symlink\.?$/,
     key: 'auto.lib.cli.detail.notOrcaSymlink',
     fallback: '{{path}} exists but is not an Orca symlink.',
     vars: (match) => ({ path: match?.[1] ?? '' })
@@ -119,7 +119,7 @@ const KNOWN_CLI_DETAILS: {
     vars: (match) => ({ path: match?.[1] ?? '' })
   },
   {
-    test: /(.+) contains an older Orca launcher\.?$/,
+    test: /(.+) contains an older (?:Seal|Orca) launcher\.?$/,
     key: 'auto.lib.cli.detail.olderLauncher',
     fallback: '{{path}} contains an older Orca launcher.',
     vars: (match) => ({ path: match?.[1] ?? '' })
@@ -143,9 +143,9 @@ function registerPathToken(raw: string | undefined): string {
   return trimmed.length > 0 ? trimmed : 'orca'
 }
 
-/** Map stable English "Register … to use Orca from …" status details. */
+/** Map stable English "Register … to use Seal from …" status details. */
 function formatRegisterCliDetail(normalized: string): string | null {
-  const wsl = normalized.match(/^Register\s*(.*?)\s+to use Orca from WSL\.?$/i)
+  const wsl = normalized.match(/^Register\s*(.*?)\s+to use (?:Seal|Orca) from WSL\.?$/i)
   if (wsl) {
     return translate(
       'auto.lib.cli.detail.registerForWsl',
@@ -153,7 +153,9 @@ function formatRegisterCliDetail(normalized: string): string | null {
       { path: registerPathToken(wsl[1]) }
     )
   }
-  const terminal = normalized.match(/^Register\s*(.*?)\s+to use Orca from the terminal\.?$/i)
+  const terminal = normalized.match(
+    /^Register\s*(.*?)\s+to use (?:Seal|Orca) from the terminal\.?$/i
+  )
   if (terminal) {
     return translate(
       'auto.lib.cli.detail.registerForTerminal',
@@ -162,7 +164,7 @@ function formatRegisterCliDetail(normalized: string): string | null {
     )
   }
   const windowsShell = normalized.match(
-    /^Register\s*(.*?)\s+to use Orca from Command Prompt or PowerShell\.?$/i
+    /^Register\s*(.*?)\s+to use (?:Seal|Orca) from Command Prompt or PowerShell\.?$/i
   )
   if (windowsShell) {
     return translate(

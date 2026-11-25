@@ -1,0 +1,80 @@
+{
+  "id": "model-rate-limited",
+  "title": "The provider rate-limits the request",
+  "categories": ["model-failure"],
+  "surfaces": ["claude-cli"],
+  "expected": "The recap is paused, and is written once the pause is over without the user doing anything.",
+  "steps": [
+    {
+      "fault": {
+        "kind": "rate-limit",
+        "model": "primary",
+        "times": 1
+      }
+    },
+    {
+      "user": "The checkout page crashes when the cart is empty. Fix it."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/src/pages/checkout.tsx"
+        },
+        "output": "// src/pages/checkout.tsx"
+      }
+    },
+    {
+      "edit": "/srv/shop/src/pages/checkout.tsx"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm test src/pages/checkout.test.tsx"
+        },
+        "output": "12 passed"
+      }
+    },
+    {
+      "agent": "Fixed. The checkout page read cart.items[0] without checking for an empty cart; it now shows the empty-cart message instead. All 12 checkout tests pass."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "view": "state",
+          "is": "paused",
+          "why": "the user is told recaps are paused"
+        }
+      ]
+    },
+    {
+      "advance": 70000
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "five minutes later",
+      "check": [
+        {
+          "view": "exists",
+          "is": true,
+          "why": "the recap is written once the pause is over"
+        },
+        {
+          "in": "did",
+          "has": "checkout|crash|empty",
+          "why": "the fix is recorded as done"
+        }
+      ]
+    }
+  ]
+}

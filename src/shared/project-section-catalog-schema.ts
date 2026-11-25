@@ -76,6 +76,8 @@ export const ProjectGroupSchema = z.object({
   rootProjectOrder: salvagedOptional('rootProjectOrder', z.number().finite()),
   isCollapsed: z.boolean(),
   color: z.string().nullable(),
+  // Older desktops omit both; the group then stays listed, as it did.
+  hiddenAt: salvagedOptional('hiddenAt', z.number()),
   createdAt: z.number(),
   updatedAt: z.number()
 }) satisfies z.ZodType<ProjectGroup, unknown>

@@ -27,7 +27,7 @@ import { getMainHttpClient } from '../../../network/http-client'
 import { probeCodexAuthPresence } from './codex-auth-presence'
 import {
   fetchCodexRateLimitsViaBackend,
-  supplementCodexSessionWindow
+  supplementCodexUsageWindows
 } from './codex-backend-usage-client'
 import type { CodexRateLimitFetchOptions } from './codex-rate-limit-fetch-options'
 import { abortedCodexRateLimitResult } from './codex-rate-limit-fetch-result'
@@ -132,8 +132,8 @@ async function supplementBackendMetadata(
   limits: ProviderRateLimits,
   options?: CodexRateLimitFetchOptions
 ): Promise<ProviderRateLimits> {
-  const withSession = await supplementCodexSessionWindow(limits, requestCodexBackend, options)
-  return supplementCodexRateLimitResetCredits(withSession, requestCodexBackend, options)
+  const withWindows = await supplementCodexUsageWindows(limits, requestCodexBackend, options)
+  return supplementCodexRateLimitResetCredits(withWindows, requestCodexBackend, options)
 }
 
 function codexUnavailable(error: string, status: 'error' | 'unavailable'): ProviderRateLimits {
@@ -188,7 +188,8 @@ export async function fetchCodexRateLimits(
   }
 
   const isWslHome = Boolean(options?.codexHomePath && parseWslUncPath(options.codexHomePath))
-  if (isWslHome) {
+  const triedBackendFirst = isWslHome || options?.preferBackend === true
+  if (triedBackendFirst) {
     const backendResult = await fetchBackendUsage(options)
     if (backendResult) {
       return options?.signal?.aborted ? abortedCodexRateLimitResult() : backendResult
@@ -198,7 +199,7 @@ export async function fetchCodexRateLimits(
   if (options?.codexHomePath && isCodexStateDbBackfillPending(options.codexHomePath)) {
     void startCodexStateDbBackfillRecoveryInBackground(options.codexHomePath)
     // HTTP usage never opens the state DB, so it cannot contend with the backfill (#15741).
-    const backendResult = isWslHome ? null : await fetchBackendUsage(options)
+    const backendResult = triedBackendFirst ? null : await fetchBackendUsage(options)
     if (options?.signal?.aborted) {
       return abortedCodexRateLimitResult()
     }
@@ -237,7 +238,7 @@ export async function fetchCodexRateLimits(
     rpcFailure = codexUnavailable('RPC failed', 'error')
   }
 
-  if (isWslHome) {
+  if (triedBackendFirst) {
     return rpcFailure
   }
   // Interactive Codex keystrokes can accept startup dialogs, including updates; read HTTP usage instead (#17415).

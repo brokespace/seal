@@ -1,0 +1,30 @@
+import { useCallback } from 'react'
+import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import { useLiveSessionLinks } from '../links/use-live-session-links'
+import { isLiveSessionUnread, useLiveSessionMarks } from '../live-session-marks-store'
+import { liveSessionAccountLabel, useLocalSealAccounts } from '../menu/live-session-accounts'
+import { useIsAgentSessionShowing } from '../open/use-agent-session-showing'
+import type { LiveSessionRowProps } from './LiveSessionRow'
+
+export type LiveSessionRowState = Pick<
+  LiveSessionRowProps,
+  'workspaceName' | 'account' | 'unread' | 'current' | 'highlighted'
+>
+
+/** What a session's row says about it, the same on every surface that lists sessions. */
+export function useLiveSessionRowState(): (session: LiveSession) => LiveSessionRowState {
+  const { links } = useLiveSessionLinks()
+  const accounts = useLocalSealAccounts()
+  const marks = useLiveSessionMarks()
+  const isShowing = useIsAgentSessionShowing()
+  return useCallback(
+    (session) => ({
+      workspaceName: links.get(session.id)?.name ?? null,
+      account: liveSessionAccountLabel(session, accounts),
+      unread: isLiveSessionUnread(session, marks.seenAt),
+      current: isShowing(session),
+      highlighted: marks.highlighted.has(session.id)
+    }),
+    [links, accounts, marks.seenAt, marks.highlighted, isShowing]
+  )
+}

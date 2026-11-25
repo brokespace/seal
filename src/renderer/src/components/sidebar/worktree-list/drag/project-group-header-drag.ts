@@ -1,7 +1,3 @@
-import {
-  requestVirtualizedScrollAnchorRecord,
-  supersedeVirtualizedScrollAnchorRestore
-} from '@/hooks/requestVirtualizedScrollAnchorRecord'
 import { measureRootProjectHeaderDragRects } from './root-project-header-drop'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
@@ -20,8 +16,15 @@ import {
 } from './project-group-header-drag-contract'
 import { createProjectGroupHeaderDragSession } from './project-group-header-drag-start'
 import { getWorktreeSidebarDragAutoscroll } from './worktree-sidebar-drag-autoscroll'
+import {
+  haveWorktreeRowsMoved,
+  measureWorktreeRowsAutoscrollView,
+  scrollWorktreeRowsForDrag,
+  measureWorktreeRowsViewTop
+} from './worktree-rows-drag-view'
 import { hasPointerBeenReleased } from './header-drag-pointer-release'
 import { swallowNextClickOnDragHandle } from './header-drag-click-swallow'
+import { useHeaderDragGrabbingCursor } from './use-header-drag-grabbing-cursor'
 
 // Virtualized rows can unmount during drag; pointer events and cached model indices keep drops stable.
 
@@ -53,8 +56,8 @@ export function useProjectGroupHeaderDrag({
   const autoscrollFrameIdRef = useRef<number | null>(null)
 
   const dragSessionRef = useRef<ProjectGroupHeaderDragSession | null>(null)
-  const clickSwallowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const rowsGeometryKeyRef = useRef<string | null>(null)
   const refreshHeaderRects = useCallback(() => {
     const container = getContainerRef.current()
     const session = dragSessionRef.current
@@ -89,7 +92,8 @@ export function useProjectGroupHeaderDrag({
         scrollTop: container.scrollTop,
         rects: session.headerRects,
         sidebarProjectGroupHeaderIds: session.sidebarProjectGroupHeaderIds,
-        contentBottom: container.scrollHeight
+        contentBottom: container.scrollHeight,
+        viewTop: measureWorktreeRowsViewTop(container)
       })
     },
     []
@@ -135,7 +139,7 @@ export function useProjectGroupHeaderDrag({
         // Pointer cancellation or unmount may already have released capture.
       }
       if (session.promoted) {
-        clickSwallowTimeoutRef.current = swallowNextClickOnDragHandle(session.handleEl)
+        swallowNextClickOnDragHandle(session.handleEl)
       }
       const sidebarDropIndex =
         commit && session.promoted && latestDropIndexRef.current !== null
@@ -173,16 +177,13 @@ export function useProjectGroupHeaderDrag({
       autoscrollLastFrameTimeRef.current = frameTime
       const autoscroll = getWorktreeSidebarDragAutoscroll({
         point: { clientX: 0, clientY: session.latestPointerY },
-        containerRect: container.getBoundingClientRect(),
-        scrollTop: container.scrollTop,
-        scrollHeight: container.scrollHeight,
-        clientHeight: container.clientHeight,
+        ...measureWorktreeRowsAutoscrollView(container),
         elapsedMs: frameTime - previousFrameTime
       })
       if (autoscroll) {
-        supersedeVirtualizedScrollAnchorRestore(container, autoscroll.scrollTop)
-        container.scrollTop = autoscroll.scrollTop
-        requestVirtualizedScrollAnchorRecord(container)
+        scrollWorktreeRowsForDrag(container, autoscroll.scrollTop)
+      }
+      if (haveWorktreeRowsMoved(container, rowsGeometryKeyRef)) {
         refreshHeaderRects()
       }
 
@@ -271,10 +272,6 @@ export function useProjectGroupHeaderDrag({
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('blur', onBlur)
       cancelAutoscroll()
-      if (clickSwallowTimeoutRef.current !== null) {
-        clearTimeout(clickSwallowTimeoutRef.current)
-        clickSwallowTimeoutRef.current = null
-      }
     }
   }, [
     applyDrop,
@@ -286,19 +283,7 @@ export function useProjectGroupHeaderDrag({
     sessionArmed
   ])
 
-  useEffect(() => {
-    if (state.draggingGroupId === null) {
-      return
-    }
-    const body = document.body
-    const { cursor: prevCursor, userSelect: prevUserSelect } = body.style
-    body.style.cursor = 'grabbing'
-    body.style.userSelect = 'none'
-    return () => {
-      body.style.cursor = prevCursor
-      body.style.userSelect = prevUserSelect
-    }
-  }, [state.draggingGroupId])
+  useHeaderDragGrabbingCursor(state.draggingGroupId !== null)
 
   const onHandlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLElement>, groupId: string) => {

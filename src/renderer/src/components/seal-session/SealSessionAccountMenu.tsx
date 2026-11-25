@@ -1,0 +1,222 @@
+import { ArrowLeftRight, TriangleAlert } from 'lucide-react'
+import { useTranslate, type Translate } from '@/i18n/use-translate'
+import { cn } from '@/lib/class-names'
+import { formatResetDuration } from '../../../../shared/rate-limit-reset-format'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '../ui/dropdown-menu'
+import type { SealAccountCandidate } from '../../../../shared/seal-accounts/seal-account-candidates'
+import type {
+  SealSessionAssignment,
+  SealSessionLiveSwapMode,
+  SealSessionSwapEntry
+} from '../../../../shared/seal-accounts/seal-accounts-status'
+import { sessionSwapTargets } from './seal-session-account-view'
+import { sealLoginUsable } from '../../../../shared/seal-accounts/seal-account-health'
+import { sealHealthLabel } from '../settings/seal-accounts/seal-account-presentation'
+import { useAppStore } from '../../store'
+import { normalizeUsagePercentageDisplay } from '../../../../shared/usage-percentage-display'
+import type { RateLimitWindow } from '../../../../shared/rate-limit-types'
+import { accountUsage } from '../status-bar/AccountUsageReading'
+import { formatBareUsagePercentage } from '../status-bar/usage-percentage-label'
+import { clampUsedPercent } from '../status-bar/tooltip'
+
+type SealSessionAccountMenuProps = {
+  session: SealSessionAssignment
+  candidates: SealAccountCandidate[]
+  readAt: number
+  onSwap: (accountKey: string) => void
+  onSetLiveSwap: (mode: SealSessionLiveSwapMode) => void
+  className?: string
+  defaultOpen?: boolean
+}
+
+const LIVE_SWAP_MODES: SealSessionLiveSwapMode[] = ['inherit', 'on', 'off']
+
+function isLiveSwapMode(value: string): value is SealSessionLiveSwapMode {
+  return value === 'inherit' || value === 'on' || value === 'off'
+}
+
+function liveSwapLabel(mode: SealSessionLiveSwapMode, t: Translate): string {
+  switch (mode) {
+    case 'inherit':
+      return t('seal.session.liveSwap.inherit', 'Follow the global setting')
+    case 'on':
+      return t('seal.session.liveSwap.on', 'Always move this session')
+    case 'off':
+      return t('seal.session.liveSwap.off', 'Never move this session')
+  }
+}
+
+export function swapDeliveryLabel(entry: SealSessionSwapEntry, t: Translate): string {
+  switch (entry.delivery) {
+    case 'live':
+      return t('seal.session.delivery.live', 'switched live')
+    case 'resume':
+      return t('seal.session.delivery.resume', 'resumed')
+    case 'failed':
+      return t('seal.session.delivery.failed', 'failed')
+  }
+}
+
+/** Badge with the session's account and usage; opens a menu to move the session to another login. */
+export function SealSessionAccountMenu({
+  session,
+  candidates,
+  readAt,
+  onSwap,
+  onSetLiveSwap,
+  className,
+  defaultOpen
+}: SealSessionAccountMenuProps) {
+  const t = useTranslate()
+  const display = normalizeUsagePercentageDisplay(
+    useAppStore((state) => state.usagePercentageDisplay)
+  )
+  // The popover's own figure for a window, so the badge can never disagree with it.
+  const percent = (window: RateLimitWindow | null | undefined): string | null =>
+    window ? formatBareUsagePercentage(clampUsedPercent(window.usedPercent), display, t) : null
+  const current = candidates.find((candidate) => candidate.key === session.accountKey) ?? null
+  const used = percent(current?.limits?.session)
+  const usage = accountUsage(current?.limits, current?.usageFetching === true)
+  const estimate = current?.swapEstimate ?? null
+  const swapNote = estimate
+    ? estimate.at <= readAt
+      ? t('seal.session.menu.swapNow', 'swapping now')
+      : t('seal.session.menu.swapAt', 'next swap ~{{value0}}', {
+          value0: formatResetDuration(estimate.at - readAt)
+        })
+    : current?.nextPollAt
+      ? t('seal.session.menu.noSwap', 'no swap expected before reset')
+      : null
+  const targets = sessionSwapTargets(session, candidates)
+  const last = session.history?.at(-1) ?? null
+  const label = current?.label ?? session.accountLabel
+  // The login this session runs on stopped working here; its next relaunch moves off it.
+  const broken = current && !sealLoginUsable(current) ? sealHealthLabel(current.health, t) : null
+  return (
+    <DropdownMenu modal={false} defaultOpen={defaultOpen}>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          data-seal-session-badge=""
+          className={cn(
+            'inline-flex max-w-32 shrink-0 items-center gap-1 rounded-sm border border-border px-1 text-3xs leading-4 text-muted-foreground hover:bg-muted hover:text-foreground',
+            className
+          )}
+          title={
+            broken
+              ? t(
+                  'seal.session.badge.brokenTitle',
+                  'Running on {{value0}}: {{value1}}. Click to switch.',
+                  { value0: label, value1: broken }
+                )
+              : t('seal.session.badge.title', 'Running on {{value0}}. Click to switch.', {
+                  value0: label
+                })
+          }
+          aria-label={t('seal.session.badge.aria', 'Session account {{value0}}', {
+            value0: label
+          })}
+          onPointerDown={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
+        >
+          {broken ? (
+            <TriangleAlert
+              className="size-3 shrink-0 text-destructive"
+              data-slot="seal-session-account-warning"
+              aria-hidden
+            />
+          ) : null}
+          <span className="truncate">{label}</span>
+          {used !== null ? <span className="tabular-nums">{used}</span> : null}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-56">
+        {broken ? (
+          <p className="px-2 pt-1.5 text-2xs text-destructive" role="status">
+            {t(
+              'seal.session.menu.broken',
+              '{{value0}}: {{value1}}. Sign in again in Settings → Accounts, or move this session below.',
+              { value0: label, value1: broken }
+            )}
+          </p>
+        ) : null}
+        {usage ? (
+          <div className="px-2 pt-1.5" data-slot="seal-session-usage">
+            {usage}
+          </div>
+        ) : null}
+        {swapNote ? (
+          <p className="px-2 pt-1 text-2xs text-muted-foreground tabular-nums">{swapNote}</p>
+        ) : null}
+        <DropdownMenuLabel>
+          {t('seal.session.menu.switch', 'Move this session to')}
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={session.accountKey ?? ''}
+          onValueChange={(key) => {
+            if (key !== session.accountKey) {
+              onSwap(key)
+            }
+          }}
+        >
+          {targets.map((candidate) => {
+            const sessionUsed = percent(candidate.limits?.session)
+            return (
+              <DropdownMenuRadioItem key={candidate.key} value={candidate.key}>
+                <span className="truncate">{candidate.label}</span>
+                {sessionUsed !== null ? (
+                  <span className="ml-auto pl-3 text-muted-foreground tabular-nums">
+                    {sessionUsed}
+                  </span>
+                ) : null}
+              </DropdownMenuRadioItem>
+            )
+          })}
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>
+          {t('seal.session.menu.liveSwap', 'When this account runs low')}
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={session.liveSwap ?? 'inherit'}
+          onValueChange={(mode) => {
+            if (isLiveSwapMode(mode)) {
+              onSetLiveSwap(mode)
+            }
+          }}
+        >
+          {LIVE_SWAP_MODES.map((mode) => (
+            <DropdownMenuRadioItem key={mode} value={mode}>
+              {liveSwapLabel(mode, t)}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        {last ? (
+          <>
+            <DropdownMenuSeparator />
+            <p className="flex items-center gap-1.5 px-2 py-1 text-2xs text-muted-foreground">
+              <ArrowLeftRight className="size-3 shrink-0" aria-hidden />
+              <span className="truncate">
+                {t('seal.session.menu.lastSwap', '{{value0}} to {{value1}}, {{value2}}', {
+                  value0: last.fromLabel,
+                  value1: last.toLabel,
+                  value2: swapDeliveryLabel(last, t)
+                })}
+              </span>
+            </p>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}

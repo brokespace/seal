@@ -10,7 +10,8 @@ import {
   openMobileE2EEV2Frame,
   sealMobileE2EEV2Frame
 } from '../../../../../shared/remote-runtime/e2ee/mobile-e2ee-v2-framing'
-import { deriveSharedKey } from '../../../../../shared/remote-runtime/e2ee/node/e2ee-crypto'
+import { x25519 } from '../../../../../shared/remote-runtime/e2ee/node/e2ee-crypto'
+import { contributoryX25519SharedSecret } from '../../../../../shared/remote-runtime/e2ee/x25519-low-order-points'
 import { deriveMobileE2EEV2KeySchedule } from '../../../../../shared/remote-runtime/e2ee/node/mobile-e2ee-v2-node-key-schedule'
 import { REMOTE_RUNTIME_MAX_OUTBOUND_JSON_BYTES } from '../../../../../shared/remote-runtime/remote-runtime-memory-limits'
 
@@ -40,33 +41,56 @@ export class DesktopMobileE2EEV2Session {
     serverSecretKey: Uint8Array
     expectedContext: DesktopMobileE2EEV2Context
     randomBytes?: (length: number) => Uint8Array
+    // Tests pin the per-session key; production always draws a fresh one.
+    ephemeralKeyPair?: { publicKey: Uint8Array; secretKey: Uint8Array }
   }): DesktopMobileE2EEV2Session | null {
     if (!hasExpectedContext(args.hello, args.expectedContext)) {
       return null
     }
     const hello = args.hello as MobileE2EEV2Hello
     const serverKeys = nacl.box.keyPair.fromSecretKey(args.serverSecretKey)
+    const ephemeralKeys = args.ephemeralKeyPair ?? nacl.box.keyPair()
     const randomBytes = args.randomBytes ?? ((length: number) => nacl.randomBytes(length))
     const ready: MobileE2EEV2Ready = {
       type: 'e2ee_ready',
       v: 2,
       desktopPublicKeyB64: Buffer.from(serverKeys.publicKey).toString('base64'),
+      desktopEphemeralPublicKeyB64: Buffer.from(ephemeralKeys.publicKey).toString('base64'),
       clientNonceB64: hello.clientNonceB64,
       desktopNonceB64: Buffer.from(randomBytes(32)).toString('base64'),
-      selection: { framing: 2, payloadKinds: ['text', 'binary'] },
+      selection: { framing: 2, payloadKinds: ['text', 'binary'], forwardSecrecy: true },
       context: hello.context
     }
     const handshake = validateMobileE2EEV2Handshake(hello, ready)
     if (!handshake) {
       return null
     }
-    const sharedSecret = deriveSharedKey(args.serverSecretKey, handshake.clientPublicKey)
+    const staticSharedSecret = contributoryX25519SharedSecret(
+      x25519,
+      args.serverSecretKey,
+      handshake.clientPublicKey
+    )
+    const ephemeralSharedSecret = contributoryX25519SharedSecret(
+      x25519,
+      ephemeralKeys.secretKey,
+      handshake.clientPublicKey
+    )
+    if (!staticSharedSecret || !ephemeralSharedSecret) {
+      return null
+    }
     const schedule = deriveMobileE2EEV2KeySchedule({
-      sharedSecret,
+      staticSharedSecret,
+      ephemeralSharedSecret,
       transcript: encodeMobileE2EEV2Transcript(handshake),
       clientNonce: handshake.clientNonce,
       desktopNonce: handshake.desktopNonce
     })
+    // Why wiped: forward secrecy holds only if this socket's ephemeral secrets do not outlive the handshake.
+    staticSharedSecret.fill(0)
+    ephemeralSharedSecret.fill(0)
+    if (!args.ephemeralKeyPair) {
+      ephemeralKeys.secretKey.fill(0)
+    }
     return new DesktopMobileE2EEV2Session(
       ready,
       Buffer.from(schedule.transcriptHash).toString('base64'),

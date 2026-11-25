@@ -1,0 +1,34 @@
+{
+  "id": "subagent-still-running-when-the-agent-stops",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["bump the Node version in CI to 22"],
+      "at": {
+        "while the subagent runs": {
+          "is": "done",
+          "why": "step 4: the agent edited ci.yml and says CI runs Node 22 now"
+        },
+        "after the subagent reports": {
+          "is": "done",
+          "why": "step 4: the agent edited ci.yml and says CI runs Node 22 now"
+        }
+      }
+    },
+    {
+      "quotes": ["audit our npm dependencies for known vulnerabilities"],
+      "at": {
+        "while the subagent runs": {
+          "is": "working",
+          "why": "step 5: the status is waiting-subagent while the audit subagent is still running"
+        },
+        "after the subagent reports": {
+          "is": "done",
+          "why": "step 9: the agent reports the audit result, 3 high advisories with fixed versions"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

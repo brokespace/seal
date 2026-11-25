@@ -7,12 +7,14 @@ type PaneRect = { left: number; top: number; width: number; height: number }
 
 export function resolveDropZone(
   rect: { left: number; top: number; width: number; height: number },
-  point: { x: number; y: number }
+  point: { x: number; y: number },
+  /** Share of each side that splits instead of merging; the rest is the center zone. */
+  edgeShare = 0.1
 ): TabDropZone {
   const localX = point.x - rect.left
   const localY = point.y - rect.top
-  const edgeWidthThreshold = rect.width * 0.1
-  const edgeHeightThreshold = rect.height * 0.1
+  const edgeWidthThreshold = rect.width * edgeShare
+  const edgeHeightThreshold = rect.height * edgeShare
   const splitWidthThreshold = rect.width / 3
 
   // Keep a center merge zone and favor horizontal splits so nested layouts have stable drop targets.

@@ -1,9 +1,11 @@
 import type { Repo } from '../../../../shared/repo-types'
 import type { ExecutionHostId } from '../../../../shared/execution-host'
 import type { RemoveWorktreeResult } from '../../../../shared/worktree/create-types'
+import type { GitWorktreeInfo } from '../../../../shared/worktree/types'
+import { unlockWorktreeForConfirmedRemoval } from '../../../git/worktrees/removal/worktree-unlock'
 import { assertRemovalHostMatchesRepoRow } from '../repo-host-ownership'
 import { isFolderRepo } from '../../../../shared/repo-kind'
-import { assertWorktreeUnlockedForRemoval } from '../../../../shared/worktree/removal'
+import { assertWorktreeUnlockedForRemoval } from '../../../../shared/worktree/removal/removal'
 import { isWindowsAbsolutePathLike } from '../../../../shared/cross-platform-path'
 import { getLocalProjectWorktreeGitOptions } from '../../../workspaces/execution-host/project-runtime-git-options'
 import { listWorktreesStrict as listGitWorktreesStrict } from '../../../git/worktrees/catalog/worktree-listing'
@@ -23,7 +25,7 @@ import { assertNestedWorktreeRemovalApproval } from '../../../workspaces/removal
 import { removeStaleLocalWorktreeRegistration } from '../../../workspaces/removal/local-worktree-removal-recovery'
 import { resolveWorktreeRemovalHomeForHost } from '../../../workspaces/removal/worktree-removal-execution-host-route'
 import { getEffectiveHooks, runHook } from '../../../workspace-hooks/hooks'
-import type { ArchiveHookOverride } from '../../../../shared/worktree/archive-hook-removal-gate'
+import type { ArchiveHookOverride } from '../../../../shared/worktree/removal/archive-hook-removal-gate'
 import { gateWorktreeRemovalOnArchiveHook } from '../../../workspaces/removal/worktree-archive-hook-gate'
 import { withWorktreeRemoveStageSpan } from '../../../observability/instrumentation'
 import {
@@ -61,17 +63,33 @@ export async function executeWorktreeRemoval(
   }
   const localWorktreeGitOptions = getLocalProjectWorktreeGitOptions(store, repo)
   const hasLocalWorktreeGitOptions = Object.keys(localWorktreeGitOptions).length > 0
-  const registeredWorktrees = hasLocalWorktreeGitOptions
-    ? await listGitWorktreesStrict(repo.path, localWorktreeGitOptions)
-    : await listGitWorktreesStrict(repo.path)
+  const listRegistered = (): Promise<GitWorktreeInfo[]> =>
+    hasLocalWorktreeGitOptions
+      ? listGitWorktreesStrict(repo.path, localWorktreeGitOptions)
+      : listGitWorktreesStrict(repo.path)
+  let registeredWorktrees = await listRegistered()
   const removedMeta = resolveWorktreeRemovalMetadata(store, repoId, args.worktreeId, removalHostId)
   const removedPushTarget = removedMeta?.pushTarget
-  const registeredWorktree = findRegisteredDeletableWorktree(
-    repo.path,
-    worktreePath,
-    registeredWorktrees,
-    resolveWorktreeRemovalHomeForHost(removalHostId)
-  )
+  const findRegistered = (): GitWorktreeInfo | null =>
+    findRegisteredDeletableWorktree(
+      repo.path,
+      worktreePath,
+      registeredWorktrees,
+      resolveWorktreeRemovalHomeForHost(removalHostId)
+    )
+  let registeredWorktree = findRegistered()
+  if (
+    args.unlockLockedWorktree === true &&
+    (await unlockWorktreeForConfirmedRemoval(
+      repo.path,
+      registeredWorktree,
+      localWorktreeGitOptions
+    ))
+  ) {
+    // Every later lock check reads a listing, so they must see the released lock.
+    registeredWorktrees = await listRegistered()
+    registeredWorktree = findRegistered()
+  }
   if (args.expectedCheckout) {
     assertNestedWorktreeRemovalApproval(registeredWorktree ? [registeredWorktree] : [], [
       args.expectedCheckout

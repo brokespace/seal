@@ -44,9 +44,9 @@ describe('pairing ticket exchange', () => {
     expect(registry.validateToken(offer.token)?.deviceId).toBe(offer.deviceId)
 
     const signedIn = registry.validateToken(REPLACEMENT)
-    expect(signedIn).toMatchObject({ deviceId: offer.deviceId, token: REPLACEMENT })
+    expect(signedIn?.deviceId).toBe(offer.deviceId)
     expect(signedIn?.ticket).toBeUndefined()
-    expect(signedIn?.exchangeToken).toBeUndefined()
+    expect(signedIn?.exchangeTokenHash).toBeUndefined()
     expect(registry.validateToken(offer.token)).toBeNull()
 
     // Same pairing for orchestration ownership; sockets still on the pairing token are cut.
@@ -80,7 +80,7 @@ describe('pairing ticket exchange', () => {
     const reloaded = new DeviceRegistry(dir)
     expect(reloaded.validateToken(offer.token)?.deviceId).toBe(offer.deviceId)
     expect(reloaded.validateToken(RETRY)).toBeNull()
-    expect(reloaded.validateToken(REPLACEMENT)?.token).toBe(REPLACEMENT)
+    expect(reloaded.validateToken(REPLACEMENT)?.deviceId).toBe(offer.deviceId)
     expect(reloaded.validateToken(offer.token)).toBeNull()
   })
 
@@ -95,7 +95,7 @@ describe('pairing ticket exchange', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
 
     const signedIn = registry.validateToken(REPLACEMENT)
-    expect(signedIn).toMatchObject({ deviceId: offer.deviceId, token: REPLACEMENT })
+    expect(signedIn?.deviceId).toBe(offer.deviceId)
     // The replacement socket stays authenticated on later requests.
     expect(
       registry.resolveAuthenticatedPrincipal({

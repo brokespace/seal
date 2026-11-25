@@ -55,7 +55,10 @@ export function useVirtualRowMeasurementSync(args: {
   const activeStickyIndexes = getActiveStickyIndexesForScroll({
     rows: renderRows,
     rangeStartIndex: virtualization.stickyRangeStartIndexRef.current,
-    scrollOffset: virtualizer.scrollOffset ?? scrollOffsetRef.current,
+    // Group headers pin below the Projects header, and only once the rows reach it.
+    scrollOffset:
+      (virtualizer.scrollOffset ?? scrollOffsetRef.current) +
+      virtualization.scrollSectionInsets.pinned,
     stickyHeaderIndexes: virtualization.stickyHeaderIndexes,
     virtualItems
   })
@@ -74,6 +77,10 @@ export function useVirtualRowMeasurementSync(args: {
     (element: HTMLDivElement | null) => {
       if (!element) {
         virtualizer.measureElement(null)
+        if (!virtualizer.isScrolling) {
+          // Why again: React removes the node after detaching its ref, and at rest no later removal sweeps it out; a removed row still observed reports 0px and trips the ResizeObserver loop error.
+          queueMicrotask(() => virtualizer.measureElement(null))
+        }
         return
       }
       if (!isCurrentVirtualRowElement(element)) {
@@ -114,6 +121,7 @@ export function useVirtualRowMeasurementSync(args: {
     scrollElementRef: scrollRef,
     scrollOffsetRef,
     shouldSkipRestore: shouldSkipScrollAnchorRestore,
+    topInset: virtualization.scrollSectionInsets.pinned,
     totalSize,
     virtualizer
   })

@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { OrcaRuntimeService } from '../../orca-runtime'
 import { OrcaRuntimeRpcServer } from './runtime-rpc'
+import { deriveRelayHostIdFromPublicKeyB64 } from '../../../../shared/remote-runtime/relay/relay-host-id'
 import '../../../../shared/remote-runtime/pairing/pairing'
 
 vi.mock('../../../git/worktrees/catalog/worktree-scan-cache', async (importOriginal) => {
@@ -63,7 +64,7 @@ describe('OrcaRuntimeRpcServer', () => {
           directorUrl: 'https://relay.example.com',
           cellUrl: 'https://cell.example.com',
           assignmentEpoch: 7,
-          relayHostId: 'AbCdEf0123_-xyZ9',
+          relayHostId: deriveRelayHostIdFromPublicKeyB64(server.getE2EEPublicKey() ?? '') ?? '',
           inviteToken: 'A'.repeat(43),
           inviteExpiresAt: Date.now() + 60_000,
           e2eeFraming: 2 as const
@@ -121,7 +122,7 @@ describe('OrcaRuntimeRpcServer', () => {
           directorUrl: 'https://relay.example.com',
           cellUrl: 'https://cell.example.com',
           assignmentEpoch: 7,
-          relayHostId: 'AbCdEf0123_-xyZ9',
+          relayHostId: deriveRelayHostIdFromPublicKeyB64(server.getE2EEPublicKey() ?? '') ?? '',
           inviteToken: 'A'.repeat(43),
           inviteExpiresAt: Date.now() + 60_000,
           e2eeFraming: 2 as const
@@ -186,7 +187,7 @@ describe('OrcaRuntimeRpcServer', () => {
             directorUrl: 'https://relay.example.com',
             cellUrl: 'https://cell.example.com',
             assignmentEpoch: 7,
-            relayHostId: 'AbCdEf0123_-xyZ9',
+            relayHostId: deriveRelayHostIdFromPublicKeyB64(server.getE2EEPublicKey() ?? '') ?? '',
             inviteToken: 'A'.repeat(43),
             inviteExpiresAt: Date.now() + 60_000,
             e2eeFraming: 2
@@ -247,7 +248,7 @@ describe('OrcaRuntimeRpcServer', () => {
           directorUrl: 'https://relay.example.com',
           cellUrl: 'https://cell.example.com',
           assignmentEpoch: 7,
-          relayHostId: 'AbCdEf0123_-xyZ9',
+          relayHostId: deriveRelayHostIdFromPublicKeyB64(server.getE2EEPublicKey() ?? '') ?? '',
           inviteToken: 'A'.repeat(43),
           inviteExpiresAt: Date.now() + 60_000,
           e2eeFraming: 2
@@ -303,7 +304,7 @@ describe('OrcaRuntimeRpcServer', () => {
             directorUrl: 'https://relay.example.com',
             cellUrl: 'https://cell.example.com',
             assignmentEpoch: 7,
-            relayHostId: 'AbCdEf0123_-xyZ9',
+            relayHostId: deriveRelayHostIdFromPublicKeyB64(server.getE2EEPublicKey() ?? '') ?? '',
             inviteToken: 'A'.repeat(43),
             inviteExpiresAt: Date.now() + 60_000,
             e2eeFraming: 2
@@ -364,7 +365,7 @@ describe('OrcaRuntimeRpcServer', () => {
             directorUrl: 'https://relay.example.com',
             cellUrl: 'https://cell.example.com',
             assignmentEpoch: 7,
-            relayHostId: 'AbCdEf0123_-xyZ9',
+            relayHostId: deriveRelayHostIdFromPublicKeyB64(server.getE2EEPublicKey() ?? '') ?? '',
             inviteToken: 'A'.repeat(43),
             inviteExpiresAt: Date.now() + 60_000,
             e2eeFraming: 2

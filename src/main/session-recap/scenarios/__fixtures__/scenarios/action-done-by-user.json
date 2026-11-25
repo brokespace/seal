@@ -1,0 +1,66 @@
+{
+  "id": "action-done-by-user",
+  "title": "The agent hands the user a task and the user says it is done",
+  "categories": ["question-answered"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The secret is listed as an action for the user until they say they added it; after that no action is open.",
+  "steps": [
+    {
+      "user": "Wire up Stripe webhooks for refunds."
+    },
+    {
+      "edit": "/srv/shop/src/webhooks/stripe-refund.ts"
+    },
+    {
+      "agent": "The refund webhook handler is in src/webhooks/stripe-refund.ts and verified against Stripe's test events. You need to do one thing yourself: add STRIPE_WEBHOOK_SECRET to the production environment, since I can't reach the secrets manager."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "actions",
+          "has": "secret",
+          "why": "adding the secret is for the user to do"
+        }
+      ]
+    },
+    {
+      "user": "added the secret. what else?"
+    },
+    {
+      "agent": "Nothing else: with the secret in place refunds will flow through the webhook on the next deploy."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "actions",
+          "lacks": "secret",
+          "why": "the user did it"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "questions",
+          "max": 0,
+          "why": "nothing is waiting on the user"
+        }
+      ]
+    }
+  ]
+}

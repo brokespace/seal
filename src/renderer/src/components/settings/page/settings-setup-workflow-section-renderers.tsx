@@ -5,6 +5,9 @@ import { AutomationsSettingsPane } from '../automations/AutomationsSettingsPane'
 import { GeneralPane } from '../general/GeneralPane'
 import { IntegrationsPane } from '../integrations/IntegrationsPane'
 import { MobileSettingsPane } from '../mobile/MobileSettingsPane'
+import { McpSettingsPane } from '../mcp/McpSettingsPane'
+import { SettingsHostScopeUnavailableNotice } from '../host-scope/SettingsHostScopePicker'
+import { sealHostKey } from '@/components/seal-session/seal-session-status-store'
 import { OrcaAccountSettingsPane } from '../accounts/orca/OrcaAccountSettingsPane'
 import { SettingsSetupGuidePane } from '../setup-guide/SettingsSetupGuidePane'
 import { ShareSkillsSettingsPane } from '../skills/sharing/ShareSkillsSettingsPane'
@@ -13,6 +16,8 @@ import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import type { SettingsRenderContext } from './settings-render-context'
 import { SettingsGroup } from '../section-layout/SettingsGroup'
+import { WorkspaceCleanupSettingsPane } from '../workspace-cleanup/WorkspaceCleanupSettingsPane'
+import { runtimeTargetEnvironmentId } from '@/runtime/rpc/targets/runtime-client-target'
 
 export function renderOrcaAccountSettingsSection(
   context: SettingsRenderContext,
@@ -146,6 +151,33 @@ export function renderMobileSettingsSection(
   ) : null
 }
 
+export function renderMcpSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element | null {
+  const { model, navigation, view } = context
+  return model.showDesktopOnlySettings ? (
+    <SettingsSection
+      id="mcp"
+      title={t('seal.mcp.title', 'MCP')}
+      description={t(
+        'seal.mcp.description',
+        'Let MCP clients such as Claude Code, Codex and Cursor drive this Seal server.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('mcp')}
+    >
+      {!view.isSectionMounted('mcp') ? null : !model.settingsHostScope.available ? (
+        <SettingsHostScopeUnavailableNotice />
+      ) : (
+        <McpSettingsPane
+          key={sealHostKey(model.settingsHostScope.target)}
+          target={model.settingsHostScope.target}
+        />
+      )}
+    </SettingsSection>
+  ) : null
+}
+
 export function renderAutomationsSettingsSection(
   context: SettingsRenderContext,
   t: Translate = translate
@@ -235,4 +267,33 @@ export function renderSessionHistorySettingsSection(
       ) : null}
     </SettingsSection>
   )
+}
+
+export function renderWorkspaceCleanupSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element | null {
+  const { model, navigation, view } = context
+  // A paired browser's settings are its own; the cleanup rules live on the host it pairs with.
+  return model.showDesktopOnlySettings ? (
+    <SettingsSection
+      id="workspace-cleanup"
+      title={t('components.settings.workspaceCleanup.title', 'Workspace Cleanup')}
+      description={t(
+        'components.settings.workspaceCleanup.description',
+        "Remove workspaces you're done with. Before removing anything, Orca checks again for unsaved work."
+      )}
+      searchEntries={navigation.getSectionSearchEntries('workspace-cleanup')}
+    >
+      {view.isSectionMounted('workspace-cleanup') ? (
+        <WorkspaceCleanupSettingsPane
+          // A change waiting on its preview belongs to the host it was made for.
+          key={runtimeTargetEnvironmentId(model.settingsHostScope.target) ?? 'local'}
+          hostScope={model.settingsHostScope}
+          settings={model.settings}
+          updateSettings={model.updateSettingsOrThrow}
+        />
+      ) : null}
+    </SettingsSection>
+  ) : null
 }

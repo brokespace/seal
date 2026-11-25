@@ -1,6 +1,6 @@
 import { withDeviceSighting, type DeviceSightingFraming } from './device-sighting'
 import { DeviceRegistryStore } from './device-registry-store'
-import type { DeviceEntry } from './device-entry'
+import { withoutUsedPlaintextToken, type DeviceEntry } from './device-entry'
 import type { NetworkSourceClass } from '../../transports/websocket/source-admission/network-source-class'
 
 // Coalesce reconnect bookkeeping: each Windows save otherwise spawns synchronous ACL PowerShell twice.
@@ -27,7 +27,10 @@ export class DeviceRegistrySightings extends DeviceRegistryStore {
         device.ticket === true && device.lastSeenAt === 0
           ? { ...device, ticketFirstSeenAt: seenAt }
           : device
-      return withDeviceSighting(seen(firstSighting, seenAt, sourceClass), seenAt, framing)
+      // From its first use the bearer is stored only as a hash.
+      return withoutUsedPlaintextToken(
+        withDeviceSighting(seen(firstSighting, seenAt, sourceClass), seenAt, framing)
+      )
     }
     try {
       this.replaceRow(deviceId, sight)

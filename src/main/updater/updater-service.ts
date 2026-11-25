@@ -90,6 +90,10 @@ export function dismissAvailableUpdate(): void {
   updater.dismissAvailableUpdate()
 }
 
+export function reportNoUpdateFeed(): void {
+  updater.reportNoUpdateFeed()
+}
+
 export function setupAutoUpdater(
   mainWindow: BrowserWindow | null,
   opts?: UpdaterSetupOptions

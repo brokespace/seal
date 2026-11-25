@@ -1,0 +1,76 @@
+{
+  "id": "changed-ask",
+  "title": "The user changes what they asked for after the agent asks a question",
+  "categories": ["withdrawn-or-changed", "question-answered"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The cache is done as an in-memory LRU. Redis is not listed as unaddressed, the agent's question is answered, and the recap shows the request as the user changed it.",
+  "steps": [
+    {
+      "user": "Cache the product list in Redis with a 5 minute TTL."
+    },
+    {
+      "agent": "Before I add it: Redis isn't in the stack yet, so this means a new service in docker-compose and in production. Do you want that, or an in-process cache?"
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "questions",
+          "has": "redis|in-process|cache",
+          "why": "the agent is waiting on an answer"
+        }
+      ]
+    },
+    {
+      "user": "oh, no new services. in-memory LRU is fine, same TTL"
+    },
+    {
+      "edit": "/srv/shop/src/cache/product-cache.ts"
+    },
+    {
+      "agent": "The product list is cached in an in-memory LRU with a 5 minute TTL (src/cache/product-cache.ts); no Redis involved."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "redis",
+          "why": "the user dropped Redis"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "questions",
+          "max": 0,
+          "why": "the user answered the question"
+        },
+        {
+          "in": "did",
+          "has": "LRU|in-memory|cache",
+          "why": "the cache is recorded as done"
+        },
+        {
+          "in": "asked",
+          "has": "LRU|in-memory|in memory",
+          "why": "the request as the user changed it is recorded"
+        }
+      ]
+    }
+  ]
+}

@@ -18,6 +18,12 @@ import {
   PairingProvisionRelayParamsSchema
 } from '../../../../../shared/remote-runtime/relay/mobile-relay-credential-contract'
 import {
+  PAIRED_DEVICES_LIST_METHOD,
+  PAIRED_DEVICES_REVOKE_METHOD,
+  PairedDevicesListParamsSchema,
+  PairedDevicesRevokeParamsSchema
+} from '../../../../../shared/paired-device-admin-contract'
+import {
   PAIRING_CREATE_OFFER_METHOD,
   PairingCreateOfferParamsSchema
 } from '../../../../../shared/remote-runtime/pairing/pairing-create-offer-contract'
@@ -33,6 +39,29 @@ export const PAIRING_METHODS = [
         throw new Error('pairing_context_unavailable')
       }
       return await ctx.pairingOffers.create(params)
+    }
+  }),
+  defineMethod({
+    name: PAIRED_DEVICES_LIST_METHOD,
+    // Same gate as createOffer: the context exists only on the owner's local transport.
+    permission: 'pairing-admin',
+    params: PairedDevicesListParamsSchema,
+    handler: (_params, ctx) => {
+      if (!ctx.pairedDevices) {
+        throw new Error('pairing_context_unavailable')
+      }
+      return ctx.pairedDevices.list()
+    }
+  }),
+  defineMethod({
+    name: PAIRED_DEVICES_REVOKE_METHOD,
+    permission: 'pairing-admin',
+    params: PairedDevicesRevokeParamsSchema,
+    handler: (params, ctx) => {
+      if (!ctx.pairedDevices) {
+        throw new Error('pairing_context_unavailable')
+      }
+      return ctx.pairedDevices.revoke(params)
     }
   }),
   defineMethod({

@@ -1,0 +1,59 @@
+{
+  "id": "user-asks-whether-it-was-done",
+  "title": "The user asks whether something was done, and it was, turns ago",
+  "categories": ["duplicate-asks", "addressed-implicitly"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The documentation was written in turn 1 without a word. When the user asks about it the agent confirms, with no new work. The request is not reopened and not listed as not addressed.",
+  "steps": [
+    {
+      "user": "Add rate limiting to /login, and document it in docs/api.md."
+    },
+    {
+      "edit": "/srv/shop/src/routes/login.ts"
+    },
+    {
+      "edit": "/srv/shop/docs/api.md"
+    },
+    {
+      "agent": "Rate limiting is on /login: five attempts a minute per IP, then a 429."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "user": "did you document the rate limit?"
+    },
+    {
+      "agent": "Yes. docs/api.md has had a Rate limits section since the first change."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "the documentation was written in turn 1 and the agent confirmed it"
+        },
+        {
+          "in": "asked",
+          "max": 3,
+          "why": "a question about finished work is not a second request for it"
+        },
+        {
+          "in": "questions",
+          "max": 0,
+          "why": "the agent asked nothing"
+        }
+      ]
+    }
+  ]
+}

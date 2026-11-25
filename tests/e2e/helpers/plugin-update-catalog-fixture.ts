@@ -87,7 +87,7 @@ export async function publishCatalog(
   )
   await writeFile(
     join(repositories, 'orca-plugins.git', 'orca-catalog.json'),
-    JSON.stringify({ catalogVersion: 2, name: 'Orca Plugins', owner: 'stablyai', plugins })
+    JSON.stringify({ catalogVersion: 2, name: 'Seal Plugins', owner: 'stablyai', plugins })
   )
 }
 

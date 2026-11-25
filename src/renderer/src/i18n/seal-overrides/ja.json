@@ -1,0 +1,36 @@
+{
+  "auto": {
+    "web": {
+      "WebConnect": {
+        "27393856e4": "seal://pair?code=..."
+      },
+      "runtimeAuth": {
+        "hostOutdated": "この Seal サーバーは、この Web クライアントに必要な暗号化をサポートしていません。サーバーの Seal を更新してから、このページを再読み込みしてください。サーバーがすでに最新の場合は、サーバーの識別キーが変更されています。このブラウザを再度ペアリングしてください。"
+      }
+    },
+    "components": {
+      "sidebar": {
+        "AddRemoteHostDialog": {
+          "pairingCodePlaceholder": "seal://pair?code=..."
+        }
+      },
+      "settings": {
+        "RuntimeHostAccessForm": {
+          "accessLinkPlaceholder": "seal://pair?code=..."
+        }
+      },
+      "mobile": {
+        "MobileHero": {
+          "installHeading": "Seal Mobile をインストールします。",
+          "installLead": "Seal Mobile は App Store や Google Play では配信されていません。Seal リポジトリからビルドしてインストールし、ステップ 2 に進んでペアリング用 QR コードを表示してください。",
+          "installGuide": "インストールガイドを開く"
+        }
+      }
+    }
+  },
+  "runtime": {
+    "remoteServerPairingErrors": {
+      "invalidPairingCode": "ペアリングコードが無効です。seal://pair?... 形式の URL または生のペアリングデータが必要です。"
+    }
+  }
+}

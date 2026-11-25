@@ -22,13 +22,10 @@ import type { KeyedWebDeviceKeySupport } from '../../../src/renderer/src/web/web
 import { createMemoryWebDeviceKeyStore } from '../../../src/renderer/src/web/web-device-key-store'
 import { WebRuntimeConnectionTransport } from '../../../src/renderer/src/web/web-runtime-connection-transport'
 import { createWebRuntimeCredentialSource } from '../../../src/renderer/src/web/web-runtime-credential-source'
-import {
-  importReleaseCheckoutModule,
-  materializeReleaseCheckout,
-  resolveBaselineReleaseRef
-} from './release-checkout'
+import { PRE_FORWARD_SECRECY_RELEASE_REF } from './pre-forward-secrecy-release'
+import { importReleaseCheckoutModule, materializeReleaseCheckout } from './release-checkout'
 
-// Run real web/socket/registry wiring: new hosts upgrade browser codes to keys, while old hosts keep code auth.
+// Run real web/socket/registry wiring: current hosts upgrade browser codes to keys; released hosts are refused.
 const SUITE_TIMEOUT_MS = 180_000
 
 type HostImplementation = {
@@ -39,7 +36,7 @@ const CURRENT_HOST: HostImplementation = { Registry: DeviceRegistry, Wiring: Mob
 let releasedHost: HostImplementation
 
 beforeAll(async () => {
-  const checkout = await materializeReleaseCheckout(resolveBaselineReleaseRef())
+  const checkout = await materializeReleaseCheckout(PRE_FORWARD_SECRECY_RELEASE_REF)
   const [registryModule, wiringModule] = await Promise.all([
     importReleaseCheckoutModule(checkout, 'src/main/runtime/rpc/server/pairing/device-registry.ts'),
     importReleaseCheckoutModule(checkout, 'src/main/runtime/rpc/mobile-socket-wiring.ts')
@@ -61,7 +58,7 @@ type HostSocket = {
   readyState: number
   bufferedAmount: number
   send: (data: string | Uint8Array) => void
-  close: () => void
+  close: (code?: number) => void
 }
 
 /** A paired host: the real socket wiring, registry and key registration, answering two RPCs. */
@@ -126,7 +123,7 @@ class BrowserSocket {
   binaryType = 'arraybuffer'
   onopen: (() => void) | null = null
   onmessage: ((event: { data: unknown }) => void) | null = null
-  onclose: (() => void) | null = null
+  onclose: ((event?: { code: number }) => void) | null = null
   onerror: (() => void) | null = null
   private readonly server: HostSocket
 
@@ -137,7 +134,7 @@ class BrowserSocket {
       readyState: 1,
       bufferedAmount: 0,
       send: (data) => queueMicrotask(() => this.onmessage?.({ data })),
-      close: () => this.close()
+      close: (code) => this.close(code)
     }
     queueMicrotask(() => {
       this.readyState = BrowserSocket.OPEN
@@ -149,14 +146,14 @@ class BrowserSocket {
     queueMicrotask(() => currentHost.receive(this.server, data))
   }
 
-  close(): void {
+  close(code?: number): void {
     if (this.readyState === 3) {
       return
     }
     this.readyState = 3
     this.server.readyState = 3
     currentHost.closed(this.server)
-    queueMicrotask(() => this.onclose?.())
+    queueMicrotask(() => this.onclose?.(code === undefined ? undefined : { code }))
   }
 }
 
@@ -246,35 +243,22 @@ describe('a browser moving from its pairing code to a device key', () => {
     browser.transport.close()
   })
 
-  it('a re-pair recovers with its fresh code after a downgrade refuses the old key', async () => {
-    currentHost = host([DEVICE_KEY_RUNTIME_CAPABILITY])
-    const first = currentHost.registry.addDevice('Browser', 'runtime')
-    currentHost.registry.updateLastSeen(first.deviceId)
-    const store = createMemoryWebDeviceKeyStore()
-    const migrated = browserFor(first.token, 'persistent', 'persisted', store, 1)
-    await migrated.transport.waitForConnected(5_000)
-    migrated.transport.close()
-
-    currentHost.wiring.dispose?.()
-    currentHost = host([], releasedHost)
-    const fresh = currentHost.registry.addDevice('Browser', 'runtime')
-    currentHost.registry.updateLastSeen(fresh.deviceId)
-    const repaired = browserFor(fresh.token, 'persistent', 'persisted', store, 2)
-    await repaired.transport.waitForConnected(5_000)
-    expect(currentHost.authenticated.at(-1)?.device.deviceToken).toBe(fresh.token)
-    repaired.transport.close()
-  })
-
-  it('keeps its pairing code against a released host', async () => {
+  it('stops with an update-the-host failure against a released host, keeping its code', async () => {
     currentHost = host([], releasedHost)
     const paired = currentHost.registry.addDevice('Browser', 'runtime')
     currentHost.registry.updateLastSeen(paired.deviceId)
+    const dialsBefore = dialedUrls.length
     const browser = browserFor(paired.token, 'persistent', 'persisted')
 
-    await browser.transport.waitForConnected(5_000)
-    expect(currentHost.authenticated.at(-1)?.device.deviceToken).toBe(paired.token)
+    await expect(browser.transport.waitForConnected(5_000)).rejects.toMatchObject({
+      code: 'unauthorized',
+      reason: 'host-outdated'
+    })
+    expect(browser.transport.state).toBe('auth-failed')
+    expect(currentHost.authenticated).toEqual([])
+    expect(dialedUrls).toHaveLength(dialsBefore + 1)
     expect(browser.forgetStoredToken).not.toHaveBeenCalled()
-    expect(currentHost.registry.listDevices()).toHaveLength(1)
+    expect(browser.forgetPairing).not.toHaveBeenCalled()
     browser.transport.close()
   })
 

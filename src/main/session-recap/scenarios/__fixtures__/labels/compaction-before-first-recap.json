@@ -1,0 +1,26 @@
+{
+  "id": "compaction-before-first-recap",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Build a CSV import for products"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 3: the agent says the importer is built in src/import/products.ts"
+        }
+      }
+    },
+    {
+      "quotes": ["Blank SKU rows should be skipped, not fail the whole file"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 7: the agent says rows with a blank SKU are now skipped"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

@@ -18,7 +18,7 @@ async function writeCatppuccinPlugin(root: string, publisher: string): Promise<v
       manifestVersion: 1,
       id: 'catppuccin',
       publisher,
-      name: 'Catppuccin for Orca',
+      name: 'Catppuccin for Seal',
       version: '1.0.0',
       engines: { orca: '>=1.0.0' },
       pluginApi: 1,
@@ -64,12 +64,12 @@ test('plugins and themes sharing a name show their publishers', async ({ orcaPag
 
     await openSettingsPane(orcaPage, 'plugins')
     const section = orcaPage.locator('[data-settings-section="plugins"]')
-    await expect(section.getByText(/^Catppuccin for Orca/).first()).toBeVisible()
+    await expect(section.getByText(/^Catppuccin for Seal/).first()).toBeVisible()
     await orcaPage.screenshot({
       path: join(proofDir ?? testInfo.outputPath(), 'plugin-list.png')
     })
-    await expect(section.getByText('Catppuccin for Orca (acme)', { exact: true })).toBeVisible()
-    await expect(section.getByText('Catppuccin for Orca (vale-c)', { exact: true })).toBeVisible()
+    await expect(section.getByText('Catppuccin for Seal (acme)', { exact: true })).toBeVisible()
+    await expect(section.getByText('Catppuccin for Seal (vale-c)', { exact: true })).toBeVisible()
   } finally {
     await disablePluginSystem(orcaPage).catch(() => undefined)
     await rm(root, { recursive: true, force: true })

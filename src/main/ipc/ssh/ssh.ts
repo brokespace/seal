@@ -25,7 +25,7 @@ import {
   resetSshConnectionGenerations
 } from '../../ssh/connection/authority/ssh-connection-generation'
 import { resetSshProviderAuthorities } from '../../ssh/connection/authority/ssh-provider-authority'
-import { installManagedOrcadStartStatus } from '../runtime-environments/runtime-environment-managed-tunnel'
+import { installManagedOrcadStartStatus } from '../runtime-environments/managed-orcad/runtime-environment-managed-tunnel'
 import {
   connectInFlight,
   credentialRequestedForTarget,
@@ -75,6 +75,8 @@ import {
   retryMoveAfterLastBridgedExit
 } from '../../ssh/legacy-relay/bridge/legacy-relay-move-retry'
 import { connectTarget } from './ssh-connect-flow'
+import { setDirectSshConnectPolicyWithoutMachines } from '../../ssh/host-server/ssh-direct-connect-policy'
+import { sshConnectUsesSealServer } from '../../machines/server-install/server-install-consent'
 import {
   disposeDesktopBrowserBridge,
   installDesktopBrowserBridge
@@ -118,6 +120,8 @@ export function registerSshHandlers(
   setCurrentRuntime(runtime)
   setSshTargetRegistryStore(new SshConnectionStore(store))
   setPersistedStore(store)
+  // No install can be confirmed without Machines, so only a server Seal already deployed is used.
+  setDirectSshConnectPolicyWithoutMachines((targetId) => !sshConnectUsesSealServer(null, targetId))
   reconcileManagedOrcadSshTargets(getAppEnvironment().getPath('userData'), store)
   void retainUnretainedOrcadMigrationSources(getAppEnvironment().getPath('userData'), store)
   installOrcadMigrationScrollbackRetention(getAppEnvironment().getPath('userData'), store)

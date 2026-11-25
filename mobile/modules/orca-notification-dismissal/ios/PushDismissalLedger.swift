@@ -31,6 +31,8 @@ final class PushDismissalLedger {
   private let defaults: UserDefaults
   private let lock = NSLock()
   private let storageKey = "orca.pushDismissals.v1"
+  // Past the cap the oldest fence goes: a delayed alert reappearing costs less than an unbounded ledger.
+  private let maxEntries = 1024
   init(defaults: UserDefaults = .standard) { self.defaults = defaults }
 
   private func read(now: TimeInterval) -> [Entry] {
@@ -62,8 +64,8 @@ final class PushDismissalLedger {
       guard let batch = newest[entry.identity.key] else { kept.append(entry); continue }
       if entry.identity.notificationSeq > batch.notificationSeq { newest[entry.identity.key] = entry.identity }
     }
-    // Keep every live fence: count-based eviction lets delayed alerts reappear.
-    let next = kept + order.compactMap { key in newest[key].map { Entry(identity: $0, expiresAt: now + 86400) } }
+    let live = kept + order.compactMap { key in newest[key].map { Entry(identity: $0, expiresAt: now + 86400) } }
+    let next = Array(live.suffix(maxEntries))
     if let data = try? JSONEncoder().encode(next) {
       defaults.set(data, forKey: storageKey)
     }

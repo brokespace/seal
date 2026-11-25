@@ -61,14 +61,16 @@ const UNAVAILABLE_BY_DEFERRAL_CODE: Record<string, OrcadHostUnavailableReason> =
 }
 
 // Reprobed on every connect, so fixing or upgrading the host needs no new Orca version.
-const FIXABLE_ON_HOST: ReadonlySet<string> = new Set<OrcadHostUnavailableReason>([
+// Missing server files belong to this copy of the app, not the host: a rebuild keeps the version.
+const RECHECKED_ON_CONNECT: ReadonlySet<string> = new Set<OrcadHostUnavailableReason>([
   'runtime_noexec',
   'windows_build_unsupported',
-  'windows_no_extractor'
+  'windows_no_extractor',
+  'artifacts_unavailable'
 ])
 
-export function isOrcadHostUnavailableFixableOnHost(reason: string): boolean {
-  return FIXABLE_ON_HOST.has(reason)
+export function isOrcadHostUnavailableRecheckedOnConnect(reason: string): boolean {
+  return RECHECKED_ON_CONNECT.has(reason)
 }
 
 export function orcadCandidateLaunchFailureCode(error: unknown): string {

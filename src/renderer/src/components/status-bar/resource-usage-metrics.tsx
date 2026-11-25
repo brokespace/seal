@@ -37,9 +37,16 @@ type SparklineProps = {
   samples: number[]
   width?: number
   height?: number
+  /** Fixed scale, e.g. 0–100 for a percentage; the line autoscales to its samples without it. */
+  domain?: readonly [number, number]
 }
 
-function SparklineImpl({ samples, width = 48, height = 14 }: SparklineProps): React.JSX.Element {
+function SparklineImpl({
+  samples,
+  width = 48,
+  height = 14,
+  domain
+}: SparklineProps): React.JSX.Element {
   const points = useMemo(() => {
     const safe = Array.isArray(samples) ? samples : []
     if (safe.length < 2) {
@@ -57,17 +64,21 @@ function SparklineImpl({ samples, width = 48, height = 14 }: SparklineProps): Re
         max = v
       }
     }
+    if (domain) {
+      ;[min, max] = domain
+    }
     const range = max - min || 1
     const stepX = width / (safe.length - 1)
 
     const out: string[] = []
     for (let i = 0; i < safe.length; i++) {
       const x = (i * stepX).toFixed(1)
-      const y = (height - ((safe[i] - min) / range) * height).toFixed(1)
+      const share = Math.min(1, Math.max(0, (safe[i] - min) / range))
+      const y = (height - share * height).toFixed(1)
       out.push(`${x},${y}`)
     }
     return out.join(' ')
-  }, [samples, width, height])
+  }, [samples, width, height, domain])
 
   return (
     <svg
@@ -90,7 +101,12 @@ function SparklineImpl({ samples, width = 48, height = 14 }: SparklineProps): Re
 }
 
 export const Sparkline = memo(SparklineImpl, (a, b) => {
-  if (a.width !== b.width || a.height !== b.height) {
+  if (
+    a.width !== b.width ||
+    a.height !== b.height ||
+    a.domain?.[0] !== b.domain?.[0] ||
+    a.domain?.[1] !== b.domain?.[1]
+  ) {
     return false
   }
   const sa = Array.isArray(a.samples) ? a.samples : []

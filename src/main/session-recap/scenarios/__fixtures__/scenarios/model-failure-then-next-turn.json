@@ -1,0 +1,81 @@
+{
+  "id": "model-failure-then-next-turn",
+  "title": "A pass fails and the session goes on",
+  "categories": ["model-failure"],
+  "surfaces": ["claude-cli"],
+  "expected": "The next pass covers both turns: nothing from the turn whose pass failed is lost.",
+  "steps": [
+    {
+      "fault": {
+        "kind": "no-text",
+        "model": "primary",
+        "times": 1
+      }
+    },
+    {
+      "user": "Add a CSV export to the orders page and a date filter above the table."
+    },
+    {
+      "edit": "/srv/shop/src/pages/orders.tsx"
+    },
+    {
+      "agent": "Both are on the orders page: a date filter above the table and an Export CSV button that exports the filtered rows."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the failed pass",
+      "check": [
+        {
+          "view": "failed",
+          "is": true,
+          "why": "the user is told the recap could not be written"
+        }
+      ]
+    },
+    {
+      "user": "make the date filter default to the last 30 days"
+    },
+    {
+      "edit": "/srv/shop/src/pages/orders.tsx"
+    },
+    {
+      "agent": "The date filter defaults to the last 30 days now."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after the next pass",
+      "check": [
+        {
+          "view": "exists",
+          "is": true,
+          "why": "the recap is written"
+        },
+        {
+          "in": "asked",
+          "has": "csv|export",
+          "why": "the request from the turn whose pass failed is recorded"
+        },
+        {
+          "in": "did",
+          "has": "csv|export",
+          "why": "the work from the turn whose pass failed is recorded"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        }
+      ]
+    }
+  ]
+}

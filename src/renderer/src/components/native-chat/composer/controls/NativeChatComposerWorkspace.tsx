@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTranslate } from '@/i18n/use-translate'
 import { usePublishedMachineName } from '@/components/machine-identity/use-published-machine-name'
-import { getWorktreeGitIdentityDisplay } from '../../../../../../shared/worktree/git-identity-display'
+import { getWorktreeGitIdentityDisplay } from '../../../../../../shared/worktree/row-display/git-identity-display'
 import { parseExecutionHostId } from '../../../../../../shared/execution-host'
 import {
   createNativeChatComposerWorkspaceSelector,
   type NativeChatComposerWorkspaceTarget
 } from './native-chat-composer-workspace'
 import { NativeChatComposerBranchPicker } from './NativeChatComposerBranchPicker'
+import { SealSessionAccountBadge } from '../../../seal-session/SealSessionAccountBadge'
 
 // Trim to cap height so flex centering aligns glyphs with icons; clip x only to keep descenders.
 const FOOTER_TEXT =
@@ -29,17 +30,17 @@ export function NativeChatComposerWorkspace({
   isWorking?: boolean
 }): React.JSX.Element {
   const t = useTranslate()
-  const { worktreeId, runtimeEnvironmentId } = structuredTransport ?? {}
+  const { worktreeId, runtimeEnvironmentId, sessionPlace, sessionId } = structuredTransport ?? {}
   const hasTransport = structuredTransport !== undefined
   const selector = useMemo(
     () =>
       createNativeChatComposerWorkspaceSelector(
         terminalTabId,
         hasTransport
-          ? { worktreeId, runtimeEnvironmentId: runtimeEnvironmentId ?? null }
+          ? { worktreeId, runtimeEnvironmentId: runtimeEnvironmentId ?? null, sessionPlace }
           : undefined
       ),
-    [terminalTabId, worktreeId, runtimeEnvironmentId, hasTransport]
+    [terminalTabId, worktreeId, runtimeEnvironmentId, hasTransport, sessionPlace]
   )
   const {
     worktreeId: rowWorktreeId,
@@ -83,7 +84,9 @@ export function NativeChatComposerWorkspace({
       ? t('components.native-chat.composerWorkspace.folder', 'Folder')
       : kind === 'main'
         ? t('components.native-chat.composerWorkspace.mainCheckout', 'Main checkout')
-        : t('components.native-chat.composerWorkspace.worktree', 'Worktree')
+        : kind === 'worktree'
+          ? t('components.native-chat.composerWorkspace.worktree', 'Worktree')
+          : null
 
   const copyIdentityButton =
     identity && label ? (
@@ -156,11 +159,13 @@ export function NativeChatComposerWorkspace({
             >
               <Folder className="size-3" aria-hidden />
               <span className={FOOTER_TEXT}>{checkout}</span>
-              <span
-                className={`${FOOTER_TEXT} max-w-[max(0px,calc(100%_-_var(--spacing)*5))] shrink-0 font-normal text-chat-foreground-faint`}
-              >
-                · {kindLabel}
-              </span>
+              {kindLabel && (
+                <span
+                  className={`${FOOTER_TEXT} max-w-[max(0px,calc(100%_-_var(--spacing)*5))] shrink-0 font-normal text-chat-foreground-faint`}
+                >
+                  · {kindLabel}
+                </span>
+              )}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={4}>
@@ -193,6 +198,13 @@ export function NativeChatComposerWorkspace({
           )}
         </div>
       )}
+      <SealSessionAccountBadge
+        className="ml-auto max-w-56"
+        worktreeId={rowWorktreeId}
+        {...(hasTransport
+          ? { chatSessionId: sessionId, runtimeEnvironmentId }
+          : { tabId: terminalTabId })}
+      />
     </div>
   )
 }

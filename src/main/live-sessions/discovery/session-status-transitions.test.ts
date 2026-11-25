@@ -1,0 +1,781 @@
+import { describe, expect, it } from 'vitest'
+import type { LiveSessionStatus } from '../../../shared/live-sessions/live-session-types'
+import {
+  CLAUDE_SHELL,
+  CODEX_APP_SERVER,
+  CODEX_COMMAND,
+  CODEX_SHELL,
+  recordedSession,
+  scan,
+  type ScanOptions
+} from './session-scan.test-fixture'
+
+type Step = {
+  /** What happened on the host since the last scan. */
+  when: string
+  host: ScanOptions
+  shows: LiveSessionStatus
+  detail?: string | null
+  /** The session's background tasks, as `[command, status]`. */
+  tasks?: [string, string][]
+}
+
+type Transitions = { session: string; fixture: string; steps: Step[] }
+
+const GONE: ScanOptions = { alive: false, listsProcesses: true, quietMs: 10 * 60_000 }
+/** Its process left the host's list seconds after its last write. */
+const KILLED: ScanOptions = { alive: false, listsProcesses: true }
+/** It exited by itself, writing to its transcript on the way out, after the scan that last saw it. */
+const LEFT: ScanOptions = { ...KILLED, closedAfterMs: 40_000 }
+
+const PINNING_TICKS = 'for i in $(seq 1 20); do echo tick $i; sleep 2; done'
+const PINNING_WATCHER =
+  "tail -F /tmp/cc-home/pinning.log & while true; do grep MemAvailable /proc/meminfo; pgrep -f vllm >/dev/null || echo 'vllm not running'; sleep 5; done"
+const ONE_LEFT_RUNNING = '1 background task still running'
+const CLEF_WAITER =
+  'until ! pgrep -f run_clef_coding.py >/dev/null; do sleep 60; done; tail -n 5 logs/clef-coding.log'
+const CACHE_BUILD =
+  'setsid numactl --interleave=all nice -n 5 python fq_cache.py --sizes 110,120,130 --out cache2 > cache2.log 2>&1 < /dev/null &'
+const SIZE_SWEEP =
+  'until ! pgrep -f fq_cache.py >/dev/null; do sleep 60; done; ./run_a13.sh > a13.log 2>&1'
+
+// One scanner follows each session from scan to scan. Claude transcripts were recorded from Claude
+// Code 2.1.325 (docs/design/agent-status.md says how); `records` is how much of one was written.
+const CLAUDE: Transitions[] = [
+  {
+    session:
+      'a turn that ended to wait on a command it started in the background (the reported session)',
+    fixture: 'live-claude-background-waiter',
+    steps: [
+      { when: 'the waiter was launched', host: { records: 7, quietMs: 1_000 }, shows: 'working' },
+      {
+        when: 'the turn ended eight seconds later on "still running"',
+        host: { records: 9, registry: { state: 'shell' }, children: CLAUDE_SHELL('00:28') },
+        shows: 'waiting-task',
+        detail: null,
+        tasks: [[CLEF_WAITER, 'running']]
+      },
+      {
+        when: 'forty minutes on, the run still going',
+        host: {
+          records: 9,
+          quietMs: 40 * 60_000,
+          registry: { state: 'shell' },
+          children: CLAUDE_SHELL('40:08')
+        },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'a Claude that writes no state, on a host that lists no processes',
+        host: { records: 9 },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'the run ended and woke Claude',
+        host: { records: 15, quietMs: 1_000, registry: { state: 'busy' } },
+        shows: 'working'
+      },
+      {
+        when: 'Claude reported',
+        host: { registry: { state: 'idle' } },
+        shows: 'your-turn',
+        detail: null,
+        tasks: [[CLEF_WAITER, 'completed']]
+      }
+    ]
+  },
+  {
+    session: 'a dev server started in one turn and left up through the next',
+    fixture: 'live-claude-background-server-leftover',
+    steps: [
+      {
+        when: 'the turn that started it ended: the rule alone cannot tell a server from a wait',
+        host: { records: 7, registry: { state: 'shell' } },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'the user asked for something else',
+        host: { records: 13, quietMs: 1_000, registry: { state: 'busy' } },
+        shows: 'working'
+      },
+      {
+        when: 'that turn ended with the server still up',
+        host: { registry: { state: 'shell' }, children: CLAUDE_SHELL('05:46') },
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING,
+        tasks: [['pnpm dev --port 5173', 'running']]
+      }
+    ]
+  },
+  {
+    session: 'a command started in the background outlives its turn',
+    fixture: 'live-claude-background-command-finished',
+    steps: [
+      { when: 'the command was launched', host: { records: 5, quietMs: 1_000 }, shows: 'working' },
+      {
+        when: 'the turn ended and Claude says its shell runs',
+        host: { records: 7, registry: { state: 'shell' } },
+        shows: 'waiting-task',
+        detail: null,
+        tasks: [[PINNING_TICKS, 'running']]
+      },
+      {
+        when: 'a Claude that writes no state, with the command under it',
+        host: { records: 7, children: CLAUDE_SHELL('00:20') },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'a host that lists no processes',
+        host: { records: 7 },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'the command ended and woke Claude',
+        host: { records: 13, quietMs: 1_000, registry: { state: 'busy' } },
+        shows: 'working'
+      },
+      {
+        when: 'Claude reported',
+        host: { registry: { state: 'idle' } },
+        shows: 'your-turn',
+        detail: null,
+        tasks: [[PINNING_TICKS, 'completed']]
+      }
+    ]
+  },
+  {
+    session: 'a log watcher and a polling loop started by the turn that ended',
+    fixture: 'live-claude-background-command-running',
+    steps: [
+      {
+        when: 'the turn ended on "pinning is still in progress"',
+        host: { registry: { state: 'shell' }, children: CLAUDE_SHELL('00:20') },
+        shows: 'waiting-task',
+        detail: null,
+        tasks: [[PINNING_WATCHER, 'running']]
+      },
+      {
+        when: 'hours later, still watching',
+        host: {
+          quietMs: 5 * 60 * 60_000,
+          registry: { state: 'shell' },
+          children: CLAUDE_SHELL('05:00:00')
+        },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'the watcher was killed outside Claude',
+        host: { quietMs: 5 * 60 * 60_000, registry: { state: 'idle', afterWriteMs: 60_000 } },
+        shows: 'your-turn',
+        detail: null,
+        tasks: [[PINNING_WATCHER, 'completed']]
+      },
+      { when: 'Claude was killed', host: GONE, shows: 'done' }
+    ]
+  },
+  {
+    session: 'a background command whose launch the scan never read',
+    fixture: 'live-claude-background-command-running',
+    steps: [
+      {
+        when: 'Claude says its shell runs',
+        host: { readFrom: 8, registry: { state: 'shell' } },
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING,
+        tasks: [['Background command', 'running']]
+      }
+    ]
+  },
+  {
+    session: 'a background command on a Claude that writes no state, launch unread',
+    fixture: 'live-claude-background-command-running',
+    steps: [
+      {
+        when: 'the command runs under it',
+        host: { readFrom: 8, children: CLAUDE_SHELL('00:20') },
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
+      }
+    ]
+  },
+  {
+    session: 'a "still running" check-in on a quiet background command',
+    fixture: 'claude-background-command-check-in',
+    steps: [
+      {
+        when: 'the turn ended',
+        host: { records: 11, registry: { state: 'shell' } },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'the check-in woke Claude',
+        host: { records: 17, quietMs: 1_000, registry: { state: 'busy' } },
+        shows: 'working'
+      },
+      {
+        when: 'Claude left the command running: the user has not spoken since it started',
+        host: {},
+        shows: 'waiting-task'
+      }
+    ]
+  },
+  {
+    session: 'a command Claude waits on inside its turn',
+    fixture: 'claude-task-output-pending',
+    steps: [
+      {
+        when: 'its TaskOutput call stands while the command runs',
+        host: { records: 6, quietMs: 20_000, children: CLAUDE_SHELL('00:20') },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'the same call on a host that lists no processes',
+        host: { records: 6, quietMs: 20_000 },
+        shows: 'working'
+      },
+      {
+        when: 'the command ended and Claude reported',
+        host: { registry: { state: 'idle' } },
+        shows: 'your-turn',
+        detail: null
+      }
+    ]
+  },
+  {
+    session: 'a Monitor watch that reports events while it runs',
+    fixture: 'live-claude-monitor-watch',
+    steps: [
+      {
+        when: 'the turn ended with the monitor watching',
+        host: { records: 7 },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'an event woke Claude',
+        host: { records: 13, quietMs: 1_000 },
+        shows: 'working'
+      },
+      {
+        when: 'Claude noted it; the monitor still runs',
+        host: { records: 15 },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'a second event was noted',
+        host: { records: 20 },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'the stream ended and woke Claude',
+        host: { records: 23, quietMs: 1_000 },
+        shows: 'working'
+      },
+      { when: 'Claude reported', host: {}, shows: 'your-turn', detail: null }
+    ]
+  },
+  {
+    session: 'a Monitor watch whose closing notice never came',
+    fixture: 'live-claude-monitor-watch',
+    steps: [
+      {
+        when: 'within its 90 s',
+        host: { records: 7, quietMs: 60_000 },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'well past its timeout',
+        host: { records: 7, quietMs: 5 * 60_000 },
+        shows: 'your-turn',
+        detail: null
+      }
+    ]
+  },
+  {
+    session: 'a foreground command its timeout moved to the background',
+    fixture: 'live-claude-command-moved-to-background',
+    steps: [
+      {
+        when: 'the command runs in the foreground',
+        host: { records: 4, quietMs: 4_000, children: CLAUDE_SHELL('00:04') },
+        shows: 'running-shell'
+      },
+      {
+        when: 'it was moved to the background and the turn ended',
+        host: { records: 11, registry: { state: 'shell' } },
+        shows: 'waiting-task'
+      },
+      { when: 'it finished and Claude reported', host: {}, shows: 'your-turn', detail: null }
+    ]
+  },
+  {
+    session: 'a wake-up Claude scheduled for itself',
+    fixture: 'live-claude-scheduled-wakeup',
+    steps: [
+      {
+        when: 'the turn ended with the wake-up 115 s away',
+        host: { records: 11, registry: { state: 'idle' } },
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
+      },
+      { when: 'the wake-up fired', host: { records: 14, quietMs: 1_000 }, shows: 'working' },
+      { when: 'Claude reported', host: {}, shows: 'your-turn', detail: null }
+    ]
+  },
+  {
+    session: 'a wake-up that never fired',
+    fixture: 'live-claude-scheduled-wakeup',
+    steps: [
+      {
+        when: 'long past its time',
+        host: { records: 11, quietMs: 10 * 60_000 },
+        shows: 'your-turn',
+        detail: null
+      }
+    ]
+  },
+  {
+    session: 'a subagent running in the background',
+    fixture: 'live-claude-background-agent',
+    steps: [
+      {
+        when: 'the turn ended with the subagent at work',
+        host: { records: 11, registry: { state: 'busy' } },
+        shows: 'waiting-subagent',
+        detail: 'Waiting on 1 subagent'
+      },
+      {
+        when: 'the subagent reported back and woke Claude',
+        host: { records: 15, quietMs: 1_000 },
+        shows: 'working'
+      },
+      { when: 'Claude reported', host: { registry: { state: 'idle' } }, shows: 'your-turn' }
+    ]
+  },
+  {
+    session: 'a question put to the user',
+    fixture: 'live-claude-question-open',
+    steps: [
+      {
+        when: 'the question is up',
+        host: { registry: { state: 'waiting', waitingFor: 'input needed' } },
+        shows: 'waiting-input',
+        detail: 'Which database should the migration target?'
+      },
+      {
+        when: 'ten minutes on, unanswered',
+        host: { quietMs: 10 * 60_000, listsProcesses: true },
+        shows: 'waiting-input'
+      },
+      {
+        when: 'a host that cannot list processes stops showing the agent',
+        host: { alive: false, quietMs: 10 * 60_000 },
+        shows: 'waiting-input'
+      },
+      { when: 'Claude was killed with the question open', host: KILLED, shows: 'done' }
+    ]
+  },
+  {
+    session: 'a permission prompt',
+    fixture: 'live-claude-approval-pending',
+    steps: [
+      {
+        when: 'Claude says a prompt is up, one second in',
+        host: { quietMs: 1_000, registry: { state: 'waiting', waitingFor: 'permission prompt' } },
+        shows: 'needs-permission',
+        detail: 'Allow Bash: Remove the build output?'
+      },
+      {
+        when: 'it was answered elsewhere and the command runs',
+        host: { quietMs: 30_000, registry: { state: 'busy' }, children: [] },
+        shows: 'working'
+      },
+      { when: 'Claude was killed at the prompt', host: KILLED, shows: 'done' }
+    ]
+  },
+  {
+    session: 'a turn the API refused',
+    fixture: 'live-claude-api-error',
+    steps: [
+      { when: 'the turn failed', host: { registry: { state: 'idle' } }, shows: 'errored' },
+      {
+        when: 'its hooks then wrote "done"',
+        host: { registry: { state: 'idle' }, hook: { state: 'done' } },
+        shows: 'errored'
+      },
+      {
+        when: 'Claude exited',
+        host: { ...GONE, hook: { state: 'done', agoMs: 9 * 60_000 } },
+        shows: 'errored'
+      }
+    ]
+  },
+  {
+    session: 'a command interrupted with Esc',
+    fixture: 'live-claude-interrupted-command',
+    steps: [
+      {
+        when: 'the command runs',
+        host: { records: 4, quietMs: 30_000, children: CLAUDE_SHELL('00:30') },
+        shows: 'running-shell'
+      },
+      {
+        when: 'Esc: no hook fires, so the hook file still says working',
+        host: { hook: { state: 'working', agoMs: 60_000 }, registry: { state: 'idle' } },
+        shows: 'your-turn',
+        detail: 'Interrupted'
+      }
+    ]
+  },
+  {
+    session: 'a turn Claude dropped without a word in its transcript',
+    fixture: 'live-claude-shell-pending',
+    steps: [
+      { when: 'the call is pending', host: { quietMs: 2_000 }, shows: 'working' },
+      {
+        when: 'Claude says it is idle, long after the last write',
+        host: { quietMs: 60_000, registry: { state: 'idle', afterWriteMs: 30_000 } },
+        shows: 'your-turn'
+      }
+    ]
+  },
+  {
+    session: 'a finished turn Claude still works past (compaction, delegated work)',
+    fixture: 'claude-idle',
+    steps: [
+      { when: 'Claude says it is busy', host: { registry: { state: 'busy' } }, shows: 'working' },
+      { when: 'Claude says it is idle', host: { registry: { state: 'idle' } }, shows: 'your-turn' }
+    ]
+  },
+  {
+    session: 'a Claude that leaves on its own (/exit, a closed terminal) at its prompt',
+    fixture: 'claude-idle',
+    steps: [
+      { when: 'it sits at its prompt', host: {}, shows: 'your-turn' },
+      { when: 'it wrote its closing records and left', host: LEFT, shows: 'done' }
+    ]
+  },
+  {
+    session: 'a Claude that leaves on its own while its background command runs',
+    fixture: 'live-claude-background-command-running',
+    steps: [
+      {
+        when: 'it sits at its prompt with the command running',
+        host: { registry: { state: 'shell' }, children: CLAUDE_SHELL('00:20') },
+        shows: 'waiting-task'
+      },
+      { when: 'it left, and took its command with it', host: LEFT, shows: 'done' }
+    ]
+  },
+  {
+    session:
+      'a turn that ended on a job its subagent started with setsid, behind a sweep waiting on it',
+    fixture: 'live-claude-subagent-detached-job',
+    steps: [
+      {
+        when: 'the subagent stopped to wait on its sweep, and the turn ended on "waiting on that job"',
+        host: {
+          registry: { state: 'shell' },
+          children: CLAUDE_SHELL('00:38'),
+          jobs: ['0 0 5120 python']
+        },
+        shows: 'waiting-subagent',
+        detail: 'Waiting on 1 subagent',
+        tasks: [
+          [SIZE_SWEEP, 'running'],
+          [CACHE_BUILD, 'running']
+        ]
+      },
+      {
+        when: 'the sweep is gone and the cache build, which no agent runs, goes on',
+        host: {
+          quietMs: 40 * 60_000,
+          registry: { state: 'idle' },
+          children: [],
+          jobs: ['0 0 5120 python']
+        },
+        shows: 'waiting-task',
+        detail: null,
+        tasks: [
+          [CACHE_BUILD, 'running'],
+          [SIZE_SWEEP, 'completed']
+        ]
+      },
+      {
+        when: 'the cache build is over',
+        host: { quietMs: 2 * 60 * 60_000, registry: { state: 'idle' }, children: [], jobs: [] },
+        shows: 'your-turn',
+        detail: null,
+        tasks: [
+          [SIZE_SWEEP, 'completed'],
+          [CACHE_BUILD, 'completed']
+        ]
+      }
+    ]
+  },
+  {
+    session: 'the same turn on a host that cannot say which jobs run by themselves',
+    fixture: 'live-claude-subagent-detached-job',
+    steps: [
+      {
+        when: 'Claude says nothing of its is running',
+        host: { registry: { state: 'idle' }, children: [] },
+        shows: 'your-turn',
+        tasks: [[SIZE_SWEEP, 'completed']]
+      }
+    ]
+  }
+]
+
+const MEMORY_WATCHER = 'while true; do grep MemAvailable /proc/meminfo; sleep 5; done'
+const WATCHER_A = 'MARK_C3A=1; while true; do sleep 120; done'
+const WATCHER_B = 'MARK_C3B=1; while true; do sleep 120; done'
+const LONG_SCRIPT = 'sleep 300; echo script-finished'
+
+const CODEX: Transitions[] = [
+  {
+    session: 'an approval Codex asked for',
+    fixture: 'codex-needs-permission',
+    steps: [
+      { when: 'the request is up', host: {}, shows: 'needs-permission' },
+      {
+        when: 'ten minutes on, on a host that lists no processes',
+        host: { alive: false, quietMs: 10 * 60_000 },
+        shows: 'needs-permission',
+        detail: 'Allow bash -lc rm -rf dist .cache?'
+      },
+      {
+        when: 'its terminal closed but an app-server still holds the thread',
+        host: {
+          alive: false,
+          listsProcesses: true,
+          quietMs: 10 * 60_000,
+          processes: [CODEX_APP_SERVER],
+          heldOpenBy: 4300
+        },
+        shows: 'needs-permission'
+      },
+      { when: 'Codex was killed', host: KILLED, shows: 'done' }
+    ]
+  },
+  {
+    session: 'a question Codex asked through its question tool',
+    fixture: 'live-codex-ask-pending',
+    steps: [
+      { when: 'the question is up', host: {}, shows: 'waiting-input' },
+      { when: 'Codex was killed', host: KILLED, shows: 'done' }
+    ]
+  },
+  {
+    session: 'a command Codex left running in a background terminal',
+    fixture: 'live-codex-background-terminal',
+    steps: [
+      {
+        when: 'the command runs',
+        host: { records: 6, children: CODEX_COMMAND('00:01') },
+        shows: 'running-shell'
+      },
+      {
+        when: 'Codex ended its turn with the command still running',
+        host: { listsProcesses: true, children: CODEX_COMMAND('00:20') },
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING,
+        tasks: [[MEMORY_WATCHER, 'running']]
+      },
+      {
+        when: 'an hour on',
+        host: { listsProcesses: true, children: CODEX_COMMAND('1:00:00'), quietMs: 60 * 60_000 },
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
+      },
+      {
+        when: 'on a host that lists no processes',
+        host: {},
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
+      },
+      {
+        when: 'the command was killed outside Codex',
+        host: { listsProcesses: true, children: [] },
+        shows: 'your-turn',
+        detail: null,
+        tasks: [[MEMORY_WATCHER, 'completed']]
+      },
+      { when: 'Codex was killed', host: KILLED, shows: 'done' }
+    ]
+  },
+  {
+    session: 'a command Codex polled until it exited',
+    fixture: 'live-codex-terminal-polled',
+    steps: [
+      {
+        when: 'the command outlived its call and Codex thinks',
+        host: { records: 7, children: CODEX_COMMAND('00:30') },
+        shows: 'working'
+      },
+      {
+        when: 'Codex polls it',
+        host: { records: 8, children: CODEX_COMMAND('00:31') },
+        shows: 'waiting-task',
+        detail: `Bash: ${LONG_SCRIPT}`
+      },
+      {
+        when: 'the poll saw it exit and the turn ended',
+        host: { listsProcesses: true, children: [] },
+        shows: 'your-turn',
+        tasks: [[LONG_SCRIPT, 'completed']]
+      },
+      {
+        when: 'another command runs under the shared app-server',
+        host: {
+          listsProcesses: true,
+          processes: [CODEX_APP_SERVER],
+          children: CODEX_SHELL('00:05')
+        },
+        shows: 'your-turn'
+      }
+    ]
+  },
+  {
+    session: 'two commands Codex left running in background terminals',
+    fixture: 'live-codex-two-terminals',
+    steps: [
+      {
+        when: 'Codex ended its turn with both running',
+        host: { records: 12, listsProcesses: true, children: CODEX_COMMAND('00:20') },
+        shows: 'your-turn',
+        detail: '2 background tasks still running',
+        tasks: [
+          [WATCHER_B, 'running'],
+          [WATCHER_A, 'running']
+        ]
+      },
+      {
+        when: 'one was killed and Codex wrote that it ended',
+        host: { records: 13, listsProcesses: true, children: CODEX_COMMAND('01:20') },
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING,
+        tasks: [
+          [WATCHER_B, 'running'],
+          [WATCHER_A, 'stopped']
+        ]
+      },
+      {
+        when: 'the other was killed while another session runs a command under the shared app-server',
+        host: {
+          listsProcesses: true,
+          processes: [CODEX_APP_SERVER],
+          children: CODEX_SHELL('00:05')
+        },
+        shows: 'your-turn',
+        detail: null,
+        tasks: [
+          [WATCHER_B, 'stopped'],
+          [WATCHER_A, 'stopped']
+        ]
+      }
+    ]
+  },
+  {
+    session: 'a command Codex was polling when the user interrupted',
+    fixture: 'live-codex-poll-interrupted',
+    steps: [
+      {
+        when: 'Codex polls the command',
+        host: { records: 8, children: CODEX_COMMAND('00:31') },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'Esc ended the turn and the command runs on in its terminal',
+        host: { records: 10, listsProcesses: true, children: CODEX_COMMAND('01:00') },
+        shows: 'your-turn',
+        detail: 'Interrupted',
+        tasks: [[LONG_SCRIPT, 'running']]
+      },
+      {
+        when: 'the command ended',
+        host: { listsProcesses: true, children: [] },
+        shows: 'your-turn',
+        detail: 'Interrupted',
+        tasks: [[LONG_SCRIPT, 'completed']]
+      }
+    ]
+  },
+  {
+    session: 'a Codex turn that failed',
+    fixture: 'live-codex-failed-turn',
+    steps: [
+      { when: 'the turn failed', host: {}, shows: 'errored' },
+      { when: 'its hooks then wrote "idle"', host: { hook: { state: 'idle' } }, shows: 'errored' },
+      { when: 'Codex exited', host: GONE, shows: 'errored' }
+    ]
+  }
+]
+
+describe.each([
+  ['Claude Code', CLAUDE],
+  ['Codex', CODEX]
+])('status transitions of a %s session', (_, sessions) => {
+  it.each(sessions)('$session', async ({ fixture, steps }) => {
+    const scanOnce = recordedSession(fixture)
+    const seen: Omit<Step, 'host'>[] = []
+    for (const step of steps) {
+      const session = await scanOnce(step.host)
+      seen.push({
+        when: step.when,
+        shows: session.status,
+        ...(step.detail !== undefined ? { detail: session.statusDetail } : {}),
+        ...(step.tasks ? { tasks: session.activity?.tasks.map((t) => [t.label, t.status]) } : {})
+      })
+    }
+    expect(seen).toEqual(
+      steps.map(({ when, shows, detail, tasks }) => ({
+        when,
+        shows,
+        ...(detail !== undefined ? { detail } : {}),
+        ...(tasks ? { tasks } : {})
+      }))
+    )
+  })
+})
+
+// A machine that just connected reads a few transcripts per scan (SSH_SCAN_LIMITS).
+it.each<[string, string, ScanOptions, LiveSessionStatus]>([
+  [
+    'Claude Code',
+    'live-claude-background-command-running',
+    { registry: { state: 'shell' } },
+    'waiting-task'
+  ],
+  ['Codex', 'live-codex-background-terminal', { children: CODEX_COMMAND('00:20') }, 'your-turn'],
+  [
+    'Codex (its rollout held open by a shared app-server, not by its own process)',
+    'live-codex-background-terminal',
+    {
+      unpinned: true,
+      processes: [CODEX_APP_SERVER],
+      heldOpenBy: 4300,
+      children: CODEX_COMMAND('00:20')
+    },
+    'your-turn'
+  ]
+])(
+  'a running %s session shows once its transcript is read, never as idle before',
+  async (_, fixture, host, shows) => {
+    const scanOnce = recordedSession(fixture)
+    expect(await scanOnce({ ...host, unread: true })).toBeUndefined()
+    expect((await scanOnce(host)).status).toBe(shows)
+  }
+)
+
+it('a Claude started where an earlier session ended is a new session, not that one running again', async () => {
+  const started = '7c1d2e3f-0a1b-4c2d-8e3f-4a5b6c7d8e9f'
+  const sessions = await scan('claude-idle', {
+    unpinned: true,
+    listsProcesses: true,
+    registry: { state: 'idle', sessionId: started }
+  })
+  expect(sessions.map((s) => [s.providerSessionId === started, s.alive]).sort()).toEqual([
+    [false, false],
+    [true, true]
+  ])
+})

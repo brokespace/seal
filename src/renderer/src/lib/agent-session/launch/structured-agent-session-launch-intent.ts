@@ -95,7 +95,8 @@ export function createStructuredAgentSessionLaunchIntent(
   resumeFrom?: StructuredAgentSessionResumeSource,
   hostSeedOptions?: LaunchSeed,
   activate = true,
-  forkFrom?: StructuredAgentSessionForkSource
+  forkFrom?: StructuredAgentSessionForkSource,
+  launchDirectory?: string
 ): StructuredAgentSessionLaunchIntent {
   const owner = structuredAgentSessionOwnerTarget(
     worktreeId,
@@ -118,7 +119,8 @@ export function createStructuredAgentSessionLaunchIntent(
     sessionId,
     resumeFrom,
     hostSeedOptions,
-    forkFrom
+    forkFrom,
+    launchDirectory
   )
 }
 
@@ -129,7 +131,8 @@ function buildStructuredAgentSessionLaunchIntent(
   sessionId: string,
   resumeFrom: StructuredAgentSessionResumeSource | undefined,
   hostSeedOptions: LaunchSeed,
-  forkFrom: StructuredAgentSessionForkSource | undefined
+  forkFrom: StructuredAgentSessionForkSource | undefined,
+  launchDirectory: string | undefined
 ): StructuredAgentSessionLaunchIntent {
   const state = useAppStore.getState()
   return {
@@ -144,6 +147,7 @@ function buildStructuredAgentSessionLaunchIntent(
       agent,
       ...(resumeFrom ? { resumeFrom } : {}),
       ...(forkFrom ? { forkFrom } : {}),
+      ...(launchDirectory ? { launchDirectory } : {}),
       randomUuid: createNonSecureContextUuid
     }),
     ...(forkFrom ? {} : launchSeedOptions(state, owner, agent, hostSeedOptions, resumeFrom))
@@ -178,7 +182,8 @@ export function retryStructuredAgentSessionLaunchIntent(
       intent.sessionId,
       fresh ? undefined : intent.params.resumeFrom,
       intent.seedOptions,
-      intent.params.forkFrom
+      intent.params.forkFrom,
+      intent.params.launchDirectory
     ),
     forkRequiresInheritedOriginal: intent.forkRequiresInheritedOriginal,
     explicitLaunchOptions: intent.explicitLaunchOptions
@@ -203,6 +208,7 @@ export function restoreStructuredAgentSessionLaunchIntent(args: {
   options?: Readonly<Record<string, string>>
   sendSelectionSupport?: boolean
   createMessageSupport?: boolean
+  launchDirectory?: string
 }): StructuredAgentSessionLaunchIntent {
   const state = useAppStore.getState()
   const { target } = structuredAgentSessionOwnerTarget(args.worktreeId, args.executionHostId)
@@ -225,7 +231,8 @@ export function restoreStructuredAgentSessionLaunchIntent(args: {
       ...(args.forkFrom ? { forkFrom: args.forkFrom } : {}),
       ...(args.firstMessage ? { firstMessage: args.firstMessage } : {}),
       ...(args.optionsMode ? { optionsMode: args.optionsMode } : {}),
-      ...(args.options ? { options: args.options } : {})
+      ...(args.options ? { options: args.options } : {}),
+      ...(args.launchDirectory ? { launchDirectory: args.launchDirectory } : {})
     },
     ...(args.createMessageSupport === undefined
       ? {}

@@ -12,7 +12,7 @@ const DAEMON_ENTRY_MARKER = 'daemon-entry.js'
 export function defaultUserDataDir() {
   const appData =
     process.env.APPDATA ?? path.join(process.env.USERPROFILE ?? '', 'AppData', 'Roaming')
-  return path.join(appData, 'Orca')
+  return path.join(appData, 'Seal')
 }
 
 // Scan command-line daemon markers; scope to this harness’s userData/token/socket substring to exclude unrelated profiles.

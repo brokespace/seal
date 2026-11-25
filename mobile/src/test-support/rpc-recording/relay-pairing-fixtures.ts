@@ -8,7 +8,8 @@ export const HOST_ID = 'host-1'
 const DEVICE_TOKEN = 'device-token-1'
 const PUBLIC_KEY_B64 = 'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8='
 const ENDPOINT = 'ws://192.168.1.10:8765'
-const RELAY_HOST_ID = 'relay-host-0001x'
+// SHA-256 of the 32 key bytes 0..31, base64url, first 16 characters: offers and journals bind the two.
+const RELAY_HOST_ID = 'Yw3NKWbEM2aRElRI'
 const INVITE_TOKEN = 'invite000000000000000000000000000000000001x'
 export const PENDING_RESUME_TOKEN = 'pending00000000000000000000000000000000001x'
 const CURRENT_RESUME_TOKEN = 'current00000000000000000000000000000000001x'
@@ -17,7 +18,7 @@ const RESUME_CONFIRM_REQ_ID = 'confirm-fixture-1'
 export const JOURNAL_ID = 'pair-fixture-1'
 const OFFER_FINGERPRINT = 'fingerprint0000000000000000000000000000001'
 const DIRECTOR_URL = 'https://director.example'
-const CELL_URL = 'https://cell.example'
+const CELL_URL = DIRECTOR_URL
 const INVITE_LIFETIME_MS = 5 * 60 * 1000
 
 /** The product's own credential hash, loaded from source: a stand-in would record a fiction. */

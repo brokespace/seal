@@ -4,7 +4,8 @@ import { getOrcaCloudAuthConfig } from '../../orca-profiles/cloud-auth/profile-c
 import { runWithFreshOrcaCloudSession } from '../../orca-profiles/cloud-session/profile-cloud-session-refresh'
 import {
   allowsArtifactCloudAuthOverride,
-  resolveArtifactCloudApiUrl
+  ARTIFACT_CLOUD_UNCONFIGURED_MESSAGE,
+  findArtifactCloudApiUrl
 } from '../../artifacts/artifact-cloud-config'
 
 export async function runSkillCloudOperation<T>(input: {
@@ -12,7 +13,10 @@ export async function runSkillCloudOperation<T>(input: {
   options: SkillCloudOptions
   operation(token: string, apiUrl: string): Promise<T>
 }): Promise<SkillCloudOperation<T>> {
-  const apiUrl = resolveArtifactCloudApiUrl(input.options.apiUrl)
+  const apiUrl = findArtifactCloudApiUrl(input.options.apiUrl)
+  if (!apiUrl) {
+    return { status: 'unconfigured', message: ARTIFACT_CLOUD_UNCONFIGURED_MESSAGE }
+  }
   const active = ensureActiveOrcaProfile(input.userDataPath)
   const stamp = {
     profileId: active.profile.id,

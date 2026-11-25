@@ -20,6 +20,9 @@ export type TabBarCreateMenuController = {
   handleSelectCreateMenuOption: (option: TabCreateMenuOption) => void
   launchAgentFromNewTabEntry: (option: TabAgentLaunchOption) => boolean | Promise<boolean>
   runPendingNewTabMenuFocusAfterClose: () => void
+  noteNewTabMenuEscape: () => void
+  /** Whether Esc closed the menu, asked once per close. */
+  takeNewTabMenuEscape: () => boolean
   clearPendingNewTabMenuFocusOnUnmount: (node: HTMLDivElement | null) => void
   queueNewActiveTerminalFocusAfterNewTabMenuClose: () => void
   queueTerminalTabFocusAfterNewTabMenuClose: (tabId: string) => void

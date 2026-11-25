@@ -1,0 +1,26 @@
+{
+  "id": "declined-as-out-of-reach",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Rotate the production Stripe key and update the secret in Vault"],
+      "at": {
+        "after the turn": {
+          "is": "declined",
+          "why": "step 3: the agent says it can't rotate the key or touch Vault without credentials and nothing was rotated"
+        }
+      }
+    },
+    {
+      "quotes": ["add a line to the README saying keys rotate every 90 days"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 3: the agent says the README now says keys rotate every 90 days"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

@@ -39,6 +39,8 @@ import {
   readOrcadE2EIdleTimeoutMs
 } from '../../../shared/orcad-idle-exit'
 import { ORCAD_MANAGED_ACTIVATION_ROOT_ENV } from '../../../shared/orcad-managed-launch-env'
+import { sealServiceLaunchTail } from '../service/seal-server-launch-record'
+import type { SealServiceManager } from '../service/seal-service-policy'
 
 export type OrcadLaunchSpec = {
   remoteInstallDir: string
@@ -67,7 +69,7 @@ export function orcadManagedLaunchEnv(
 }
 
 /** WSL without systemd kills nohup children with wsl.exe --exec; use a separate session. */
-export type OrcadLaunchDetach = 'nohup' | 'setsid'
+export type OrcadLaunchDetach = 'nohup' | 'setsid' | { service: SealServiceManager }
 
 const ORCAD_SETSID_PID_WAIT_TRIES = 100
 
@@ -105,6 +107,19 @@ export function orcadLaunchCommand(
     `ORCA_USER_DATA=${quotePosixShell(spec.userDataDir)}`,
     ...orcadManagedLaunchEnv(spec).map(([name, value]) => `${name}=${quotePosixShell(value)}`)
   ]
+  const serviceTail =
+    typeof detach === 'object'
+      ? [
+          ...sealServiceLaunchTail(host, detach.service, spec, {
+            entry,
+            readiness,
+            log,
+            launchEnv,
+            runtimeV8Flags: ORCAD_RUNTIME_V8_FLAGS
+          }),
+          ...awaitPidFileTail(pidFile)
+        ]
+      : null
   return [
     `orcad_pid=${quotePosixShell(joinRemotePath(host, spec.remoteInstallDir, ORCAD_PID_FILENAME))};`,
     // Record the launching machine before detaching; absent boot identity leaves it unverified.
@@ -127,7 +142,7 @@ export function orcadLaunchCommand(
     ...(detach === 'setsid' ? [`rm -f ${pidFile} &&`] : []),
     ...(detach === 'setsid'
       ? setsidLaunchTail(entry, spec, readiness, log, pidFile, launchEnv, hostEnv)
-      : [
+      : (serviceTail ?? [
           // Open redirects under 077 before restoring daemon login umask.
           '{ umask "$orcad_login_umask" &&',
           ...launchEnv,
@@ -140,7 +155,7 @@ export function orcadLaunchCommand(
             ? [`${writeOrcadLaunchSshSessionCommand(host, spec.userDataDir)} &&`]
             : []),
           `cat ${pidFile}`
-        ])
+        ]))
   ].join(' ')
 }
 
@@ -166,6 +181,12 @@ function setsidLaunchTail(
     `"$orcad_runtime" $orcad_runtime_flags ${ORCAD_RUNTIME_V8_FLAGS} ${entry}`,
     `--json --bind ${quotePosixShell(spec.bindHost)} --port ${String(spec.port)}`,
     `> ${readiness} 2>> ${log} < /dev/null &&`,
+    ...awaitPidFileTail(pidFile)
+  ]
+}
+
+function awaitPidFileTail(pidFile: string): string[] {
+  return [
     `orcad_wait=0; while [ ! -s ${pidFile} ] && [ "$orcad_wait" -lt ${ORCAD_SETSID_PID_WAIT_TRIES} ];`,
     'do sleep 0.05; orcad_wait=$((orcad_wait + 1)); done;',
     `cat ${pidFile}`

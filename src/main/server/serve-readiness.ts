@@ -1,6 +1,7 @@
 import type { PairingOfferUnavailableReason } from '../runtime/rpc/server/runtime-rpc-pairing-types'
 import type { OrcadHealth } from '../orcad/diagnostics/orcad-health'
 import { describePtyProcessCeiling } from '../../shared/terminal/pty/native-process/pty-process-ceiling-state'
+import { bindHostIsNetworkExposed } from '../../shared/orcad-bind-address'
 
 export type ServePairingUnavailableReason = PairingOfferUnavailableReason | 'disabled_by_operator'
 
@@ -13,6 +14,8 @@ export type ServePairingReadiness =
       webClientUrl: string | null
       scope: 'runtime' | 'mobile'
       qr: string | null
+      /** When the unused offer stops pairing (epoch ms); absent from hosts that predate offer expiry. */
+      expiresAt?: number | null
     }
   | {
       available: false
@@ -94,6 +97,10 @@ function renderHumanReadiness(readiness: ServeReadiness): string {
     `Bound endpoint: ${readiness.boundEndpoint ?? 'websocket unavailable'}`,
     `Advertised endpoint: ${readiness.advertisedEndpoint ?? 'unavailable'}`
   ]
+  const reach = describeListenerReach(readiness.boundEndpoint)
+  if (reach) {
+    lines.push(reach)
+  }
   if (readiness.health) {
     const daemon = readiness.health.terminalDaemon
     lines.push(
@@ -117,11 +124,32 @@ function renderHumanReadiness(readiness: ServeReadiness): string {
       lines.push(`Mobile pairing QR:\n${readiness.pairing.qr}`)
     }
     lines.push(`Pairing URL: ${readiness.pairing.url}`)
+    if (typeof readiness.pairing.expiresAt === 'number') {
+      lines.push(
+        `Pairing offer expires: ${new Date(readiness.pairing.expiresAt).toISOString()} if unused. ` +
+          'Run `orca pair` (with --mobile for a phone) for a new one; nothing restarts.'
+      )
+    }
   } else {
     lines.push(`Pairing unavailable: ${readiness.pairing.reason}`)
     lines.push(`Pairing guidance: ${readiness.pairing.guidance}`)
   }
   return lines.join('\n')
+}
+
+function describeListenerReach(boundEndpoint: string | null): string | null {
+  if (!boundEndpoint) {
+    return null
+  }
+  let host: string
+  try {
+    host = new URL(boundEndpoint).hostname.replace(/^\[|\]$/g, '')
+  } catch {
+    return null
+  }
+  return bindHostIsNetworkExposed(host)
+    ? `Listening on ${host}: reachable from the network.`
+    : `Listening on ${host}: this machine only. Restart with --bind <address> to accept network connections.`
 }
 
 function writeStdout(output: string): Promise<void> {

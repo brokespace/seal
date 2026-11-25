@@ -16,6 +16,7 @@ import type { SessionOptionValue } from '../../native-chat/input/native-chat-ses
 import { agentArgTerminatorIndex } from '../../agent-session/options/agent-session-option-agent-args'
 import { getTuiAgentLaunchCommand, TUI_AGENT_CONFIG } from '../catalog/tui-agent-config'
 import {
+  isSpliceableStartupCommand,
   quoteStartupArg,
   tokenizeStartupCommand,
   type AgentStartupShell
@@ -58,6 +59,25 @@ function isCodexExecutable(token: string | undefined): boolean {
   return basename !== undefined && /^codex(?:\.(?:exe|cmd|bat|ps1))?$/.test(basename)
 }
 
+/** Appends args to a lone Codex invocation; any other command is returned unchanged. */
+export function withCodexCommandArgs(
+  command: string,
+  args: readonly string[],
+  shell: AgentStartupShell,
+  quoteArg: (arg: string, shell: AgentStartupShell) => string = quoteStartupArg
+): string {
+  const parsed = tokenizeStartupCommand(command, shell)
+  // Why: a wrapper may not forward -c, a compound line would hand it to another command, and
+  // anything after `--` is no longer an option. Quoted text (a prompt) may hold any character.
+  return args.length &&
+    parsed.ok &&
+    isCodexExecutable(parsed.tokens[0]) &&
+    !parsed.tokens.includes('--') &&
+    isSpliceableStartupCommand(command, parsed)
+    ? `${command} ${args.map((arg) => quoteArg(arg, shell)).join(' ')}`
+    : command
+}
+
 /** Appends the per-launch terminal input flags to a recorded agent command. */
 export function withAgentTerminalInputArgs(
   command: string,
@@ -66,18 +86,9 @@ export function withAgentTerminalInputArgs(
   platform: NodeJS.Platform | null,
   shell: AgentStartupShell
 ): string {
-  const inputArgs = agentTerminalInputArgs(agent, platform)
-  const tokens = tokenizeStartupCommand(command, shell)
-  // Why: only a lone Codex invocation is safe; a wrapper may not forward -c, a compound line would
-  // hand it to another command, and the command may already set it or end its options with `--`.
-  return inputArgs.length &&
-    !/[;&|<>`$()\n]/.test(command) &&
-    tokens.ok &&
-    isCodexExecutable(tokens.tokens[0]) &&
-    !command.includes('disable_paste_burst') &&
-    !tokens.tokens.includes('--')
-    ? `${command} ${inputArgs.map((arg) => quoteStartupArg(arg, shell)).join(' ')}`
-    : command
+  return command.includes('disable_paste_burst')
+    ? command
+    : withCodexCommandArgs(command, agentTerminalInputArgs(agent, platform), shell)
 }
 
 export type ResolvedAgentLaunchCommand =
